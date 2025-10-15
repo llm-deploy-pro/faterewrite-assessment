@@ -1,4 +1,4 @@
-﻿// 文件路径：src/scenes/ScreenTwo/index.tsx
+﻿// src/scenes/ScreenTwo/index.tsx
 
 import React, { useState } from 'react';
 import ScreenTwoFrontComponent from './ScreenTwoFront';
@@ -8,16 +8,12 @@ interface ScreenTwoProps {
   onCheckout?: () => void;
 }
 
-// ✅ 局部包装以兼容传参（不改动子组件声明）
-const ScreenTwoFrontWithProps =
-  ScreenTwoFrontComponent as unknown as React.ComponentType<{ onContinue: () => void }>;
-const ScreenTwoBackWithProps =
-  ScreenTwoBackComponent as unknown as React.ComponentType<{ onCheckout: () => void }>;
-
 const ScreenTwo: React.FC<ScreenTwoProps> = ({ onCheckout }) => {
   const [showBack, setShowBack] = useState(false);
 
   const handleContinue = () => {
+    console.log('[S2] 切换到后屏'); // 调试日志
+    
     // 埋点：S2A CTA点击
     if (typeof window !== 'undefined' && (window as any).analytics) {
       (window as any).analytics.track('S2A_CTA_Click', {
@@ -28,10 +24,14 @@ const ScreenTwo: React.FC<ScreenTwoProps> = ({ onCheckout }) => {
     setShowBack(true);
     
     // 滚动到顶部
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
   };
 
   const handleCheckout = () => {
+    console.log('[S2] 点击支付按钮'); // 调试日志
+    
     // 埋点：S2B CTA点击
     if (typeof window !== 'undefined' && (window as any).analytics) {
       (window as any).analytics.track('S2B_CTA_Click', {
@@ -41,53 +41,68 @@ const ScreenTwo: React.FC<ScreenTwoProps> = ({ onCheckout }) => {
     
     if (onCheckout) {
       onCheckout();
+    } else {
+      // 如果没有传入 onCheckout，默认跳转
+      window.location.href = '/checkout';
     }
   };
+
+  console.log('[S2] showBack状态:', showBack); // 调试日志
 
   return (
     <>
       {!showBack ? (
-        <ScreenTwoFrontWithProps onContinue={handleContinue} />
+        <ScreenTwoFrontComponent onContinue={handleContinue} />
       ) : (
-        <ScreenTwoBackWithProps onCheckout={handleCheckout} />
+        <ScreenTwoBackComponent onCheckout={handleCheckout} />
       )}
     </>
   );
 };
 
-// 默认导出（用于 /screen-2 路由）
+// 默认导出
 export default ScreenTwo;
 
-// 命名导出前屏组件（用于独立路由）
+// 命名导出前屏组件
 export const ScreenTwoFront: React.FC = () => {
   const [showBack, setShowBack] = useState(false);
 
   const handleContinue = () => {
+    console.log('[S2Front] 切换到后屏'); // 调试日志
+    
     if (typeof window !== 'undefined' && (window as any).analytics) {
       (window as any).analytics.track('S2A_CTA_Click', {
         timestamp: new Date().toISOString()
       });
     }
+    
     setShowBack(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
   };
 
   const handleCheckout = () => {
+    console.log('[S2Front] 点击支付按钮'); // 调试日志
+    
     if (typeof window !== 'undefined' && (window as any).analytics) {
       (window as any).analytics.track('S2B_CTA_Click', {
         timestamp: new Date().toISOString()
       });
     }
-    // 跳转到支付页
+    
     window.location.href = '/checkout';
   };
+
+  console.log('[S2Front] showBack状态:', showBack); // 调试日志
 
   return (
     <>
       {!showBack ? (
-        <ScreenTwoFrontWithProps onContinue={handleContinue} />
+        <ScreenTwoFrontComponent onContinue={handleContinue} />
       ) : (
-        <ScreenTwoBackWithProps onCheckout={handleCheckout} />
+        <ScreenTwoBackComponent onCheckout={handleCheckout} />
       )}
     </>
   );
