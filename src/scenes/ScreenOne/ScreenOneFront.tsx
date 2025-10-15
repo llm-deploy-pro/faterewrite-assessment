@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import Wordmark from "@/components/Wordmark";
 
-/* ===================== 跨子域去重小工具（新增，仅用于打点） ===================== */
+/* ===================== 跨子域去重工具 ===================== */
 function getCookie(name: string): string {
   if (typeof document === "undefined") return "";
   const list = (document.cookie || "").split("; ");
@@ -15,34 +15,51 @@ function getCookie(name: string): string {
   }
   return "";
 }
+
 function setRootCookie(name: string, value: string, days: number) {
   try {
     const exp = new Date(Date.now() + days * 864e5).toUTCString();
-    // 1) 尝试写顶级域，跨子域共享
+    // 优先写顶级域（生产环境）
     document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
       value
     )}; path=/; domain=.faterewrite.com; expires=${exp}; SameSite=Lax`;
-    // 2) 若失败（本地开发等），退回当前域
+    // 若失败（本地开发），退回当前域
     if (document.cookie.indexOf(name + "=") === -1) {
       document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
         value
       )}; path=/; expires=${exp}; SameSite=Lax`;
     }
-  } catch {
-    /* ignore */
-  }
+  } catch {}
 }
-/** 将一次性 key 记录到 frd_dedupe_v1，首次返回 true（用于门控上报） */
-function markOnce(key: string): boolean {
+
+/** 
+ * 记录一次性事件到 Cookie
+ * @param key - 事件唯一标识（如 s1e3）
+ * @param devMode - 开发模式下不去重（默认 false）
+ * @returns true=首次触发，false=已触发过
+ */
+function markOnce(key: string, devMode: boolean = false): boolean {
+  // 开发模式：允许重复触发（方便测试）
+  if (devMode && window.location.hostname === 'localhost') {
+    console.log(`[DEV] 事件 ${key} 触发（开发模式不去重）`);
+    return true;
+  }
+
   const name = "frd_dedupe_v1";
   const raw = getCookie(name);
   const set = new Set(raw ? raw.split(",") : []);
-  if (set.has(key)) return false;
+  
+  if (set.has(key)) {
+    console.log(`[去重] 事件 ${key} 已触发过，跳过`);
+    return false;
+  }
+  
   set.add(key);
   setRootCookie(name, Array.from(set).join(","), 30);
+  console.log(`[打点] 事件 ${key} 首次触发 ✓`);
   return true;
 }
-/* ===================== 新增：确保存在 FRID（跨子域 + 全局） ===================== */
+
 function ensureFrid() {
   const win: any = window as any;
   let frid = win.__frid || getCookie("frd_uid");
@@ -53,18 +70,13 @@ function ensureFrid() {
   if (!win.__frid) win.__frid = frid;
   return frid;
 }
-/* ===================================================================== */
+/* ========================================================== */
 
 export default function ScreenOneFront() {
-  // ═══════════════════════════════════════════════════════════════
-  // 🔧 新增：打点相关 Refs
-  // ═══════════════════════════════════════════════════════════════
   const startTimeRef = useRef<number>(0);
-  const engaged3sRef = useRef<boolean>(false);
-  const pageViewTrackedRef = useRef<boolean>(false);
 
   // ═══════════════════════════════════════════════════════════════
-  // 埋点逻辑（保持不变）
+  // 进度条动画逻辑（保持不变）
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     const TOTAL = 3000;
@@ -88,85 +100,47 @@ export default function ScreenOneFront() {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
-  // 🔧 新增：FB 打点逻辑（仅新增事件，不删改原有三条）
+  // 🎯 核心打点：前屏 3秒停留（唯一保留的前屏事件）
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
-    /* 新增：确保页面加载即生成/复用 FRID（跨子域） */
-    ensureFrid();
-
-    // 记录开始时间
+    // 确保 FRID 存在
+    const frid = ensureFrid();
+    
+    // 记录开始时间（用于日志）
     startTimeRef.current = Date.now();
 
-    // 0️⃣ 自定义：前屏加载成功（去重 key: s1fl）
-    const frontLoadedTimer = setTimeout(() => {
-      if (typeof window.fbq !== "undefined" && markOnce("s1fl")) {
-        window.fbq("trackCustom", "S1_Front_Loaded", {
-          content_name: "ScreenOne_Front",
-          content_category: "Assessment_Landing",
-          frid: (window as any).__frid || "",
-        });
-      }
-    }, 100);
-
-    // 1️⃣ 原有：前屏加载成功 PageView（保留）
-    const loadTimer = setTimeout(() => {
-      if (!pageViewTrackedRef.current && typeof window.fbq !== "undefined") {
-        window.fbq("track", "PageView", {
-          content_name: "ScreenOne_Front",
-          content_category: "Assessment_Landing",
-        });
-        pageViewTrackedRef.current = true;
-      }
-    }, 100);
-
-    // 2️⃣ 原有：3秒停留（保留）+ 自定义去重版（key: s1e3）
+    // 🎯 事件1：前屏3秒停留（User级去重：key = s1e3）
     const engageTimer = setTimeout(() => {
       if (typeof window.fbq !== "undefined") {
-        // 自定义：去重版
-        if (markOnce("s1e3")) {
+        const isDev = window.location.hostname === 'localhost';
+        
+        if (markOnce("s1e3", isDev)) {
+          const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+          
           window.fbq("trackCustom", "S1_Front_Engaged_3s", {
             content_name: "ScreenOne_Front",
+            content_category: "Assessment_Landing",
             engagement_type: "view_3s",
-            frid: (window as any).__frid || "",
+            frid: frid,
+          }, { 
+            eventID: eventId 
           });
-        }
-        // 原有事件（保留）
-        if (!engaged3sRef.current) {
-          window.fbq("trackCustom", "Engaged3s", {
-            content_name: "ScreenOne_Front",
-            engagement_type: "view_3s",
-          });
-          engaged3sRef.current = true;
+          
+          console.log(`[FB打点] S1_Front_Engaged_3s 触发成功`, { frid, eventId });
         }
       }
     }, 3000);
 
-    // 3️⃣ 原有：组件卸载时记录停留时长（保留）
     return () => {
-      clearTimeout(frontLoadedTimer);
-      clearTimeout(loadTimer);
       clearTimeout(engageTimer);
-
-      if (typeof window.fbq !== "undefined" && startTimeRef.current > 0) {
+      
+      // 日志：记录前屏停留时长
+      if (startTimeRef.current > 0) {
         const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
-        const bucket = getDurationBucket(duration);
-
-        window.fbq("trackCustom", "TimeOnPage", {
-          content_name: "ScreenOne_Front",
-          duration_seconds: duration,
-          duration_bucket: bucket,
-        });
+        console.log(`[前屏] 停留时长: ${duration}秒`);
       }
     };
   }, []);
-
-  // 🔧 新增：时长分桶辅助函数（原有函数保持不变）
-  const getDurationBucket = (seconds: number): string => {
-    if (seconds < 3) return "under_3s";
-    if (seconds < 5) return "3_to_5s";
-    if (seconds < 10) return "5_to_10s";
-    return "over_10s";
-  };
 
   return (
     <section className="screen-front-container">
@@ -375,7 +349,7 @@ export default function ScreenOneFront() {
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           🔧 Assessment ready 状态标签（优化版）
+           Assessment ready 状态标签（优化版）
            ═══════════════════════════════════════════════════════════════════ */
         .s1-status-label {
           margin: 0 0 12px 0;
@@ -535,34 +509,32 @@ export default function ScreenOneFront() {
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           【10.0/10 满分版 + FB 打点】验收清单
+           【前屏打点】验收清单
            
-           🔧 新增打点逻辑（0删减/0修改现有代码）：
-           ✅ useRef：startTimeRef, engaged3sRef, pageViewTrackedRef
-           ✅ useEffect：FB 打点逻辑（3个事件）
-           ✅ getDurationBucket：时长分桶函数
+           🎯 唯一保留事件：
+           ✅ S1_Front_Engaged_3s（3秒停留，User级去重：key=s1e3）
            
-           打点事件清单：
-           1️⃣ PageView（100ms后）：前屏加载成功（保留）
-           2️⃣ Engaged3s（3000ms后）：3秒停留（保留）
-           3️⃣ TimeOnPage（组件卸载时）：停留时长（保留）
-           ➕ S1_Front_Loaded（100ms）：前屏加载成功（用户级去重）
-           ➕ S1_Front_Engaged_3s（3000ms）：前屏3秒停留（用户级去重）
+           去重逻辑：
+           - 生产环境：Cookie跨子域去重（30天有效期）
+           - 开发环境：localhost 不去重（方便测试）
+           - 控制台日志：清晰标注触发/去重状态
            
-           完全不动（0修改）：
-           ✅ 所有标题/副标题/理念
-           ✅ 进度条所有样式（位置/宽度/动画/圆点）
-           ✅ 所有现有 CSS
-           ✅ 所有现有 useEffect
+           FRID 机制：
+           ✅ 页面加载即生成/复用
+           ✅ 跨子域共享（.faterewrite.com）
+           ✅ 30天有效期
            
-           最终评分：10.0/10 + 完整打点
+           已删除事件：
+           ❌ PageView
+           ❌ S1_Front_Loaded
+           ❌ Engaged3s（重复）
+           ❌ TimeOnPage
            ═══════════════════════════════════════════════════════════════════ */
       `}</style>
     </section>
   );
 }
 
-/* === 全局类型声明：保留 fbq，并补充 __frid（可选） === */
 declare global {
   interface Window {
     fbq: (...args: any[]) => void;
