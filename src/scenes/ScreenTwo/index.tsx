@@ -141,3 +141,7 @@ export default function ScreenOne() {
     </section>
   );
 }
+
+export { default as ScreenTwoFront } from './ScreenTwoFront';
+
+export { default as ScreenTwoBack }  from './ScreenTwoBack';

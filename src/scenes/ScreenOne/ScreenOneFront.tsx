@@ -2,6 +2,48 @@
 import { useEffect, useRef } from "react";
 import Wordmark from "@/components/Wordmark";
 
+/* ===================== 跨子域去重小工具（新增，仅用于打点） ===================== */
+function getCookie(name: string): string {
+  if (typeof document === "undefined") return "";
+  const list = (document.cookie || "").split("; ");
+  for (const item of list) {
+    const eq = item.indexOf("=");
+    if (eq === -1) continue;
+    const k = decodeURIComponent(item.slice(0, eq));
+    const v = decodeURIComponent(item.slice(eq + 1));
+    if (k === name) return v;
+  }
+  return "";
+}
+function setRootCookie(name: string, value: string, days: number) {
+  try {
+    const exp = new Date(Date.now() + days * 864e5).toUTCString();
+    // 1) 尝试写顶级域，跨子域共享
+    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
+      value
+    )}; path=/; domain=.faterewrite.com; expires=${exp}; SameSite=Lax`;
+    // 2) 若失败（本地开发等），退回当前域
+    if (document.cookie.indexOf(name + "=") === -1) {
+      document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
+        value
+      )}; path=/; expires=${exp}; SameSite=Lax`;
+    }
+  } catch {
+    /* ignore */
+  }
+}
+/** 将一次性 key 记录到 frd_dedupe_v1，首次返回 true（用于门控上报） */
+function markOnce(key: string): boolean {
+  const name = "frd_dedupe_v1";
+  const raw = getCookie(name);
+  const set = new Set(raw ? raw.split(",") : []);
+  if (set.has(key)) return false;
+  set.add(key);
+  setRootCookie(name, Array.from(set).join(","), 30);
+  return true;
+}
+/* ===================================================================== */
+
 export default function ScreenOneFront() {
   // ═══════════════════════════════════════════════════════════════
   // 🔧 新增：打点相关 Refs
@@ -35,45 +77,68 @@ export default function ScreenOneFront() {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
-  // 🔧 新增：FB 打点逻辑
+  // 🔧 新增：FB 打点逻辑（仅新增事件，不删改原有三条）
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     // 记录开始时间
     startTimeRef.current = Date.now();
 
-    // 1️⃣ 前屏加载成功（延迟100ms确保DOM渲染完成）
+    // 0️⃣ 自定义：前屏加载成功（去重 key: s1fl）
+    const frontLoadedTimer = setTimeout(() => {
+      if (typeof window.fbq !== "undefined" && markOnce("s1fl")) {
+        window.fbq("trackCustom", "S1_Front_Loaded", {
+          content_name: "ScreenOne_Front",
+          content_category: "Assessment_Landing",
+          frid: (window as any).__frid || "",
+        });
+      }
+    }, 100);
+
+    // 1️⃣ 原有：前屏加载成功 PageView（保留）
     const loadTimer = setTimeout(() => {
-      if (!pageViewTrackedRef.current && typeof window.fbq !== 'undefined') {
-        window.fbq('track', 'PageView', {
-          content_name: 'ScreenOne_Front',
-          content_category: 'Assessment_Landing',
+      if (!pageViewTrackedRef.current && typeof window.fbq !== "undefined") {
+        window.fbq("track", "PageView", {
+          content_name: "ScreenOne_Front",
+          content_category: "Assessment_Landing",
         });
         pageViewTrackedRef.current = true;
       }
     }, 100);
 
-    // 2️⃣ 3秒停留事件（关键指标）
+    // 2️⃣ 原有：3秒停留（保留）+ 自定义去重版（key: s1e3）
     const engageTimer = setTimeout(() => {
-      if (!engaged3sRef.current && typeof window.fbq !== 'undefined') {
-        window.fbq('trackCustom', 'Engaged3s', {
-          content_name: 'ScreenOne_Front',
-          engagement_type: 'view_3s',
-        });
-        engaged3sRef.current = true;
+      if (typeof window.fbq !== "undefined") {
+        // 自定义：去重版
+        if (markOnce("s1e3")) {
+          window.fbq("trackCustom", "S1_Front_Engaged_3s", {
+            content_name: "ScreenOne_Front",
+            engagement_type: "view_3s",
+            frid: (window as any).__frid || "",
+          });
+        }
+        // 原有事件（保留）
+        if (!engaged3sRef.current) {
+          window.fbq("trackCustom", "Engaged3s", {
+            content_name: "ScreenOne_Front",
+            engagement_type: "view_3s",
+          });
+          engaged3sRef.current = true;
+        }
       }
     }, 3000);
 
-    // 3️⃣ 组件卸载时记录停留时长
+    // 3️⃣ 原有：组件卸载时记录停留时长（保留）
     return () => {
+      clearTimeout(frontLoadedTimer);
       clearTimeout(loadTimer);
       clearTimeout(engageTimer);
 
-      if (typeof window.fbq !== 'undefined' && startTimeRef.current > 0) {
+      if (typeof window.fbq !== "undefined" && startTimeRef.current > 0) {
         const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
         const bucket = getDurationBucket(duration);
-        
-        window.fbq('trackCustom', 'TimeOnPage', {
-          content_name: 'ScreenOne_Front',
+
+        window.fbq("trackCustom", "TimeOnPage", {
+          content_name: "ScreenOne_Front",
           duration_seconds: duration,
           duration_bucket: bucket,
         });
@@ -81,12 +146,12 @@ export default function ScreenOneFront() {
     };
   }, []);
 
-  // 🔧 新增：时长分桶辅助函数
+  // 🔧 新增：时长分桶辅助函数（原有函数保持不变）
   const getDurationBucket = (seconds: number): string => {
-    if (seconds < 3) return 'under_3s';
-    if (seconds < 5) return '3_to_5s';
-    if (seconds < 10) return '5_to_10s';
-    return 'over_10s';
+    if (seconds < 3) return "under_3s";
+    if (seconds < 5) return "3_to_5s";
+    if (seconds < 10) return "5_to_10s";
+    return "over_10s";
   };
 
   return (
@@ -464,9 +529,11 @@ export default function ScreenOneFront() {
            ✅ getDurationBucket：时长分桶函数
            
            打点事件清单：
-           1️⃣ PageView（100ms后）：前屏加载成功
-           2️⃣ Engaged3s（3000ms后）：3秒停留
-           3️⃣ TimeOnPage（组件卸载时）：停留时长
+           1️⃣ PageView（100ms后）：前屏加载成功（保留）
+           2️⃣ Engaged3s（3000ms后）：3秒停留（保留）
+           3️⃣ TimeOnPage（组件卸载时）：停留时长（保留）
+           ➕ S1_Front_Loaded（100ms）：前屏加载成功（用户级去重）
+           ➕ S1_Front_Engaged_3s（3000ms）：前屏3秒停留（用户级去重）
            
            完全不动（0修改）：
            ✅ 所有标题/副标题/理念
@@ -481,9 +548,10 @@ export default function ScreenOneFront() {
   );
 }
 
-// 🔧 新增：TypeScript 类型声明
+/* === 全局类型声明：保留 fbq，并补充 __frid（可选） === */
 declare global {
   interface Window {
     fbq: (...args: any[]) => void;
+    __frid?: string;
   }
 }

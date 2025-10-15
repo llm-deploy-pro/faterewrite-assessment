@@ -27,6 +27,45 @@ interface CTAProps {
   disabled?: boolean;
 }
 
+/* ===================== 去重工具（新增，跨子域） ===================== */
+// 无正则版本，避免 TSX 对 /.../g 的解析干扰
+function getCookie(name: string): string {
+  if (typeof document === "undefined") return "";
+  const list = (document.cookie || "").split("; ");
+  for (const item of list) {
+    const [k, ...rest] = item.split("=");
+    if (decodeURIComponent(k) === name) {
+      return decodeURIComponent(rest.join("="));
+    }
+  }
+  return "";
+}
+function setRootCookie(name: string, value: string, days: number) {
+  try {
+    const exp = new Date(Date.now() + days * 864e5).toUTCString();
+    // 优先写顶级域
+    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
+      value
+    )}; path=/; domain=.faterewrite.com; expires=${exp}; SameSite=Lax`;
+    // 若失败（本地开发等）退回当前域
+    if ((document.cookie || "").indexOf(`${encodeURIComponent(name)}=`) === -1) {
+      document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
+        value
+      )}; path=/; expires=${exp}; SameSite=Lax`;
+    }
+  } catch {}
+}
+function markOnce(key: string): boolean {
+  const name = "frd_dedupe_v1";
+  const raw = getCookie(name);
+  const set = new Set(raw ? raw.split(",") : []);
+  if (set.has(key)) return false;
+  set.add(key);
+  setRootCookie(name, Array.from(set).join(","), 30);
+  return true;
+}
+/* ================================================================== */
+
 export default function CTA({ 
   label, 
   onClick, 
@@ -50,16 +89,28 @@ export default function CTA({
 
   // 🔧 新增：CTA点击处理（User级去重）
   const handleClick = () => {
-    // 5️⃣ CTA点击（去重）
+    // 5️⃣ CTA点击（去重：跨子域 frd_dedupe_v1 + 本地 localStorage 兜底）
     if (!hasClicked && typeof window.fbq !== 'undefined') {
-      window.fbq('track', 'InitiateCheckout', {
-        content_name: 'Assessment_CTA',
-        content_category: 'Matching_Assessment',
-        content_ids: ['assessment_49'],
-        value: 49,
-        currency: 'USD',
-        num_items: 1,
-      });
+      // 自定义事件（可辨识）：S1_CTA_Click（dedupe key: s1cc）
+      if (markOnce("s1cc")) {
+        window.fbq('trackCustom', 'S1_CTA_Click', {
+          content_name: 'Assessment_CTA',
+          content_category: 'Matching_Assessment',
+          value: 49,
+          currency: 'USD',
+          frid: (window as any).__frid || '',
+        });
+        // 标准事件可保留（同门控下只触发一次）
+        window.fbq('track', 'InitiateCheckout', {
+          content_name: 'Assessment_CTA',
+          content_category: 'Matching_Assessment',
+          content_ids: ['assessment_49'],
+          value: 49,
+          currency: 'USD',
+          num_items: 1,
+          frid: (window as any).__frid || '',
+        });
+      }
 
       // 标记已点击（User级去重）
       try {
@@ -341,6 +392,7 @@ export default function CTA({
 declare global {
   interface Window {
     fbq: (...args: any[]) => void;
+    __frid?: string;
   }
 }
 
@@ -350,7 +402,7 @@ declare global {
  * 
  * 当前版本（Version A）：
  * "View my matching assessment · $49"
- * - 优势：第一人称友好，"matching" 强调精准匹配
+ * - 优势：第一人称友好，“matching” 强调精准匹配
  * - 转化率：85-88%（预估）
  * 
  * 备选版本（Version B - 动作导向）：
@@ -360,7 +412,7 @@ declare global {
  * 
  * 备选版本（Version C - 价值导向）：
  * "See where I fit · $49"
- * - 优势：更简洁，"fit" 强调归属感
+ * - 优势：更简洁，“fit” 强调归属感
  * - 转化率：90-95%（预估，+5-10%，适合情感驱动用户）
  * 
  * 建议：
