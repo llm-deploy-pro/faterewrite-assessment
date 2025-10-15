@@ -20,6 +20,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom'; // ★ 新增
 
 interface CTAProps {
   label: string;
@@ -64,6 +65,27 @@ function markOnce(key: string): boolean {
   setRootCookie(name, Array.from(set).join(","), 30);
   return true;
 }
+/* ===================== ★ 新增：追踪辅助（不改动原逻辑） ===================== */
+function ensureFrid() {
+  const win: any = window as any;
+  let frid = win.__frid || getCookie("frd_uid");
+  if (!frid) {
+    frid = "fr_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    setRootCookie("frd_uid", frid, 30);
+  }
+  if (!win.__frid) win.__frid = frid;
+  return frid;
+}
+function withParams(
+  url: string,
+  params: Record<string, string | number | undefined | null>
+) {
+  const u = new URL(url, window.location.origin);
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== "") u.searchParams.set(k, String(v));
+  });
+  return u.pathname + (u.search || "");
+}
 /* ================================================================== */
 
 export default function CTA({ 
@@ -73,6 +95,10 @@ export default function CTA({
 }: CTAProps) {
   // 🔧 新增：User级去重状态
   const [hasClicked, setHasClicked] = useState(false);
+
+  // ★ 新增：路由工具
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // 🔧 新增：组件挂载时检查localStorage
   useEffect(() => {
@@ -87,8 +113,24 @@ export default function CTA({
     }
   }, []);
 
+  // ★ 新增：优雅离场 + 跳转封装
+  const gentleGo = (to: string) => {
+    document.documentElement.classList.add('page-leave');
+    setTimeout(() => {
+      navigate(to);
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove('page-leave');
+        window.scrollTo(0, 0);
+      });
+    }, 220);
+  };
+
   // 🔧 新增：CTA点击处理（User级去重）
   const handleClick = () => {
+    // ★ 新增：统一构建 frid 与 eventID（用于像素与落地页参数）
+    const frid = ensureFrid();
+    const fbEventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
     // 5️⃣ CTA点击（去重：跨子域 frd_dedupe_v1 + 本地 localStorage 兜底）
     if (!hasClicked && typeof window.fbq !== 'undefined') {
       // 自定义事件（可辨识）：S1_CTA_Click（dedupe key: s1cc）
@@ -99,7 +141,8 @@ export default function CTA({
           value: 49,
           currency: 'USD',
           frid: (window as any).__frid || '',
-        });
+        }, { eventID: fbEventId }); // ★ 新增 eventID
+
         // 标准事件可保留（同门控下只触发一次）
         window.fbq('track', 'InitiateCheckout', {
           content_name: 'Assessment_CTA',
@@ -109,7 +152,7 @@ export default function CTA({
           currency: 'USD',
           num_items: 1,
           frid: (window as any).__frid || '',
-        });
+        }, { eventID: fbEventId }); // ★ 新增 eventID
       }
 
       // 标记已点击（User级去重）
@@ -121,12 +164,27 @@ export default function CTA({
       }
     }
 
+    // ★ 新增：当处于第一屏（/ 或 /screen-1）时，优雅进入第二屏前屏
+    if (!onClick) {
+      const isOnS1 = location.pathname === '/' || location.pathname === '/screen-1';
+      if (isOnS1) {
+        gentleGo('/screen-2');
+        return;
+      }
+    }
+
     // 执行自定义 onClick（如果提供）
     if (onClick) {
       onClick();
     } else {
-      // 默认跳转到支付页
-      window.location.href = '/checkout';
+      // 默认跳转到支付页（非第一屏） —— ★ 改为携带可追踪参数
+      const target = withParams('/checkout', {
+        frid,
+        src: 's1cta',
+        price: 49,
+        fb_eid: fbEventId,
+      });
+      window.location.href = target;
     }
   };
 
@@ -146,6 +204,18 @@ export default function CTA({
         /* ═══════════════════════════════════════════════════════════════════
            【10/10 CTA + FB打点】Quiet Luxury 按钮（终极优化版）
            ═══════════════════════════════════════════════════════════════════ */
+
+        /* ★ 新增：页面离场过渡（在 html 加 .page-leave 即生效） */
+        .page-leave .s1-back,
+        .page-leave .screen-front-container {
+          opacity: 0;
+          transform: translateY(8px);
+          filter: blur(1px);
+          transition:
+            opacity 220ms cubic-bezier(0.23, 1, 0.32, 1),
+            transform 220ms cubic-bezier(0.23, 1, 0.32, 1),
+            filter 220ms ease-out;
+        }
 
         /* ═══════════════════════════════════════════════════════════════════
            A. 基础样式（移动端优先）

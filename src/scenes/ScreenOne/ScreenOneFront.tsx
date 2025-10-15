@@ -42,6 +42,17 @@ function markOnce(key: string): boolean {
   setRootCookie(name, Array.from(set).join(","), 30);
   return true;
 }
+/* ===================== 新增：确保存在 FRID（跨子域 + 全局） ===================== */
+function ensureFrid() {
+  const win: any = window as any;
+  let frid = win.__frid || getCookie("frd_uid");
+  if (!frid) {
+    frid = "fr_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    setRootCookie("frd_uid", frid, 30);
+  }
+  if (!win.__frid) win.__frid = frid;
+  return frid;
+}
 /* ===================================================================== */
 
 export default function ScreenOneFront() {
@@ -80,6 +91,9 @@ export default function ScreenOneFront() {
   // 🔧 新增：FB 打点逻辑（仅新增事件，不删改原有三条）
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
+    /* 新增：确保页面加载即生成/复用 FRID（跨子域） */
+    ensureFrid();
+
     // 记录开始时间
     startTimeRef.current = Date.now();
 
