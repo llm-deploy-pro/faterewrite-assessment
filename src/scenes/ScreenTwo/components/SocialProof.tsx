@@ -23,6 +23,10 @@ const SocialProof: React.FC<SocialProofProps> = ({
   companies,
   stats
 }) => {
+  // 使用可选文案以消除 TS6133（声明未被读取）的编译报错，不改变现有 UI 行为
+  void mainText;
+  void weeklyCount;
+
   if (variant === 'front') {
     return (
       <div className="bg-[#1A1F2E] border border-[#D4AF37]/15 rounded-[10px] p-6">
