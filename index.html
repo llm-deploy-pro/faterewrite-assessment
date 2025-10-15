@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fate Rewrite</title>
+    <title>1009</title>
     
-    <!-- ✅ Facebook Pixel 初始化（必须触发 PageView）-->
+    <!-- Facebook Pixel 初始化 -->
     <script>
       !function(f,b,e,v,n,t,s)
       {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -16,15 +16,12 @@
       t.src=v;s=b.getElementsByTagName(e)[0];
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
-      
-      // ✅ 关键修复：初始化后必须触发 PageView
       fbq('init', '4227628657556124');
-      fbq('track', 'PageView');
+      fbq('track', 'PageView');  // ✅ 添加这一行
     </script>
-    <!-- End Facebook Pixel Code -->
   </head>
   <body>
-    <!-- Facebook Pixel noscript 标签 -->
+    <!-- Facebook Pixel noscript 标签（在 body 中）-->
     <noscript>
       <img height="1" width="1" style="display:none"
            src="https://www.facebook.com/tr?id=4227628657556124&ev=PageView&noscript=1"/>
