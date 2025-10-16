@@ -1,4 +1,4 @@
-// src/scenes/ScreenOne/ScreenOneBack.tsx
+// 文件路径: src/scenes/ScreenOne/ScreenOneBack.tsx
 import { useEffect, useRef } from "react";
 import CTA from "./CTA";
 import Wordmark from "@/components/Wordmark";
@@ -37,7 +37,8 @@ function markOnce(key: string, devMode: boolean = false): boolean {
     return true;
   }
 
-  const name = "frd_dedupe_v1";
+  // ✅ 改为“第一屏专用”去重 Cookie，避免跨页面冲突
+  const name = "frd_s1_dedupe";
   const raw = getCookie(name);
   const set = new Set(raw ? raw.split(",") : []);
   
@@ -78,7 +79,7 @@ export default function ScreenOneBack() {
     const frid = ensureFrid();
     const isDev = window.location.hostname === 'localhost';
 
-    // 🎯 事件2：后屏成功加载（User级去重：key = s1bl）
+    // 🎯 事件：后屏成功加载（User级去重：key = s1bl）
     const timer = setTimeout(() => {
       if (typeof window.fbq !== "undefined") {
         if (markOnce("s1bl", isDev)) {
@@ -87,6 +88,11 @@ export default function ScreenOneBack() {
           window.fbq("trackCustom", "S1_Back_Loaded", {
             content_name: "ScreenOne_Back",
             content_category: "Assessment_Offer",
+            // ✅ 增加关键维度
+            screen_position: "back",
+            screen_number: 1,
+            page_url: window.location.href,
+            referrer: document.referrer,
             frid: frid,
           }, { 
             eventID: eventId 

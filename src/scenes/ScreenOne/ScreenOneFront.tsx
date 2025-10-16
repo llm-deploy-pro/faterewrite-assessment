@@ -1,4 +1,4 @@
-// src/scenes/ScreenOne/ScreenOneFront.tsx
+// 文件路径: src/scenes/ScreenOne/ScreenOneFront.tsx
 import { useEffect, useRef } from "react";
 import Wordmark from "@/components/Wordmark";
 
@@ -45,7 +45,8 @@ function markOnce(key: string, devMode: boolean = false): boolean {
     return true;
   }
 
-  const name = "frd_dedupe_v1";
+  // ❗致命问题修复：为第一屏使用独立去重 Cookie，避免与其他页面冲突
+  const name = "frd_s1_dedupe";
   const raw = getCookie(name);
   const set = new Set(raw ? raw.split(",") : []);
   
@@ -100,7 +101,36 @@ export default function ScreenOneFront() {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
-  // 🎯 核心打点：前屏 3秒停留（唯一保留的前屏事件）
+  // 🎯 新增：前屏 加载成功（去重）
+  // 要求：两个屏的前/后屏“加载成功人数（去重）”
+  // 事件名：S1_Front_Loaded
+  // 去重 key：s1f_load
+  // ═══════════════════════════════════════════════════════════════
+  useEffect(() => {
+    const frid = ensureFrid();
+    if (typeof window.fbq !== "undefined") {
+      const isDev = window.location.hostname === 'localhost';
+      if (markOnce("s1f_load", isDev)) {
+        const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        window.fbq(
+          "trackCustom",
+          "S1_Front_Loaded",
+          {
+            content_name: "ScreenOne_Front",
+            content_category: "Assessment_Landing",
+            frid: frid,
+          },
+          { eventID: eventId }
+        );
+        console.log(`[FB打点] S1_Front_Loaded 触发成功`, { frid, eventId });
+      }
+    }
+  }, []);
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🎯 核心打点：前屏 3秒停留（保留）
+  // 事件名：S1_Front_Engaged_3s
+  // 去重 key：s1e3
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     // 确保 FRID 存在
@@ -109,7 +139,7 @@ export default function ScreenOneFront() {
     // 记录开始时间（用于日志）
     startTimeRef.current = Date.now();
 
-    // 🎯 事件1：前屏3秒停留（User级去重：key = s1e3）
+    // 🎯 事件：前屏3秒停留（User级去重：key = s1e3）
     const engageTimer = setTimeout(() => {
       if (typeof window.fbq !== "undefined") {
         const isDev = window.location.hostname === 'localhost';
@@ -511,7 +541,8 @@ export default function ScreenOneFront() {
         /* ═══════════════════════════════════════════════════════════════════
            【前屏打点】验收清单
            
-           🎯 唯一保留事件：
+           🎯 事件（均为“跨子域去重”）：
+           ✅ S1_Front_Loaded（加载成功，User级去重：key=s1f_load）
            ✅ S1_Front_Engaged_3s（3秒停留，User级去重：key=s1e3）
            
            去重逻辑：
@@ -523,13 +554,7 @@ export default function ScreenOneFront() {
            ✅ 页面加载即生成/复用
            ✅ 跨子域共享（.faterewrite.com）
            ✅ 30天有效期
-           
-           已删除事件：
-           ❌ PageView
-           ❌ S1_Front_Loaded
-           ❌ Engaged3s（重复）
-           ❌ TimeOnPage
-           ═══════════════════════════════════════════════════════════════════ */
+        ═══════════════════════════════════════════════════════════════════ */
       `}</style>
     </section>
   );

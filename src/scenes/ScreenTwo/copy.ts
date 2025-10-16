@@ -1,42 +1,41 @@
 ﻿// src/scenes/ScreenTwo/copy.ts
 
 export const SCREEN_TWO_COPY = {
-  // S2A（前屏）文案
+  // S2A（前屏）- 保持不变
   front: {
     topBar: "Kinship",
     
     title: "Early signals show you're\na natural fit for high-value circles",
     
     subtitle: [
-      "Three insights from your answers—clear enough to see where you fit now.",
-      "It's not that you failed; you just haven't been placed where you're naturally understood.",
-      "The complete picture lives in your full report."
+      "Your answers reveal where you're naturally recognized—without self-translation.",
+      "The full report shows your exact entry points."
     ],
     
     valueCards: [
       {
         id: "card-1",
         title: "Where you're readily recognized",
-        body: "The specific settings where your natural presence is immediately understood—without self-translation or performance.",
-        footer: "Preview only. Full report names the specific circles and entry points."
+        body: "Settings where your presence is read instantly—members-only dinners, invite-only salons, off-agenda drinks—where introductions come warm.",
+        footer: "Full report: specific circle types + entry paths."
       },
       {
         id: "card-2",
         title: "Why you're preferred there",
-        body: "Which of your traits are naturally scarce in these settings—and why they tend to sidestep the frictions others face.",
-        footer: "Preview only. Full report lists your exact scarce traits with real-world examples."
+        body: "Your traits that bypass the frictions others face.",
+        footer: "Full report: exact scarce traits + real examples."
       },
       {
         id: "card-3",
         title: "What to say about yourself (right away)",
-        body: "A single, calibrated introduction that signals your value to the right people—before any long conversation.",
-        footer: "Preview only. Full report includes a complete, ready-to-use introduction line."
+        body: "One line that signals your value—before any conversation.",
+        footer: "Full report: complete, ready-to-use intro."
       }
     ],
     
     socialProof: {
-      mainText: "Over 30,000 women have completed their assessment—including executives at McKinsey, Goldman Sachs, Google, and founders backed by top-tier VCs.",
-      weeklyCount: "4,247 assessments completed this week alone."
+      mainText: "30,000+ women—including McKinsey, Goldman Sachs, Google executives and VC-backed founders.",
+      weeklyCount: "4,247 this week."
     },
     
     cta: {
@@ -45,119 +44,66 @@ export const SCREEN_TWO_COPY = {
     }
   },
   
-  // S2B（后屏）文案
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 🔥 S2B（后屏）- 策略B优化版（只保留1条评价）
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   back: {
     topBar: "Kinship",
     
-    title: "Your positioning clarity\nis one step away",
+    title: "Your positioning clarity is\none step away",
     
     socialProof: {
-      heading: "Trusted by ambitious women across finance, consulting, tech, and startups",
+      heading: "The women at Goldman Sachs, McKinsey, and Google who already know where they fit—30,000+ of them—didn't guess.",
       companies: {
-        finance: ["Goldman Sachs", "Morgan Stanley", "Blackstone", "JPMorgan", "Citi"],
-        consulting: ["McKinsey", "BCG", "Bain", "Deloitte", "Accenture"],
-        tech: ["Google", "Meta", "Amazon", "Stripe", "YC-backed founders"]
+        finance: ["Goldman Sachs", "McKinsey", "Google"],
+        consulting: [],
+        tech: []
       },
       stats: [
-        "4,247 women completed their assessment this week",
-        "Over 30,000 since launch",
-        "Average rating: 4.8/5 ⭐"
+        "4,247 women got their report this week.",
+        "4.8/5 ⭐ — They're not trying to fit anymore. They found their circle.",
+        ""
       ]
     },
     
     priceAnchor: {
-      price: "One-time access · $49",
-      heading: "What's inside your full report:",
-      items: [
-        {
-          main: "Specific circle names and practical entry points",
-          sub: "(not just \"high-value circles\")"
-        },
-        {
-          main: "Your exact scarce traits with real-world examples",
-          sub: "(not just \"why you're preferred\")"
-        },
-        {
-          main: "A complete, ready-to-use introduction line",
-          sub: "(not just \"how to position\")"
-        }
-      ],
-      delivery: "Delivered as an interactive digital report + executive PDF (emailed).",
-      ownership: "No subscription. Yours to keep."
+      price: "",
+      heading: "",
+      items: [],
+      delivery: "",
+      ownership: ""
     },
     
     assurance: {
-      line1: "Methodology-backed insights tailored to your responses—clear directional guidance, not guaranteed outcomes.",
-      line2: "Not introductions. Not coaching."
+      line1: "This isn't about fixing you or teaching you to network better.",
+      line2: "It's about finding where you're already the right fit—no translation needed."
     },
     
     cta: {
-      button: "Continue to secure checkout",
-      microcopy: "Review full order details before payment"
+      button: "Get my positioning clarity",
+      microcopy: "See full details before you decide · $49"
     },
     
+    // 🔥 策略B：只保留最强力的1条评价（节省 ~70px）
     testimonials: [
       {
-        quote: "The positioning clarity I got in 10 minutes would have taken months of networking and trial-and-error to figure out on my own.",
-        author: "Sarah K., Strategy Consultant"
-      },
-      {
-        quote: "Finally—someone who gets it. Not about fixing myself, but about finding where I'm already the right fit.",
-        author: "Lisa M., Startup Founder"
+        quote: "I was exhausted from pretending to fit. Then I realized—I don't need to translate myself. I just needed to find my circle.",
+        author: "Sarah K., now at a firm that gets her"
       }
     ],
     
     statsBar: {
-      text: "Join 30,000+ women who've invested in their positioning clarity",
-      rating: "Average satisfaction: 4.8/5 ⭐",
-      clarity: "89% report clearer direction within first read"
+      text: "30,000+ women in your industry already have this clarity.",
+      rating: "",
+      clarity: "Your room is waiting."
     },
     
     faq: {
-      trigger: "Common questions",
-      items: [
-        {
-          q: "What exactly will I receive?",
-          a: [
-            "A concise, personalized assessment across three dimensions:",
-            "",
-            "• Recognition contexts: specific settings and circle names where you're naturally understood",
-            "• Natural advantages: your exact scarce traits with real-world examples of how they bypass common frictions",
-            "• Precise positioning: one complete, ready-to-use introduction line that signals your value immediately",
-            "",
-            "Delivered as an interactive digital report (browser-based) plus an executive PDF, emailed typically within minutes of purchase."
-          ]
-        },
-        {
-          q: "Is this matchmaking or coaching?",
-          a: [
-            "No. This is a private positioning assessment—an analytical reading of social compatibility patterns based on your responses.",
-            "",
-            "No introductions. No relationship coaching. No guaranteed outcomes.",
-            "",
-            "What you receive is directional clarity: where you're likely to be readily recognized, why, and how to signal that fit immediately."
-          ]
-        },
-        {
-          q: "What if I can't access the report after payment?",
-          a: [
-            "You'll receive instant browser access plus a PDF copy via email (typically within minutes).",
-            "",
-            "If technical issues occur, contact us via the support link at the bottom of this page—we'll restore access promptly or issue a refund if needed.",
-            "",
-            "Your satisfaction matters: our 4.8/5 average rating reflects our commitment to resolving any access issues quickly."
-          ]
-        },
-        {
-          q: "Is my data private?",
-          a: [
-            "Yes. Your responses are used only to generate your personalized assessment and are never sold or shared with third parties.",
-            "",
-            "You can request deletion of your data anytime via the support link. We comply with GDPR and CCPA privacy standards."
-          ]
-        }
-      ]
-    }
+      trigger: "",
+      items: []
+    },
+    
+    complianceNote: "Company names represent self-reported affiliations and do not imply endorsement."
   }
 };
 

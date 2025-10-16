@@ -1,12 +1,14 @@
-﻿// src/scenes/ScreenTwo/index.tsx
-
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import ScreenTwoFrontComponent from './ScreenTwoFront';
 import ScreenTwoBackComponent from './ScreenTwoBack';
 
 interface ScreenTwoProps {
   onCheckout?: () => void;
 }
+
+/** ✅ 最小修复：为后屏组件添加期望的 props 类型断言，避免被推断成 ScreenTwoFrontProps */
+type ScreenTwoBackExpectedProps = { onCheckout: () => void };
+const ScreenTwoBackFixed = ScreenTwoBackComponent as unknown as React.FC<ScreenTwoBackExpectedProps>;
 
 const ScreenTwo: React.FC<ScreenTwoProps> = ({ onCheckout }) => {
   const [showBack, setShowBack] = useState(false);
@@ -54,7 +56,7 @@ const ScreenTwo: React.FC<ScreenTwoProps> = ({ onCheckout }) => {
       {!showBack ? (
         <ScreenTwoFrontComponent onContinue={handleContinue} />
       ) : (
-        <ScreenTwoBackComponent onCheckout={handleCheckout} />
+        <ScreenTwoBackFixed onCheckout={handleCheckout} />
       )}
     </>
   );
@@ -102,7 +104,7 @@ export const ScreenTwoFront: React.FC = () => {
       {!showBack ? (
         <ScreenTwoFrontComponent onContinue={handleContinue} />
       ) : (
-        <ScreenTwoBackComponent onCheckout={handleCheckout} />
+        <ScreenTwoBackFixed onCheckout={handleCheckout} />
       )}
     </>
   );

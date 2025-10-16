@@ -1,4 +1,4 @@
-﻿// src/scenes/ScreenOne/CTA.tsx
+﻿// 文件路径: src/scenes/ScreenOne/CTA.tsx
 
 /**
  * ═══════════════════════════════════════════════════════════════════
@@ -64,7 +64,8 @@ function markOnce(key: string, devMode: boolean = false): boolean {
     return true;
   }
 
-  const name = "frd_dedupe_v1";
+  // ✅ 改为“第一屏专用”去重 Cookie，避免跨页面冲突
+  const name = "frd_s1_dedupe";
   const raw = getCookie(name);
   const set = new Set(raw ? raw.split(",") : []);
   
@@ -146,7 +147,7 @@ export default function CTA({
     const fbEventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     const isDev = window.location.hostname === 'localhost';
 
-    // 🎯 事件3：CTA点击（User级去重：key = s1cc）
+    // 🎯 事件：CTA点击（User级去重：key = s1cc）
     if (!hasClicked && typeof window.fbq !== 'undefined') {
       if (markOnce("s1cc", isDev)) {
         window.fbq('trackCustom', 'S1_CTA_Click', {
@@ -154,6 +155,11 @@ export default function CTA({
           content_category: 'Matching_Assessment',
           value: 49,
           currency: 'USD',
+          // ✅ 增加关键维度
+          screen_position: 'back',
+          screen_number: 1,
+          page_url: window.location.href,
+          referrer: document.referrer,
           frid: frid,
         }, { 
           eventID: fbEventId 
@@ -419,7 +425,7 @@ export default function CTA({
            ✅ S1_CTA_Click（CTA点击，User级去重：key=s1cc）
            
            去重逻辑：
-           - Cookie跨子域：frd_dedupe_v1（30天有效期）
+           - Cookie跨子域：frd_s1_dedupe（30天有效期）
            - localStorage兜底：cta_clicked_assessment_49
            - 开发模式：localhost 不去重（方便测试）
            - 控制台日志：清晰标注触发/去重状态
@@ -435,16 +441,6 @@ export default function CTA({
            ✅ 优雅离场动画
            ✅ 路由跳转逻辑
            ✅ 参数传递机制（frid/src/price/fb_eid）
-           
-           设计理念验证：
-           - Quiet Luxury：克制但清晰（0.18/0.5 完美平衡）✅
-           - 高对比度：纯白文字 15:1 ✅
-           - 微妙交互：上浮 1px ✅
-           - 品牌统一：金色体系完整呼应 ✅
-           - User级去重：Cookie + localStorage双重保障 ✅
-           
-           最终评分：10.0/10 + 精简打点
-           ═══════════════════════════════════════════════════════════════════ */
       `}</style>
     </>
   );
@@ -465,17 +461,12 @@ declare global {
  * 当前版本（Version A）：
  * "View my matching assessment · $49"
  * - 优势：第一人称友好，"matching" 强调精准匹配
- * - 转化率：85-88%（预估）
  * 
  * 备选版本（Version B - 动作导向）：
  * "Get my matching assessment · $49"
- * - 优势：动词 "Get" 更直接，降低决策门槛
- * - 转化率：88-90%（预估，+3-5%）
  * 
  * 备选版本（Version C - 价值导向）：
  * "See where I fit · $49"
- * - 优势：更简洁，"fit" 强调归属感
- * - 转化率：90-95%（预估，+5-10%，适合情感驱动用户）
  * 
  * 建议：
  * 1. 先上线 Version A（当前版本）
