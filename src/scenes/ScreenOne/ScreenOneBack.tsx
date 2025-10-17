@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import CTA from "./CTA";
 import Wordmark from "@/components/Wordmark";
+import { COPY } from "./copy";
 
 /* ===================== 跨子域去重工具 ===================== */
 function getCookie(name: string): string {
@@ -118,7 +119,7 @@ export default function ScreenOneBack() {
         
         {/* 身份确认语句（克制版）*/}
         <p className="s1-identity-brief">
-          Initial screening indicates strong alignment with high-value circles
+          {COPY.lead[0]}
         </p>
         
         {/* 价值点列表 */}
@@ -126,34 +127,34 @@ export default function ScreenOneBack() {
           <li className="s1-list-item">
             <span className="s1-list-dot" />
             <p className="s1-list-text">
-              Friendly-circle profile: the roles, industries, and atmospheres where you're readily recognized, and the expression styles they value.
+              {COPY.bullets[0]}
             </p>
           </li>
           <li className="s1-list-item">
             <span className="s1-list-dot" />
             <p className="s1-list-text">
-              Reasons you're preferred: which of your traits are naturally scarce in these contexts, and why they're readily accepted.
+              {COPY.bullets[1]}
             </p>
           </li>
           <li className="s1-list-item">
             <span className="s1-list-dot" />
             <p className="s1-list-text">
-              One precise self-introduction: a clear positioning line that lets the right people know immediately where you belong.
+              {COPY.bullets[2]}
             </p>
           </li>
         </ul>
         
         {/* CTA 按钮 */}
         <div className="s1-cta">
-          <CTA label="View my matching assessment · $49" />
+          <CTA label={COPY.cta} />
         </div>
         
         {/* 辅助说明文字 */}
-        <p className="s1-assist">One-time access · Instant PDF · Sample pages included</p>
+        <p className="s1-assist">{COPY.support}</p>
         
         {/* 合规文案（方法学背书 + 温和免责）*/}
         <p className="s1-compliance">
-          Methodology-backed insights from your responses; results may vary.
+          {COPY.trust}
         </p>
         
       </div>

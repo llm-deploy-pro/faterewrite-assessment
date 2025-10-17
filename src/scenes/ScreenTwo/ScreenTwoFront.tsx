@@ -1,6 +1,4 @@
-﻿// src/scenes/ScreenTwo/ScreenTwoFront.tsx
-
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import COPY from './copy';
 import LuxuryBackground from '../../components/LuxuryBackground';
 import Wordmark from '../../components/Wordmark';
@@ -453,7 +451,7 @@ const ScreenTwoFront: React.FC<ScreenTwoFrontProps> = ({ onContinue }) => {
           color: #F5F5F0;
           font-weight: 400;
           font-family: Georgia, 'Times New Roman', serif;
-          opacity: 0;
+          opacity: 0.90;
           transform: translateY(6px);
           animation: s2SubIn 360ms cubic-bezier(0.23,1,0.32,1) forwards;
         }

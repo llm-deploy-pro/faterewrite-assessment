@@ -1,6 +1,7 @@
 // 文件路径: src/scenes/ScreenOne/ScreenOneFront.tsx
 import { useEffect, useRef } from "react";
 import Wordmark from "@/components/Wordmark";
+import { COPY } from "./copy";
 
 /* ===================== 跨子域去重工具 ===================== */
 function getCookie(name: string): string {
@@ -172,6 +173,29 @@ export default function ScreenOneFront() {
     };
   }, []);
 
+  // —— 文案分片（保留两段结构；切分点为 “recognized / at a glance.”）——
+  const titleChunks = (() => {
+    const t = COPY.title; // "Where you're recognized at a glance."
+    const semantic = "recognized ";
+    const i = t.indexOf(semantic);
+    if (i > -1) {
+      return [t.slice(0, i + "recognized".length), t.slice(i + semantic.length)];
+    }
+    const idx = t.lastIndexOf(" ");
+    if (idx > 0) return [t.slice(0, idx), t.slice(idx + 1)];
+    return [t, ""];
+  })();
+
+  const sub1Parts = (() => {
+    const s = COPY.sub1;
+    const marker = ", and ";
+    const i = s.indexOf(marker);
+    if (i > -1) {
+      return [s.slice(0, i + 1), "and " + s.slice(i + marker.length)];
+    }
+    return [s, ""];
+  })();
+
   return (
     <section className="screen-front-container">
       
@@ -182,26 +206,26 @@ export default function ScreenOneFront() {
 
       <div className="screen-front-content">
         
-        {/* 主标题（保持不变） */}
-        <h1 className="screen-front-title" aria-label="The right circles have been waiting for you">
-          <span className="h1-chunk">The right circles</span>
-          <span className="h1-chunk">have been waiting for you</span>
+        {/* 主标题（从 COPY 读取） */}
+        <h1 className="screen-front-title" aria-label={COPY.title}>
+          <span className="h1-chunk">{titleChunks[0]}</span>
+          <span className="h1-chunk">{titleChunks[1]}</span>
         </h1>
 
-        {/* 副标题（保持不变） */}
+        {/* 副标题（从 COPY.sub1 智能切分为两行） */}
         <p className="screen-front-subtitle">
           <span className="subline">
-            This matching assessment will <em className="key-phrase">point out</em>: who is more likely to understand you,
+            {sub1Parts[0]}
           </span>
           <span className="subline">
-            and <em className="key-phrase">which environments</em> let your value speak for itself.
+            {sub1Parts[1]}
           </span>
         </p>
 
-        {/* 核心理念（保持不变） */}
-        <p className="screen-front-tagline">Not reforming, but aligning.</p>
+        {/* 核心理念（从 COPY.sub2 读取） */}
+        <p className="screen-front-tagline">{COPY.sub2}</p>
 
-        {/* Assessment ready 标签（进度条上方）*/}
+        {/* Assessment ready 标签（进度条上方）*/} 
         <p className="s1-status-label">Assessment ready</p>
 
         {/* 进度条（完全不动）*/}
@@ -248,12 +272,12 @@ export default function ScreenOneFront() {
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           A. 主标题（保持不变）
+           A. 主标题（移动端字号 26px）
            ═══════════════════════════════════════════════════════════════════ */
         .screen-front-title {
           margin: 0 0 32px 0;
           padding: 0;
-          font-size: 34px;
+          font-size: 26px;
           line-height: 1.25;
           font-weight: 600;
           letter-spacing: -0.01em;
@@ -472,7 +496,7 @@ export default function ScreenOneFront() {
               0 0 28px rgba(184, 149, 106, calc(var(--s1-shine-intensity) * 0.3));
           }
           82%     { 
-            box-shadow: 
+            box阴影: 
               0 0 18px rgba(184, 149, 106, calc(var(--s1-shine-intensity) * 1.1)),
               0 0 36px rgba(184, 149, 106, calc(var(--s1-shine-intensity) * 0.5)),
               inset 0 0 10px rgba(255, 255, 255, 0.2);
@@ -509,9 +533,9 @@ export default function ScreenOneFront() {
             animation: none !important;
             opacity: 0.12 !important;
           }
-          .s1-progress{ opacity:1 !important; animation:none !important; }
-          .s1-progress::after{ animation:none !important; transform: scaleX(1) !important; }
-          .s1-status-label { opacity: 0.85 !important; }
+          .s1-progress{ opacity:1 !重要; animation:none !重要; }
+          .s1-progress::after{ animation:none !重要; transform: scaleX(1) !重要; }
+          .s1-status-label { opacity: 0.85 !重要; }
         }
 
         @media (prefers-contrast: more) {

@@ -1,27 +1,27 @@
 ﻿// ScreenOne · copy (EN only) — God-Tier Version II · The Moment of Being Recognized
 export const COPY = {
-  title: "The right circles have been waiting for you",
-  sub1:
-    "This matching assessment will point out: who is more likely to understand you, and which environments let your value speak for itself.",
-  sub2: "Not reforming, but aligning.",
-  lead: [
-    "You don’t lack ability; you’ve been missing the right placement.",
-    "Truly high-quality circles have their own recognition logic—you may have been standing outside their line of sight.",
-    "When the connection is set correctly, invitations and introductions flow more smoothly."
-  ],
-  bullets: [
-    "Friendly-circle profile: the types of roles/industries/topics and atmospheres that more readily recognize you, and the expression styles they prefer.",
-    "Reasons you’re preferred: which of your traits are naturally scarce in these contexts, and why they’re readily accepted.",
-    "One precise self-introduction: a clear positioning line that lets the right people know immediately where you belong."
-  ],
-  trust:
-    "Built on a validated social-compatibility assessment framework; a structured PDF is generated instantly, suitable for saving and internal forwarding.",
-  cta: "View my matching assessment · $49",
-  support: "One-time access · Instant PDF · Sample pages included",
-  footer: {
-    privacy: "Privacy: used only to generate the report; export/delete anytime",
-    security: "Security: TLS encryption; shortest-necessary data retention policy"
-  }
+title: "Where you're recognized at a glance.",
+sub1:
+"This blueprint maps the high-value circles where your signal is instantly understood, and reveals your natural entry paths.",
+sub2: "Not reforming. Recognizing.",
+lead: [
+"Early signals show a strong fit with high-value circles.",
+"Where your presence is read instantly, invitations come warm.",
+"A signature intro lets the right people know where you belong."
+],
+bullets: [
+"Your Natural Habitats: Settings where your presence is read instantly—invite-only salons, off-agenda drinks, quiet dinners where introductions come warm.",
+"Why you're preferred there: Your signal bypasses social friction. We'll show you the scarce traits you own that these circles instinctively value.",
+"Signature Story Snippet: One signal that communicates your value—before any conversation. A ready-to-use intro that feels like you."
+],
+trust:
+"Insights guided by your responses; individual results may vary.",
+cta: "Unlock my blueprint",
+support: "Private, one-time access. Instant PDF revealing your recognition map.",
+footer: {
+privacy: "Privacy: used only to generate the report; export/delete anytime",
+security: "Security: TLS encryption; shortest-necessary data retention policy"
+}
 } as const;
 
 export type Copy = typeof COPY;
