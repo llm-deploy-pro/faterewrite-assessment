@@ -1,6 +1,5 @@
 // 文件路径: src/scenes/ScreenOne/ScreenOneFront.tsx
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Wordmark from "@/components/Wordmark";
 import { COPY } from "./copy";
 
@@ -70,7 +69,6 @@ function ensureFrid() {
 
 export default function ScreenOneFront() {
   const startTimeRef = useRef<number>(0);
-  const navigate = useNavigate();
   
   // CTA 状态管理
   const [ctaVisible, setCtaVisible] = useState(false);
@@ -235,7 +233,8 @@ export default function ScreenOneFront() {
     document.documentElement.classList.add('page-leave');
     
     setTimeout(() => {
-      navigate('/screen-2');
+      // ✅ 改为发出事件，由 ScreenOne.tsx 监听后切换到后屏
+      window.dispatchEvent(new CustomEvent('s1:cta:continue'));
       requestAnimationFrame(() => {
         document.documentElement.classList.remove('page-leave');
         window.scrollTo(0, 0);
