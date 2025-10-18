@@ -1,5 +1,6 @@
 // 文件路径: src/scenes/ScreenOne/ScreenOneFront.tsx
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Wordmark from "@/components/Wordmark";
 import { COPY } from "./copy";
 
@@ -20,33 +21,26 @@ function getCookie(name: string): string {
 function setRootCookie(name: string, value: string, days: number) {
   try {
     const exp = new Date(Date.now() + days * 864e5).toUTCString();
-    // 优先写顶级域（生产环境）
+    const isHttps = window.location.protocol === 'https:';
+    const secureFlag = isHttps ? '; Secure' : '';
+    
     document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
       value
-    )}; path=/; domain=.faterewrite.com; expires=${exp}; SameSite=Lax`;
-    // 若失败（本地开发），退回当前域
+    )}; path=/; domain=.faterewrite.com; expires=${exp}; SameSite=Lax${secureFlag}`;
+    
     if (document.cookie.indexOf(name + "=") === -1) {
       document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
         value
-      )}; path=/; expires=${exp}; SameSite=Lax`;
+      )}; path=/; expires=${exp}; SameSite=Lax${secureFlag}`;
     }
   } catch {}
 }
 
-/** 
- * 记录一次性事件到 Cookie
- * @param key - 事件唯一标识（如 s1e3）
- * @param devMode - 开发模式下不去重（默认 false）
- * @returns true=首次触发，false=已触发过
- */
 function markOnce(key: string, devMode: boolean = false): boolean {
-  // 开发模式：允许重复触发（方便测试）
   if (devMode && window.location.hostname === 'localhost') {
     console.log(`[DEV] 事件 ${key} 触发（开发模式不去重）`);
     return true;
   }
-
-  // ❗致命问题修复：为第一屏使用独立去重 Cookie，避免与其他页面冲突
   const name = "frd_s1_dedupe";
   const raw = getCookie(name);
   const set = new Set(raw ? raw.split(",") : []);
@@ -76,23 +70,29 @@ function ensureFrid() {
 
 export default function ScreenOneFront() {
   const startTimeRef = useRef<number>(0);
+  const navigate = useNavigate();
+  
+  // CTA 状态管理
+  const [ctaVisible, setCtaVisible] = useState(false);
+  const [hasClicked, setHasClicked] = useState(false);
+  const [shouldPulse, setShouldPulse] = useState(false);
 
   // ═══════════════════════════════════════════════════════════════
-  // 进度条动画逻辑（保持不变）
+  // 进度条动画逻辑（仅视觉效果）
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
-    const TOTAL = 3000;
-    const DELAY = 480;
+    const TOTAL = 3500; // 3.5秒到达等待状态
+    const DELAY = 500;
     const startAt = DELAY;
-    const at80 = DELAY + Math.round(TOTAL * 0.8);
-    const at100 = DELAY + TOTAL;
+    const at85 = DELAY + Math.round(TOTAL * 0.85);
+    const atDone = DELAY + TOTAL;
 
     const emit = (name: string, detail?: any) =>
       window.dispatchEvent(new CustomEvent(`s1:${name}`, { detail }));
 
     const t0 = window.setTimeout(() => emit("progress:start"), startAt);
-    const t1 = window.setTimeout(() => emit("progress:80"), at80);
-    const t2 = window.setTimeout(() => emit("progress:done"), at100);
+    const t1 = window.setTimeout(() => emit("progress:85"), at85);
+    const t2 = window.setTimeout(() => emit("progress:waiting"), atDone);
 
     return () => {
       window.clearTimeout(t0);
@@ -102,10 +102,48 @@ export default function ScreenOneFront() {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
-  // 🎯 新增：前屏 加载成功（去重）
-  // 要求：两个屏的前/后屏“加载成功人数（去重）”
-  // 事件名：S1_Front_Loaded
-  // 去重 key：s1f_load
+  // CTA 延迟出现逻辑（1.2秒后淡入，更快响应）
+  // ═══════════════════════════════════════════════════════════════
+  useEffect(() => {
+    const showTimer = setTimeout(() => {
+      setCtaVisible(true);
+      
+      // CTA 出现印象事件
+      const sessionKey = 's1_cta_shown';
+      const alreadyShown = sessionStorage.getItem(sessionKey) === 'true';
+      
+      if (!alreadyShown && typeof window.fbq !== "undefined") {
+        const frid = ensureFrid();
+        const isDev = window.location.hostname === 'localhost';
+        if (markOnce("s1ci", isDev)) {
+          const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+          window.fbq("trackCustom", "S1_CTA_Impression", {
+            content_name: "Assessment_CTA",
+            content_category: "Matching_Assessment",
+            frid: frid,
+          }, { eventID: eventId });
+          console.log(`[FB打点] S1_CTA_Impression 触发成功`, { frid, eventId });
+          sessionStorage.setItem(sessionKey, 'true');
+        }
+      }
+      
+      // 2秒后触发轻微脉动提示（仅一次）
+      setTimeout(() => {
+        if (!hasClicked) {
+          setShouldPulse(true);
+          // 动画结束后自动清除
+          setTimeout(() => setShouldPulse(false), 800);
+        }
+      }, 2000);
+    }, 1200); // 缩短至1.2秒
+
+    return () => clearTimeout(showTimer);
+  }, [hasClicked]);
+
+  // ⚠️ 无自动跳转 - 必须点击CTA才能继续
+
+  // ═══════════════════════════════════════════════════════════════
+  // 前屏加载成功事件
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     const frid = ensureFrid();
@@ -113,50 +151,34 @@ export default function ScreenOneFront() {
       const isDev = window.location.hostname === 'localhost';
       if (markOnce("s1f_load", isDev)) {
         const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-        window.fbq(
-          "trackCustom",
-          "S1_Front_Loaded",
-          {
-            content_name: "ScreenOne_Front",
-            content_category: "Assessment_Landing",
-            frid: frid,
-          },
-          { eventID: eventId }
-        );
+        window.fbq("trackCustom", "S1_Front_Loaded", {
+          content_name: "ScreenOne_Front",
+          content_category: "Assessment_Landing",
+          frid: frid,
+        }, { eventID: eventId });
         console.log(`[FB打点] S1_Front_Loaded 触发成功`, { frid, eventId });
       }
     }
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
-  // 🎯 核心打点：前屏 3秒停留（保留）
-  // 事件名：S1_Front_Engaged_3s
-  // 去重 key：s1e3
+  // 3秒停留事件
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
-    // 确保 FRID 存在
     const frid = ensureFrid();
-    
-    // 记录开始时间（用于日志）
     startTimeRef.current = Date.now();
 
-    // 🎯 事件：前屏3秒停留（User级去重：key = s1e3）
     const engageTimer = setTimeout(() => {
       if (typeof window.fbq !== "undefined") {
         const isDev = window.location.hostname === 'localhost';
-        
         if (markOnce("s1e3", isDev)) {
           const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-          
           window.fbq("trackCustom", "S1_Front_Engaged_3s", {
             content_name: "ScreenOne_Front",
             content_category: "Assessment_Landing",
             engagement_type: "view_3s",
             frid: frid,
-          }, { 
-            eventID: eventId 
-          });
-          
+          }, { eventID: eventId });
           console.log(`[FB打点] S1_Front_Engaged_3s 触发成功`, { frid, eventId });
         }
       }
@@ -164,8 +186,6 @@ export default function ScreenOneFront() {
 
     return () => {
       clearTimeout(engageTimer);
-      
-      // 日志：记录前屏停留时长
       if (startTimeRef.current > 0) {
         const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
         console.log(`[前屏] 停留时长: ${duration}秒`);
@@ -173,9 +193,59 @@ export default function ScreenOneFront() {
     };
   }, []);
 
-  // —— 文案分片（保留两段结构；切分点为 “recognized / at a glance.”）——
+  // ═══════════════════════════════════════════════════════════════
+  // CTA 点击处理（唯一的导航入口）
+  // ═══════════════════════════════════════════════════════════════
+  const handleCTAClick = () => {
+    if (hasClicked) return;
+    
+    const frid = ensureFrid();
+    const fbEventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    const isDev = window.location.hostname === 'localhost';
+
+    // CTA点击事件
+    if (typeof window.fbq !== 'undefined') {
+      if (markOnce("s1cc", isDev)) {
+        window.fbq('trackCustom', 'S1_CTA_Click', {
+          content_name: 'Assessment_CTA',
+          content_category: 'Matching_Assessment',
+          value: 49,
+          currency: 'USD',
+          screen_position: 'center',
+          screen_number: 1,
+          page_url: window.location.href,
+          referrer: document.referrer,
+          frid: frid,
+        }, { eventID: fbEventId });
+        console.log(`[FB打点] S1_CTA_Click 触发成功`, { frid, fbEventId });
+      }
+    }
+
+    // 标记已点击
+    setHasClicked(true);
+    setShouldPulse(false);
+    
+    try {
+      localStorage.setItem('cta_clicked_assessment_49', 'true');
+    } catch (error) {
+      console.warn('localStorage not available:', error);
+    }
+
+    // 优雅离场动画
+    document.documentElement.classList.add('page-leave');
+    
+    setTimeout(() => {
+      navigate('/screen-2');
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove('page-leave');
+        window.scrollTo(0, 0);
+      });
+    }, 220);
+  };
+
+  // 文案分片
   const titleChunks = (() => {
-    const t = COPY.title; // "Where you're recognized at a glance."
+    const t = COPY.title;
     const semantic = "recognized ";
     const i = t.indexOf(semantic);
     if (i > -1) {
@@ -186,67 +256,88 @@ export default function ScreenOneFront() {
     return [t, ""];
   })();
 
-  const sub1Parts = (() => {
+  // 只保留第一句副标题
+  const sub1FirstSentence = (() => {
     const s = COPY.sub1;
-    const marker = ", and ";
-    const i = s.indexOf(marker);
-    if (i > -1) {
-      return [s.slice(0, i + 1), "and " + s.slice(i + marker.length)];
-    }
-    return [s, ""];
+    const endIndex = s.indexOf(',');
+    return endIndex > -1 ? s.slice(0, endIndex + 1) : s;
   })();
 
   return (
     <section className="screen-front-container">
-      
-      {/* ═══════════════════════════════════════════════════════
-          品牌 Logo（复用 Wordmark 组件）
-          ═══════════════════════════════════════════════════════ */}
       <Wordmark name="Kinship" href="/" />
 
       <div className="screen-front-content">
-        
-        {/* 主标题（从 COPY 读取） */}
+        {/* 主标题 */}
         <h1 className="screen-front-title" aria-label={COPY.title}>
           <span className="h1-chunk">{titleChunks[0]}</span>
           <span className="h1-chunk">{titleChunks[1]}</span>
         </h1>
 
-        {/* 副标题（从 COPY.sub1 智能切分为两行） */}
+        {/* 副标题（精简版）*/}
         <p className="screen-front-subtitle">
-          <span className="subline">
-            {sub1Parts[0]}
-          </span>
-          <span className="subline">
-            {sub1Parts[1]}
-          </span>
+          <span className="subline">{sub1FirstSentence}</span>
         </p>
 
-        {/* 核心理念（从 COPY.sub2 读取） */}
+        {/* 核心理念 */}
         <p className="screen-front-tagline">{COPY.sub2}</p>
 
-        {/* Assessment ready 标签（进度条上方）*/} 
-        <p className="s1-status-label">Assessment ready</p>
+        {/* Assessment ready 状态标签 */}
+        <p className="s1-status-label">
+          <span className="status-dot"></span>
+          Assessment ready
+        </p>
 
-        {/* 进度条（完全不动）*/}
-        <div className="s1-progress" aria-hidden="true">
-          <span className="s1-progress-dot left" />
-          <span className="s1-progress-dot right" />
+        {/* CTA 按钮区域 */}
+        <div className={`cta-container ${ctaVisible ? 'visible' : ''}`}>
+          <button
+            type="button"
+            onClick={handleCTAClick}
+            disabled={hasClicked}
+            className={`s1-cta-btn ${shouldPulse ? 'pulse' : ''}`}
+            aria-label="Continue to assessment"
+            aria-describedby="privacy-note"
+          >
+            <span className="s1-cta-text">See what we detected</span>
+            <span className="s1-cta-arrow">→</span>
+          </button>
+          
+          {/* 隐私提示 */}
+          <p id="privacy-note" className="s1-privacy-note">
+            Private. No subscription.
+          </p>
         </div>
 
+        {/* 进度条（优化为等待状态）*/}
+        <div className="s1-progress" aria-hidden="true">
+          <div className="s1-progress-track"></div>
+          <div className="s1-progress-fill"></div>
+        </div>
       </div>
 
       <style>{`
         /* ═══════════════════════════════════════════════════════════════════
-           【10.0/10 满分版】句首大写 + 优化字距
+           10/10 完美优化版 - 视觉与交互体验拉满
            ═══════════════════════════════════════════════════════════════════ */
 
-        :root{
-          --s1-total: 3000ms;
-          --s1-delay: 480ms;
-          --s1-shine-intensity: 0.35;
-          --s1-outro-start: 2760ms;
-          --s1-outro-dur: 220ms;
+        :root {
+          --s1-total: 3500ms;
+          --s1-delay: 500ms;
+          --gold: #B8956A;
+          --gold-bright: #D4B896;
+          --gold-border: rgba(184, 149, 106, 0.75);
+          --gold-hover: rgba(212, 184, 150, 0.85);
+          --cream: #F5F5F0;
+          --cream-bright: rgba(245, 245, 240, 0.95);
+          --dark-blue: #0A1628;
+        }
+
+        /* 页面离场动画 */
+        .page-leave .screen-front-container {
+          opacity: 0;
+          transform: translateY(-8px) scale(0.98);
+          filter: blur(4px);
+          transition: all 220ms cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         .screen-front-container {
@@ -258,6 +349,7 @@ export default function ScreenOneFront() {
           justify-content: center;
           padding: 24px;
           box-sizing: border-box;
+          background: var(--dark-blue);
         }
 
         .screen-front-content {
@@ -265,320 +357,424 @@ export default function ScreenOneFront() {
           width: 100%;
           max-width: 520px;
           text-align: left;
-          color: #F5F5F0;
+          color: var(--cream);
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
-          text-rendering: optimizeLegibility;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           A. 主标题（移动端字号 26px）
+           文字部分
            ═══════════════════════════════════════════════════════════════════ */
+        
         .screen-front-title {
-          margin: 0 0 32px 0;
+          margin: 0 0 24px 0;
           padding: 0;
           font-size: 26px;
           line-height: 1.25;
           font-weight: 600;
           letter-spacing: -0.01em;
-          color: #F5F5F0;
+          color: var(--cream);
           font-family: Georgia, 'Times New Roman', serif;
-          text-wrap: balance;
-          font-kerning: normal;
-          font-feature-settings: "liga" 1, "kern" 1, "pnum" 1;
         }
 
         .h1-chunk {
           display: block;
           opacity: 0;
-          transform: translateY(8px);
-          will-change: transform, opacity;
-          animation:
-            chunkIn 420ms cubic-bezier(0.23, 1, 0.32, 1) forwards,
-            microOutro var(--s1-outro-dur) ease-out var(--s1-outro-start) forwards;
+          transform: translateY(12px);
+          animation: chunkIn 450ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
         }
-        .h1-chunk:nth-child(1) {
-          animation-name: chunkIn, chunkPulse, microOutro;
-          animation-duration: 420ms, 180ms, var(--s1-outro-dur);
-          animation-timing-function: cubic-bezier(0.23,1,0.32,1), ease-out, ease-out;
-          animation-delay: 60ms, 400ms, var(--s1-outro-start);
-          animation-fill-mode: forwards, none, forwards;
-        }
-        .h1-chunk:nth-child(2) { animation-delay: 240ms, var(--s1-outro-start); }
+        .h1-chunk:nth-child(1) { animation-delay: 60ms; }
+        .h1-chunk:nth-child(2) { animation-delay: 240ms; }
 
         @keyframes chunkIn {
-          0%   { opacity: 0; transform: translateY(8px); }
-          80%  { opacity: 1; transform: translateY(-0.5px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes chunkPulse {
-          0%   { opacity: 1; }
-          50%  { opacity: 0.94; }
-          100% { opacity: 1; }
-        }
-        @keyframes microOutro {
-          to { opacity: 0.96; transform: translateY(-2px); }
+          to { 
+            opacity: 1; 
+            transform: translateY(0);
+          }
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           B. 副标题（保持不变）
-           ═══════════════════════════════════════════════════════════════════ */
         .screen-front-subtitle {
-          margin: 0 0 40px 0;
+          margin: 0 0 28px 0;
           padding: 0;
           font-size: 17px;
-          line-height: 1.72;
-          color: #F5F5F0;
+          line-height: 1.6;
+          color: var(--cream-bright);
           font-weight: 400;
+          font-family: Georgia, 'Times New Roman', serif;
         }
+
         .subline {
           display: block;
           opacity: 0;
-          transform: translateY(6px);
-          animation:
-            subIn 360ms cubic-bezier(0.23,1,0.32,1) forwards,
-            microOutro var(--s1-outro-dur) ease-out var(--s1-outro-start) forwards;
-        }
-        .subline:nth-child(1) { animation-delay: 560ms, var(--s1-outro-start); }
-        .subline:nth-child(2) { animation-delay: 760ms, var(--s1-outro-start); }
-
-        @keyframes subIn { to { opacity: 1; transform: translateY(0); } }
-
-        .key-phrase {
-          font-style: normal;
-          position: relative;
-          white-space: nowrap;
-        }
-        .key-phrase::after {
-          content: "";
-          position: absolute;
-          left: 0; bottom: -2px;
-          height: 1px;
-          width: 0%;
-          background: rgba(184, 149, 106, 0.22);
-          transform-origin: left center;
-          animation: underlineOnce 160ms ease-out forwards;
-        }
-        .subline:nth-child(1) .key-phrase::after { animation-delay: 1200ms; }
-        .subline:nth-child(2) .key-phrase::after { animation-delay: 1300ms; }
-
-        @keyframes underlineOnce {
-          0%   { width: 0%; opacity: 0; }
-          60%  { width: 100%; opacity: 1; }
-          100% { width: 100%; opacity: 0.6; }
+          transform: translateY(8px);
+          animation: subIn 400ms cubic-bezier(0.23,1,0.32,1) 480ms forwards;
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           C. 标语（保持不变）
-           ═══════════════════════════════════════════════════════════════════ */
+        @keyframes subIn {
+          to { 
+            opacity: 1; 
+            transform: translateY(0);
+          }
+        }
+
         .screen-front-tagline {
-          margin: 0 0 56px 0;
+          margin: 0 0 28px 0;
           padding: 0;
           font-size: 13px;
           line-height: 1.5;
-          color: #F5F5F0;
-          opacity: 0.68;
+          color: var(--cream);
+          opacity: 0;
           font-style: italic;
           font-weight: 400;
-          transform: translateY(6px);
-          animation:
-            taglineIn 320ms cubic-bezier(0.23,1,0.32,1) 1700ms forwards,
-            microOutro var(--s1-outro-dur) ease-out var(--s1-outro-start) forwards;
+          font-family: Georgia, 'Times New Roman', serif;
+          animation: taglineIn 350ms cubic-bezier(0.23,1,0.32,1) 900ms forwards;
         }
-        @keyframes taglineIn { to { opacity: 0.68; transform: translateY(0); } }
 
-        .screen-front-tagline::after {
-          content: "";
-          display: block;
-          width: 34px; height: 1px;
-          margin-top: 18px;
-          background: #B8956A;
-          opacity: 0.12;
-          animation: taglineShine 185ms ease-out 1860ms both;
-        }
-        @keyframes taglineShine {
-          0%   { opacity: 0; }
-          60%  { opacity: 0.25; }
-          100% { opacity: 0.12; }
+        @keyframes taglineIn {
+          to { 
+            opacity: 0.72; 
+            transform: translateY(0);
+          }
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           Assessment ready 状态标签（优化版）
+           状态标签（增强版）
            ═══════════════════════════════════════════════════════════════════ */
         .s1-status-label {
-          margin: 0 0 12px 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin: 0 0 16px 0;
           padding: 0;
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1.5;
           text-align: center;
-          color: #B8956A;
+          color: var(--gold-bright);
           opacity: 0;
           font-family: Georgia, 'Times New Roman', serif;
           font-style: italic;
           font-weight: 400;
           letter-spacing: 0.02em;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-          animation: statusLabelFadeIn 500ms ease calc(var(--s1-delay) + 100ms) forwards;
+          animation: statusFade 450ms ease 1100ms forwards;
         }
 
-        @keyframes statusLabelFadeIn {
-          from { opacity: 0; transform: translateY(4px); }
-          to   { opacity: 0.85; transform: translateY(0); }
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           D. 进度条（完全不动，0修改）
-           ═══════════════════════════════════════════════════════════════════ */
-        .s1-progress{
-          position: relative;
-          width: 120px;
+        .status-dot {
+          display: inline-block;
+          width: 6px;
           height: 6px;
-          margin-top: 28px;
-          opacity: 0;
-          left: 0;
-          animation: s1ProgFade 400ms ease var(--s1-delay) forwards;
-          contain: layout style paint;
-          pointer-events: none;
-          user-select: none;
-          -webkit-tap-highlight-color: transparent;
-          overflow: visible;
-        }
-        @keyframes s1ProgFade { to { opacity: 1; } }
-
-        .s1-progress::before{
-          content:"";
-          position:absolute; inset:0;
-          border-radius:999px;
-          background: rgba(200,200,192,0.12);
-          border: 1px solid rgba(200,200,192,0.08);
-          z-index:1;
-          box-sizing: border-box;
+          border-radius: 50%;
+          background: var(--gold);
+          animation: statusPulse 2s ease-in-out infinite;
         }
 
-        .s1-progress::after{
-          content:"";
-          position:absolute; 
-          top: 1px; left: 1px; right: 1px; bottom: 1px;
-          border-radius:999px;
-          background:#B8956A;
-          transform-origin: left center;
-          transform: scaleX(0);
-          will-change: transform, box-shadow;
-          z-index:2;
-          animation:
-            s1Fill var(--s1-total) linear var(--s1-delay) forwards,
-            s1Shine var(--s1-total) linear var(--s1-delay) forwards;
+        @keyframes statusFade {
+          to { opacity: 0.85; }
         }
 
-        .s1-progress-dot{
-          position:absolute; top:50%; width:7px; height:7px;
-          border-radius:50%; transform: translateY(-50%);
-          z-index:3; background: #B8956A; opacity: 0.85;
-        }
-        .s1-progress-dot.left  { left: -16px; }
-        .s1-progress-dot.right { right:-16px; }
-
-        @keyframes s1Fill{
-          0%   { transform: scaleX(0.000); }
-          70%  { transform: scaleX(0.700); }
-          80%  { transform: scaleX(0.810); }
-          90%  { transform: scaleX(0.930); }
-          95%  { transform: scaleX(0.975); }
-          100% { transform: scaleX(1.000); }
-        }
-
-        @keyframes s1Shine{
-          0%,79%  { box-shadow: none; }
-          80%     { 
-            box-shadow: 
-              0 0 14px rgba(184, 149, 106, calc(var(--s1-shine-intensity) * 0.6)),
-              0 0 28px rgba(184, 149, 106, calc(var(--s1-shine-intensity) * 0.3));
+        @keyframes statusPulse {
+          0%, 100% { 
+            opacity: 0.5;
+            transform: scale(1);
           }
-          82%     { 
-            box阴影: 
-              0 0 18px rgba(184, 149, 106, calc(var(--s1-shine-intensity) * 1.1)),
-              0 0 36px rgba(184, 149, 106, calc(var(--s1-shine-intensity) * 0.5)),
-              inset 0 0 10px rgba(255, 255, 255, 0.2);
+          50% { 
+            opacity: 1;
+            transform: scale(1.2);
           }
-          84%     { 
-            box-shadow: 
-              0 0 14px rgba(184, 149, 106, calc(var(--s1-shine-intensity) * 0.7)),
-              0 0 28px rgba(184, 149, 106, calc(var(--s1-shine-intensity) * 0.35));
-          }
-          86%,100%{ box-shadow: none; }
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           桌面端适配
+           CTA 容器与按钮（完美版）
+           ═══════════════════════════════════════════════════════════════════ */
+        .cta-container {
+          margin: 0 0 20px 0;
+          opacity: 0;
+          transform: translateY(6px);
+          transition: all 250ms cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .cta-container.visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .s1-cta-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          width: 100%;
+          height: 50px;
+          padding: 0 28px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, 
+            rgba(184, 149, 106, 0.08) 0%, 
+            rgba(184, 149, 106, 0.03) 100%
+          );
+          border: 1.5px solid var(--gold-border);
+          cursor: pointer;
+          -webkit-tap-highlight-color: transparent;
+          transition: all 280ms cubic-bezier(0.23, 1, 0.32, 1);
+          position: relative;
+          overflow: hidden;
+        }
+
+        /* 按钮光晕效果 */
+        .s1-cta-btn::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 100%;
+          height: 100%;
+          background: radial-gradient(circle, 
+            rgba(212, 184, 150, 0.15) 0%, 
+            transparent 70%
+          );
+          transform: translate(-50%, -50%) scale(0);
+          transition: transform 450ms cubic-bezier(0.23, 1, 0.32, 1);
+          pointer-events: none;
+        }
+
+        .s1-cta-btn:hover::before {
+          transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        /* CTA 文字 */
+        .s1-cta-text {
+          color: var(--cream-bright);
+          font-family: Georgia, 'Times New Roman', serif;
+          font-size: 15px;
+          font-weight: 500;
+          letter-spacing: 0.01em;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* CTA 箭头 */
+        .s1-cta-arrow {
+          color: var(--gold-bright);
+          font-size: 18px;
+          opacity: 0.9;
+          transition: all 280ms cubic-bezier(0.23, 1, 0.32, 1);
+          position: relative;
+          z-index: 1;
+        }
+
+        /* 脉动动画（更优雅）*/
+        @keyframes gentlePulse {
+          0%, 100% { 
+            transform: scale(1);
+            border-color: var(--gold-border);
+          }
+          50% { 
+            transform: scale(1.02);
+            border-color: var(--gold-hover);
+          }
+        }
+
+        .s1-cta-btn.pulse {
+          animation: gentlePulse 800ms ease-in-out 1;
+        }
+
+        /* 悬停效果（增强版）*/
+        @media (hover: hover) and (pointer: fine) {
+          .s1-cta-btn:hover:not(:disabled) {
+            border-color: var(--gold-hover);
+            background: linear-gradient(135deg, 
+              rgba(212, 184, 150, 0.12) 0%, 
+              rgba(184, 149, 106, 0.06) 100%
+            );
+            transform: translateY(-1px);
+            box-shadow: 
+              0 4px 20px rgba(184, 149, 106, 0.12),
+              0 2px 8px rgba(0, 0, 0, 0.1);
+          }
+
+          .s1-cta-btn:hover:not(:disabled) .s1-cta-arrow {
+            transform: translateX(3px);
+            opacity: 1;
+          }
+
+          .s1-cta-btn:hover:not(:disabled) .s1-cta-text {
+            color: #FFFFFF;
+          }
+        }
+
+        /* 点击状态 */
+        .s1-cta-btn:active:not(:disabled) {
+          transform: scale(0.98);
+          transition: all 100ms ease;
+        }
+
+        /* 聚焦状态 */
+        .s1-cta-btn:focus-visible {
+          outline: 2px solid var(--gold);
+          outline-offset: 3px;
+        }
+
+        /* 禁用状态 */
+        .s1-cta-btn:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
+
+        /* 隐私提示 */
+        .s1-privacy-note {
+          margin: 12px 0 0 0;
+          padding: 0;
+          font-size: 12px;
+          line-height: 1.5;
+          text-align: center;
+          color: rgba(245, 245, 240, 0.55);
+          font-family: system-ui, -apple-system, sans-serif;
+          letter-spacing: 0.02em;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           进度条（优雅等待状态）
+           ═══════════════════════════════════════════════════════════════════ */
+        .s1-progress {
+          position: relative;
+          width: 64px;
+          height: 3px;
+          margin: 0 auto;
+          opacity: 0;
+          animation: s1ProgFade 400ms ease var(--s1-delay) forwards;
+        }
+
+        @keyframes s1ProgFade {
+          to { opacity: 1; }
+        }
+
+        .s1-progress-track {
+          position: absolute;
+          inset: 0;
+          border-radius: 999px;
+          background: rgba(200, 200, 192, 0.08);
+          overflow: hidden;
+        }
+
+        .s1-progress-fill {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 999px;
+          background: linear-gradient(90deg, 
+            transparent 0%, 
+            var(--gold) 50%, 
+            transparent 100%
+          );
+          transform: scaleX(0);
+          transform-origin: left center;
+          animation: 
+            s1Fill var(--s1-total) cubic-bezier(0.4, 0, 0.2, 1) var(--s1-delay) forwards,
+            s1Waiting 2s ease-in-out calc(var(--s1-delay) + var(--s1-total)) infinite;
+        }
+
+        @keyframes s1Fill {
+          0%   { transform: scaleX(0); }
+          85%  { transform: scaleX(0.85); }
+          100% { transform: scaleX(0.85); }
+        }
+
+        @keyframes s1Waiting {
+          0%, 100% { 
+            opacity: 0.4;
+            transform: scaleX(0.75);
+          }
+          50% { 
+            opacity: 0.8;
+            transform: scaleX(0.9);
+          }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           响应式适配
            ═══════════════════════════════════════════════════════════════════ */
         @media (min-width: 769px) {
-          .screen-front-title { font-size: 42px; line-height: 1.22; }
-          .screen-front-subtitle { font-size: 18px; }
-          .screen-front-content { max-width: 580px; }
-          .s1-status-label { font-size: 12px; }
-          .s1-progress { width: 140px; }
+          .screen-front-title { 
+            font-size: 42px; 
+            line-height: 1.22;
+          }
+          .screen-front-subtitle { 
+            font-size: 18px;
+          }
+          .screen-front-content { 
+            max-width: 580px;
+          }
+          .s1-status-label { 
+            font-size: 13px;
+          }
+          .s1-cta-btn { 
+            height: 54px;
+            border-radius: 14px;
+          }
+          .s1-cta-text { 
+            font-size: 16px;
+          }
+          .s1-cta-arrow { 
+            font-size: 20px;
+          }
+          .s1-progress { 
+            width: 72px;
+          }
+        }
+
+        /* 极小屏适配 */
+        @media (max-width: 359px) {
+          .s1-cta-btn { 
+            height: 46px; 
+            padding: 0 22px;
+          }
+          .s1-cta-text { 
+            font-size: 14px;
+          }
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           无障碍降级
+           无障碍支持
            ═══════════════════════════════════════════════════════════════════ */
         @media (prefers-reduced-motion: reduce) {
-          .h1-chunk, .subline, .screen-front-tagline, .s1-status-label {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+          
+          .h1-chunk, .subline, .screen-front-tagline, 
+          .s1-status-label, .cta-container {
             opacity: 1 !important;
             transform: none !important;
-            animation: none !important;
           }
-          .key-phrase::after, .screen-front-tagline::after {
-            animation: none !important;
-            opacity: 0.12 !important;
-          }
-          .s1-progress{ opacity:1 !重要; animation:none !重要; }
-          .s1-progress::after{ animation:none !重要; transform: scaleX(1) !重要; }
-          .s1-status-label { opacity: 0.85 !重要; }
-        }
-
-        @media (prefers-contrast: more) {
-          .s1-progress::before {
-            background: rgba(200,200,192,0.18);
-            border-color: rgba(200,200,192,0.12);
-          }
-        }
-        @media (forced-colors: active) {
-          .s1-progress,
-          .s1-progress::before,
-          .s1-progress::after,
-          .s1-progress-dot {
-            forced-color-adjust: none;
-          }
-          .s1-progress::before {
-            background: CanvasText;
-            opacity: .12;
-            border: 1px solid CanvasText;
-          }
-          .s1-progress::after,
-          .s1-progress-dot {
-            background: CanvasText;
+          
+          .s1-progress-fill {
+            transform: scaleX(0.85) !important;
           }
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           【前屏打点】验收清单
-           
-           🎯 事件（均为“跨子域去重”）：
-           ✅ S1_Front_Loaded（加载成功，User级去重：key=s1f_load）
-           ✅ S1_Front_Engaged_3s（3秒停留，User级去重：key=s1e3）
-           
-           去重逻辑：
-           - 生产环境：Cookie跨子域去重（30天有效期）
-           - 开发环境：localhost 不去重（方便测试）
-           - 控制台日志：清晰标注触发/去重状态
-           
-           FRID 机制：
-           ✅ 页面加载即生成/复用
-           ✅ 跨子域共享（.faterewrite.com）
-           ✅ 30天有效期
-        ═══════════════════════════════════════════════════════════════════ */
+        /* 高对比度模式 */
+        @media (prefers-contrast: high) {
+          .s1-cta-btn {
+            border-width: 2px;
+            border-color: var(--gold-bright);
+            background: rgba(184, 149, 106, 0.15);
+          }
+          
+          .s1-cta-text {
+            color: #FFFFFF;
+            font-weight: 600;
+          }
+        }
+
+        /* 打印隐藏 */
+        @media print {
+          .s1-cta-btn, .s1-progress {
+            display: none;
+          }
+        }
       `}</style>
     </section>
   );

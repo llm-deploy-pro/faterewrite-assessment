@@ -107,6 +107,40 @@ export default function ScreenOneBack() {
     return () => clearTimeout(timer);
   }, []);
 
+  /* ──────────────────────────────────────────────────────────────
+     ✅ 新增：后屏停留 ≥3s 去重人数打点（严格最小增量）
+     事件名：S1_Back_Engaged_3s
+     去重 key：s1be3
+     不改其它任何逻辑
+  ────────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    const frid = ensureFrid();
+    const isDev = window.location.hostname === 'localhost';
+
+    const dwellTimer = setTimeout(() => {
+      if (typeof window.fbq !== "undefined") {
+        if (markOnce("s1be3", isDev)) {
+          const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+          window.fbq("trackCustom", "S1_Back_Engaged_3s", {
+            content_name: "ScreenOne_Back",
+            content_category: "Assessment_Offer",
+            engagement_type: "view_3s",
+            screen_position: "back",
+            screen_number: 1,
+            page_url: window.location.href,
+            referrer: document.referrer,
+            frid: frid,
+          }, { eventID: eventId });
+
+          console.log(`[FB打点] S1_Back_Engaged_3s 触发成功`, { frid, eventId });
+        }
+      }
+    }, 3000);
+
+    return () => clearTimeout(dwellTimer);
+  }, []);
+
   return (
     <section className="s1-back">
       
@@ -442,9 +476,9 @@ export default function ScreenOneBack() {
            ✅ 所有无障碍支持
            ✅ Logo 引用
            ✅ CTA 组件引用
-           
-           已删除事件：
-           ❌ 无（后屏原本就只有这1个事件）
+
+           新增事件（最小增量）：
+           ✅ S1_Back_Engaged_3s（后屏停留≥3秒，User级去重：key=s1be3）
            ═══════════════════════════════════════════════════════════════════ */
       `}</style>
     </section>

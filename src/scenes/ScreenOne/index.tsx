@@ -9,15 +9,32 @@ export default function ScreenOne() {
   // 固定 3s 自动进入（不添加任意交互提前进入）
   const AUTO_ADV_MS = 3000;
 
+  // ✅ 新增：统一开关（严格不删除原逻辑，仅关闭自动推进）
+  const ALLOW_AUTO_ADV = false;
+
   // 监控：实际切换偏差 / LongTask / FCP
   const tStartRef = useRef<number | null>(null);
   const perfObsRef = useRef<PerformanceObserver | null>(null);
+
+  // ✅ 新增：仅在 CTA 明确触发时推进到后屏（不破坏原结构）
+  useEffect(() => {
+    const onContinue = () => setPhase("back");
+    window.addEventListener("s1:cta:continue", onContinue);
+    return () => window.removeEventListener("s1:cta:continue", onContinue);
+  }, []);
 
   useEffect(() => {
     if (phase !== "front") return;
 
     tStartRef.current = performance.now();
-    const timer = setTimeout(() => setPhase("back"), AUTO_ADV_MS);
+
+    // （原逻辑保留）自动推进的定时器 —— 受开关控制
+    let timer: number | null = null;
+    if (ALLOW_AUTO_ADV) {
+      // 仅在允许时才设置自动进入
+      // @ts-ignore
+      timer = setTimeout(() => setPhase("back"), AUTO_ADV_MS);
+    }
 
     // ---- O5: 性能监控（轻量，无第三方依赖） ----
     try {
@@ -32,6 +49,7 @@ export default function ScreenOne() {
             }
           }
         });
+        // @ts-ignore
         obs.observe({ entryTypes: ["longtask"] as any });
         perfObsRef.current = obs;
       }
@@ -46,6 +64,7 @@ export default function ScreenOne() {
             }
           });
         });
+        // @ts-ignore
         paintObs.observe({ type: "paint", buffered: true } as any);
       }
     } catch (err) {
@@ -53,7 +72,10 @@ export default function ScreenOne() {
     }
 
     return () => {
-      clearTimeout(timer);
+      // 仅在开启自动推进时清理定时器（不删除原句式）
+      if (ALLOW_AUTO_ADV && timer != null) {
+        clearTimeout(timer as any);
+      }
       if (perfObsRef.current) {
         try { perfObsRef.current.disconnect(); } catch {}
         perfObsRef.current = null;
@@ -61,9 +83,9 @@ export default function ScreenOne() {
     };
   }, [phase]);
 
-  // 记录实际切换偏差
+  // 记录实际切换偏差（仅在允许自动推进时才有意义）
   useEffect(() => {
-    if (phase === "back" && tStartRef.current != null) {
+    if (ALLOW_AUTO_ADV && phase === "back" && tStartRef.current != null) {
       const drift = performance.now() - tStartRef.current - AUTO_ADV_MS;
       console.log("[Timing] AutoAdvance drift:", Math.round(drift), "ms");
       tStartRef.current = null;
