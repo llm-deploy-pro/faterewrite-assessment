@@ -255,11 +255,10 @@ export default function ScreenOneFront() {
     return [t, ""];
   })();
 
-  // 只保留第一句副标题
+  // 只保留第一句副标题（改为返回完整文本以避免以逗号收尾的孤段）
   const sub1FirstSentence = (() => {
     const s = COPY.sub1;
-    const endIndex = s.indexOf(',');
-    return endIndex > -1 ? s.slice(0, endIndex + 1) : s;
+    return s;
   })();
 
   return (
@@ -284,7 +283,8 @@ export default function ScreenOneFront() {
         {/* Assessment ready 状态标签 */}
         <p className="s1-status-label">
           <span className="status-dot"></span>
-          Assessment ready
+          {/* Status hint（16） */}
+          Map for tonight.
         </p>
 
         {/* CTA 按钮区域 */}
@@ -297,13 +297,14 @@ export default function ScreenOneFront() {
             aria-label="Continue to assessment"
             aria-describedby="privacy-note"
           >
-            <span className="s1-cta-text">See what we detected</span>
+            {/* Primary CTA（文本部分，不含箭头符号） */}
+            <span className="s1-cta-text">Unlock Tonight's Map</span>
             <span className="s1-cta-arrow">→</span>
           </button>
           
           {/* 隐私提示 */}
           <p id="privacy-note" className="s1-privacy-note">
-            Private. No subscription.
+            Private. One-time access.
           </p>
         </div>
 

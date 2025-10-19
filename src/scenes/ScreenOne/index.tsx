@@ -1,4 +1,5 @@
-﻿import { useState, useEffect, useRef } from "react";
+﻿// 文件路径: src/scenes/ScreenOne/ScreenOne.tsx
+import { useState, useEffect, useRef } from "react";
 import LuxuryBackground from "../../components/LuxuryBackground";
 import ScreenOneFront from "./ScreenOneFront";
 import ScreenOneBack from "./ScreenOneBack";
@@ -99,9 +100,12 @@ export default function ScreenOne() {
         <section className={`s1-layer ${phase === "front" ? "in" : "out"}`}>
           <ScreenOneFront />
         </section>
-        <section className={`s1-layer ${phase === "back" ? "in" : "out"}`}>
-          <ScreenOneBack />
-        </section>
+        {/* ✅ 仅在进入后屏时才挂载后屏，防止首屏就触发后屏打点 */}
+        {phase === "back" && (
+          <section className={`s1-layer ${phase === "back" ? "in" : "out"}`}>
+            <ScreenOneBack />
+          </section>
+        )}
       </div>
 
       <style>{`

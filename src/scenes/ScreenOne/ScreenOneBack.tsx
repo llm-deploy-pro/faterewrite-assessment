@@ -447,7 +447,7 @@ export default function ScreenOneBack() {
           .s1-assist,
           .s1-compliance {
             animation: none !important;
-            opacity: 1 !important;
+            opacity: none !important;
             transform: none !important;
           }
 
