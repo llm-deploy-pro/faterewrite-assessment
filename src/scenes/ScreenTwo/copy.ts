@@ -1,107 +1,57 @@
-﻿export const SCREEN_TWO_COPY = {
-  // S2A（前屏）- 保持不变
-  front: {
-    topBar: "Kinship",
-    
-    title: "Early signs confirm\na natural fit in selective circles",
-    
-    subtitle: [
-      "Your answers reveal the places you're read without effort—no self-translation required.",
-      "The full blueprint names the fastest opening doors for you."
-    ],
-    
-    valueCards: [
-      {
-        id: "card-1",
-        title: "Where you're instantly recognized",
-        body: "Settings that read you quickly—members-only dinners, invite-only salons, off-agenda drinks—so intros arrive warm.",
-        footer: "Full report: exact circle types + entry paths."
-      },
-      {
-        id: "card-2",
-        title: "Why you're preferred there",
-        body: "Your signals that glide past frictions others still meet.",
-        footer: "Full report: scarce signals + lived examples."
-      },
-      {
-        id: "card-3",
-        title: "What to say about yourself (right away)",
-        body: "One signature line that announces your value—before any conversation begins.",
-        footer: "Full report: complete, ready-to-use intro."
-      }
-    ],
-    
-    socialProof: {
-      mainText: "Trusted by 30,000+ women pursuing exceptional lives across industries and cities worldwide.",
-      weeklyCount: "4,247 chose clarity this week."
-    },
-    
-    cta: {
-      button: "See access options",
-      microcopy: "Pricing and delivery details on the next page"
-    }
-  },
-  
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // 🔥 S2B（后屏）- 策略B优化版（只保留1条评价）
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+﻿// src/scenes/ScreenTwo/copy.ts
+
+export const SCREEN_TWO_COPY = {
+  // Tonight's Map - 单页面文案（10分优化版）
   back: {
     topBar: "Kinship",
     
-    title: "Your recognition signal is\none step away",
-    
-    socialProof: {
-      heading: "30,000+ women didn't guess—they followed a profile that showed exactly where they're received as themselves.",
-      companies: {
-        finance: [],
-        consulting: [],
-        tech: []
-      },
-      stats: [
-        "4,247 chose clarity this week.",
-        "4.8/5 ★ — \"It felt like someone finally handed me the map.\"",
-        ""
-      ]
+    // Headline（强证据）- 优化破折号
+    headline: {
+      main: "Join 4,247 women who got Tonight's Map this week",
+      sub: "30,000+ already use it to stop guessing and be noticed—tonight" // 使用em dash
     },
     
-    priceAnchor: {
-      price: "",
-      heading: "",
-      items: [],
-      delivery: "",
-      ownership: ""
+    // Golden Testimonial（黄金证言）
+    testimonial: {
+      quote: "I went where the map said—the hotel bar by 8:30. Someone started talking to me within ten minutes. It felt effortless.",
+      author: "Sarah K., Los Angeles"
     },
     
-    assurance: {
-      line1: "No coaching pitch—just a map to rooms already ready for you.",
-      line2: "You're the right fit; translation isn't needed."
-    },
-    
-    cta: {
-      button: "Unlock my recognition signal",
-      microcopy: "See full details before you decide · $49"
-    },
-    
-    // 🔥 策略B：只保留最强力的1条评价（节省 ~70px）
-    testimonials: [
-      {
-        quote: "I stopped trying to fit. Once I saw my map, invitations found me—without forcing anything.",
-        author: "Sarah K., finally placed where her value reads"
-      }
+    // Value Recap（统一移除句号，保持一致性）
+    valueList: [
+      "Instant PDF — one page in under 60 seconds",
+      "Tonight's intel — 3 vetted venues, prime-time window, exact seat/zone",
+      "One subtle signal — a cue that lets them open first",
+      "One-time $49 — no subscription, no hidden fees",
+      "Private & compliant — not a matchmaking service; no names, no guarantees"
     ],
     
-    statsBar: {
-      text: "Trusted clarity for 30,000+ women building uncommon lives.",
-      rating: "",
-      clarity: "Your room is waiting."
+    // Final CTA
+    cta: {
+      button: "Get Tonight's Map — $49",
+      microcopy: "Updates daily by 5 PM. Instant download."
     },
     
-    faq: {
-      trigger: "",
-      items: []
+    // Footer reassurance
+    footer: {
+      text: "Trusted clarity for 30,000+ women. Your room is waiting."
+    }
+  },
+  
+  // 保留front属性以避免其他文件引用报错
+  front: {
+    topBar: "Kinship",
+    title: "",
+    subtitle: [],
+    valueCards: [],
+    socialProof: {
+      mainText: "",
+      weeklyCount: ""
     },
-    
-    complianceNote: "Company names represent self-reported affiliations and do not imply endorsement."
+    cta: {
+      button: "",
+      microcopy: ""
+    }
   }
 };
 
