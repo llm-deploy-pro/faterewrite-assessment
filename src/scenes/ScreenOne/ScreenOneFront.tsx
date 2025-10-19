@@ -204,7 +204,7 @@ export default function ScreenOneFront() {
     // CTA点击事件
     if (typeof window.fbq !== 'undefined') {
       if (markOnce("s1cc", isDev)) {
-        window.fbq('trackCustom', 'S1_CTA_Click', {
+        window.fbq('trackCustom', 'S1_Front_CTA_Click', {
           content_name: 'Assessment_CTA',
           content_category: 'Matching_Assessment',
           value: 49,
@@ -215,7 +215,7 @@ export default function ScreenOneFront() {
           referrer: document.referrer,
           frid: frid,
         }, { eventID: fbEventId });
-        console.log(`[FB打点] S1_CTA_Click 触发成功`, { frid, fbEventId });
+        console.log(`[FB打点] S1_Front_CTA_Click 触发成功`, { frid, fbEventId });
       }
     }
 

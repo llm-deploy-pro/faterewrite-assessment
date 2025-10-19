@@ -1,6 +1,4 @@
-﻿// 文件路径: src/scenes/ScreenOne/CTA.tsx
-
-/**
+﻿/**
  * ═══════════════════════════════════════════════════════════════════
  * CTA 按钮组件 - Quiet Luxury 调性（10分级终极版 + FB打点）
  * 
@@ -150,7 +148,7 @@ export default function CTA({
     // 🎯 事件：CTA点击（User级去重：key = s1cc）
     if (!hasClicked && typeof window.fbq !== 'undefined') {
       if (markOnce("s1cc", isDev)) {
-        window.fbq('trackCustom', 'S1_CTA_Click', {
+        window.fbq('trackCustom', 'S1_back_CTA_Click', {
           content_name: 'Assessment_CTA',
           content_category: 'Matching_Assessment',
           value: 49,

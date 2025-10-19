@@ -1,4 +1,3 @@
-// 文件路径: src/scenes/ScreenOne/ScreenOneBack.tsx
 import { useEffect, useRef } from "react";
 import CTA from "./CTA";
 import Wordmark from "@/components/Wordmark";
