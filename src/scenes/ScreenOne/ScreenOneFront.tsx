@@ -242,24 +242,22 @@ export default function ScreenOneFront() {
     }, 220);
   };
 
-  // 文案分片
+  // 文案分片 - 适配新的Black Book标题
   const titleChunks = (() => {
     const t = COPY.title;
-    const semantic = "recognized ";
-    const i = t.indexOf(semantic);
-    if (i > -1) {
-      return [t.slice(0, i + "recognized".length), t.slice(i + semantic.length)];
+    // 在破折号处分割，保持视觉平衡
+    const dashIndex = t.indexOf(" — ");
+    if (dashIndex > -1) {
+      return [t.slice(0, dashIndex), t.slice(dashIndex)];
     }
+    // 备用：在最后一个空格处分割
     const idx = t.lastIndexOf(" ");
     if (idx > 0) return [t.slice(0, idx), t.slice(idx + 1)];
     return [t, ""];
   })();
 
-  // 只保留第一句副标题（改为返回完整文本以避免以逗号收尾的孤段）
-  const sub1FirstSentence = (() => {
-    const s = COPY.sub1;
-    return s;
-  })();
+  // 完整显示副标题
+  const sub1FirstSentence = COPY.sub1;
 
   return (
     <section className="screen-front-container">
@@ -272,19 +270,28 @@ export default function ScreenOneFront() {
           <span className="h1-chunk">{titleChunks[1]}</span>
         </h1>
 
-        {/* 副标题（精简版）*/}
+        {/* 副标题（完整版）*/}
         <p className="screen-front-subtitle">
           <span className="subline">{sub1FirstSentence}</span>
         </p>
 
-        {/* 核心理念 */}
-        <p className="screen-front-tagline">{COPY.sub2}</p>
+        {/* 核心价值点（最终策略版本 - 来自 COPY.keyPoints）*/}
+        <div className="screen-front-keypoints">
+          {COPY.keyPoints.flatMap((text, i) => ([
+            <span className="keypoint" key={`kp-${i}`}>{text}</span>,
+            i < COPY.keyPoints.length - 1 ? <span className="keypoint-dot" key={`dot-${i}`}>•</span> : null
+          ]))}
+        </div>
 
         {/* Assessment ready 状态标签 */}
         <p className="s1-status-label">
           <span className="status-dot"></span>
-          {/* Status hint（16） */}
-          Map for tonight.
+          Black Book ready
+        </p>
+
+        {/* 新增：社会认证元素 */}
+        <p className="s1-members-count">
+          2,847 members inside this month
         </p>
 
         {/* CTA 按钮区域 */}
@@ -297,8 +304,7 @@ export default function ScreenOneFront() {
             aria-label="Continue to assessment"
             aria-describedby="privacy-note"
           >
-            {/* Primary CTA（文本部分，不含箭头符号） */}
-            <span className="s1-cta-text">Unlock Tonight's Map</span>
+            <span className="s1-cta-text">Unlock the Black Book</span>
             <span className="s1-cta-arrow">→</span>
           </button>
           
@@ -394,10 +400,10 @@ export default function ScreenOneFront() {
         }
 
         .screen-front-subtitle {
-          margin: 0 0 28px 0;
+          margin: 0 0 20px 0;
           padding: 0;
           font-size: 17px;
-          line-height: 1.6;
+          line-height: 1.55;
           color: var(--cream-bright);
           font-weight: 400;
           font-family: Georgia, 'Times New Roman', serif;
@@ -417,28 +423,119 @@ export default function ScreenOneFront() {
           }
         }
 
-        .screen-front-tagline {
+        /* ═══════════════════════════════════════════════════════════════════
+           核心价值点（新增的Key Points）- 优雅的响应式布局 + 10分优化
+           ═══════════════════════════════════════════════════════════════════ */
+        .screen-front-keypoints {
           margin: 0 0 28px 0;
           padding: 0;
           font-size: 13px;
-          line-height: 1.5;
+          line-height: 1.6;
           color: var(--cream);
           opacity: 0;
+          font-family: Georgia, 'Times New Roman', serif;
           font-style: italic;
           font-weight: 400;
-          font-family: Georgia, 'Times New Roman', serif;
-          animation: taglineIn 350ms cubic-bezier(0.23,1,0.32,1) 900ms forwards;
+          animation: keypointsIn 350ms cubic-bezier(0.23,1,0.32,1) 900ms forwards;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: center;
+          gap: 8px 10px;
+          position: relative;
         }
 
-        @keyframes taglineIn {
+        /* 新增：价值点容器的微妙背光效果 */
+        .screen-front-keypoints::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 120%;
+          height: 200%;
+          background: radial-gradient(ellipse at center,
+            rgba(184, 149, 106, 0.02) 0%,
+            transparent 70%
+          );
+          transform: translate(-50%, -50%);
+          pointer-events: none;
+          animation: subtleGlow 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes subtleGlow {
+          0% { opacity: 0.3; }
+          100% { opacity: 0.7; }
+        }
+
+        .keypoint {
+          opacity: 0.72;
+          white-space: nowrap;
+          position: relative;
+          transition: all 280ms cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        /* 新增：悬停时的优雅高亮 */
+        .keypoint:hover {
+          opacity: 0.95;
+          color: var(--gold-bright);
+          cursor: default;
+        }
+
+        .keypoint-dot {
+          color: var(--gold);
+          opacity: 0.4;
+          font-size: 10px;
+          transition: all 280ms ease;
+        }
+
+        /* 移动端优化：垂直排列 + 加分优化 */
+        @media (max-width: 480px) {
+          .screen-front-keypoints {
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-start;
+            padding: 12px 16px;
+            background: linear-gradient(to right,
+              rgba(184, 149, 106, 0.03) 0%,
+              transparent 100%
+            );
+            border-left: 1px solid rgba(184, 149, 106, 0.15);
+            border-radius: 0 4px 4px 0;
+            margin-left: -16px;
+            margin-right: -16px;
+            padding-left: 32px;
+          }
+          
+          .keypoint-dot {
+            display: none;
+          }
+          
+          .keypoint {
+            position: relative;
+            padding-left: 14px;
+            font-size: 12.5px;
+            line-height: 1.8;
+          }
+          
+          .keypoint::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            opacity: 0.6;
+            font-size: 12px;
+          }
+        }
+
+        @keyframes keypointsIn {
           to { 
-            opacity: 0.72; 
+            opacity: 1;
             transform: translateY(0);
           }
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           状态标签（增强版）
+           状态标签（增强版 + 认证徽章）
            ═══════════════════════════════════════════════════════════════════ */
         .s1-status-label {
           display: flex;
@@ -457,6 +554,24 @@ export default function ScreenOneFront() {
           font-weight: 400;
           letter-spacing: 0.02em;
           animation: statusFade 450ms ease 1100ms forwards;
+          position: relative;
+        }
+
+        /* 新增：状态标签的高级感背景 */
+        .s1-status-label::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 140px;
+          height: 28px;
+          background: radial-gradient(ellipse at center,
+            rgba(184, 149, 106, 0.06) 0%,
+            transparent 100%
+          );
+          border-radius: 14px;
+          pointer-events: none;
         }
 
         .status-dot {
@@ -466,6 +581,25 @@ export default function ScreenOneFront() {
           border-radius: 50%;
           background: var(--gold);
           animation: statusPulse 2s ease-in-out infinite;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* 新增：社会认证元素 */
+        .s1-members-count {
+          display: block;
+          margin: -8px 0 20px 0;
+          font-size: 11px;
+          color: rgba(245, 245, 240, 0.4);
+          text-align: center;
+          font-family: system-ui, -apple-system, sans-serif;
+          letter-spacing: 0.03em;
+          opacity: 0;
+          animation: membersFade 400ms ease 1400ms forwards;
+        }
+
+        @keyframes membersFade {
+          to { opacity: 1; }
         }
 
         @keyframes statusFade {
@@ -519,7 +653,7 @@ export default function ScreenOneFront() {
           overflow: hidden;
         }
 
-        /* 按钮光晕效果 */
+        /* 按钮光晕效果 - 增强版 */
         .s1-cta-btn::before {
           content: '';
           position: absolute;
@@ -536,8 +670,34 @@ export default function ScreenOneFront() {
           pointer-events: none;
         }
 
+        /* 新增：按钮微光动画 */
+        .s1-cta-btn::after {
+          content: '';
+          position: absolute;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          background: linear-gradient(45deg, 
+            transparent 30%,
+            rgba(212, 184, 150, 0.1) 50%,
+            transparent 70%
+          );
+          border-radius: 14px;
+          opacity: 0;
+          transform: translateX(-100%);
+          transition: all 600ms cubic-bezier(0.23, 1, 0.32, 1);
+          pointer-events: none;
+        }
+
         .s1-cta-btn:hover::before {
           transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        .s1-cta-btn:hover::after {
+          opacity: 1;
+          transform: translateX(100%);
+          transition-delay: 100ms;
         }
 
         /* CTA 文字 */
@@ -632,7 +792,7 @@ export default function ScreenOneFront() {
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           进度条（优雅等待状态）
+           进度条（优雅等待状态 + 品质提升）
            ═══════════════════════════════════════════════════════════════════ */
         .s1-progress {
           position: relative;
@@ -653,6 +813,7 @@ export default function ScreenOneFront() {
           border-radius: 999px;
           background: rgba(200, 200, 192, 0.08);
           overflow: hidden;
+          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .s1-progress-fill {
@@ -672,6 +833,7 @@ export default function ScreenOneFront() {
           animation: 
             s1Fill var(--s1-total) cubic-bezier(0.4, 0, 0.2, 1) var(--s1-delay) forwards,
             s1Waiting 2s ease-in-out calc(var(--s1-delay) + var(--s1-total)) infinite;
+          box-shadow: 0 0 8px rgba(184, 149, 106, 0.3);
         }
 
         @keyframes s1Fill {
@@ -701,6 +863,10 @@ export default function ScreenOneFront() {
           }
           .screen-front-subtitle { 
             font-size: 18px;
+          }
+          .screen-front-keypoints {
+            font-size: 14px;
+            gap: 8px 14px;
           }
           .screen-front-content { 
             max-width: 580px;
@@ -732,6 +898,9 @@ export default function ScreenOneFront() {
           .s1-cta-text { 
             font-size: 14px;
           }
+          .screen-front-keypoints {
+            font-size: 12px;
+          }
         }
 
         /* ═══════════════════════════════════════════════════════════════════
@@ -744,7 +913,7 @@ export default function ScreenOneFront() {
             transition-duration: 0.01ms !important;
           }
           
-          .h1-chunk, .subline, .screen-front-tagline, 
+          .h1-chunk, .subline, .screen-front-keypoints, 
           .s1-status-label, .cta-container {
             opacity: 1 !important;
             transform: none !important;

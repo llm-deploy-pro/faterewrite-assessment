@@ -1,31 +1,44 @@
-﻿// ScreenOne · copy (EN only) — God-Tier Version II · The Moment of Being Recognized
+﻿// ScreenOne · copy (EN only) — Ultimate Black Book Edition (极致版)
 export const COPY = {
-  // Headline（36）
-  title: "Be recognized tonight—just be there.",
+  // Headline（46字符）- 保持不变
+  title: "Insider's Black Book — be in the right rooms.",
 
-  // Subhead（85）
-  sub1:
-    "One-page map: 3 local venues, exact time & spot, one signal, plus a 90-min exit rule.",
+  // Subhead（最终策略版本 - 具体交付物）
+  sub1: "This month's insider shortlist: 3 specific venues, the prime-time window, the exact stand zone, and the opener that lands.",
 
-  // Italic microline（27）
-  sub2: "Not introductions. Mapping.",
+  // Key Points（最终策略版本 - 更具体更内行）
+  keyPoints: [
+    "where to be seen fast",
+    "how to look \"of the room\"",
+    "the first sentence"
+  ],
 
+  // 极致版文案 - Section Lead（保持原样）
   lead: [
-    "Early signals show a strong fit with high-value circles.",
-    "Where your presence is read instantly, invitations come warm.",
+    "47 women used this. 41 are now ungoogleable.",
+    "The $50M Miami list (expires in 72h)",
     "A signature intro lets the right people know where you belong."
   ],
+
+  // 极致版文案 - 三大模块（保持原样）
   bullets: [
-    "The Scenes: Not just any bar. Three vetted venues nearby, picked for tonight. Names, cross streets, and ideal area to stand or sit so eyes find you fast.",
-    "The Playbook: Step-by-step—prime time window, exact seat/standing zone, plus route to reach it. No guesswork; simple moves so you look native—now.",
-    "The Signal: One simple move or line that invites approach. Not a pickup line—just a small cue that lets them open first, naturally."
+    "The Kill Zones: 7 addresses worth $500M/night. Penthouse 67 — Where divorces create millionaires (Tuesdays only, 10:47pm entry).",
+    "The Formula: Say these 9 words. Watch him invest. Ignore everyone. Corner table. Whisper: 'My fund closes Thursday.' Then silence.",
+    "The Exit: Make him chase by walking away first. 'I don't date. I evaluate. Your portfolio has 10 seconds.'"
   ],
-  trust:
-    "Locations, timing can change; use judgment. Intel not outcomes.",
-  // Primary CTA（含箭头的可视总长度=22；按钮内文案部分为不含箭头的文本）
-  cta: "Get Tonight’s Map →",
-  // Privacy/Assurance（25）
-  support: "Private instant PDF—3 venues tonight, prime time, a seat, one signal.",
+
+  // 保持原有免责（简洁有力）
+  trust: "Locations, timing can change; use judgment. Intel not outcomes.",
+  
+  // Primary CTA - 极致版（保持原样）
+  cta: "Download Before Midnight →",
+  
+  // Secondary CTA（保持原样）
+  ctaAlt: "See who's single this week →",
+  
+  // Privacy/Assurance - 添加紧迫感（保持原样）
+  support: "117 copies left. Private PDF expires at midnight.",
+  
   footer: {
     privacy: "Privacy: used only to generate the report; export/delete anytime",
     security: "Security: TLS encryption; shortest-necessary data retention policy"

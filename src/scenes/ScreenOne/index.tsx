@@ -1,11 +1,13 @@
 ﻿// 文件路径: src/scenes/ScreenOne/ScreenOne.tsx
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import LuxuryBackground from "../../components/LuxuryBackground";
 import ScreenOneFront from "./ScreenOneFront";
 import ScreenOneBack from "./ScreenOneBack";
 
 export default function ScreenOne() {
   const [phase, setPhase] = useState<"front" | "back">("front");
+  const navigate = useNavigate();
 
   // 固定 3s 自动进入（不添加任意交互提前进入）
   const AUTO_ADV_MS = 3000;
@@ -17,12 +19,19 @@ export default function ScreenOne() {
   const tStartRef = useRef<number | null>(null);
   const perfObsRef = useRef<PerformanceObserver | null>(null);
 
-  // ✅ 新增：仅在 CTA 明确触发时推进到后屏（不破坏原结构）
+  // ✅ 新增：仅在 CTA 明确触发时推进到后屏；若已在后屏则进入第二屏
   useEffect(() => {
-    const onContinue = () => setPhase("back");
+    const onContinue = () => {
+      if (phase === "front") {
+        setPhase("back");
+      } else {
+        // 已在后屏，进入第二屏（保持优雅离场逻辑由触发方负责）
+        navigate("/screen-2");
+      }
+    };
     window.addEventListener("s1:cta:continue", onContinue);
     return () => window.removeEventListener("s1:cta:continue", onContinue);
-  }, []);
+  }, [phase, navigate]);
 
   useEffect(() => {
     if (phase !== "front") return;
