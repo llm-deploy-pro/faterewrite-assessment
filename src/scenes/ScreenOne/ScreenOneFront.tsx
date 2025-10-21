@@ -1,4 +1,3 @@
-// 文件路径: src/scenes/ScreenOne/ScreenOneFront.tsx
 import { useEffect, useRef, useState } from "react";
 import Wordmark from "@/components/Wordmark";
 import { COPY } from "./copy";
@@ -242,7 +241,7 @@ export default function ScreenOneFront() {
     }, 220);
   };
 
-  // 文案分片 - 适配新的Black Book标题
+  // 文案分片 - 适配新的标题
   const titleChunks = (() => {
     const t = COPY.title;
     // 在破折号处分割，保持视觉平衡
@@ -261,7 +260,14 @@ export default function ScreenOneFront() {
 
   return (
     <section className="screen-front-container">
-      <Wordmark name="Kinship" href="/" />
+      <Wordmark name="PRIME WINDOW" href="/" />
+      
+      {/* 新增：顶部小字标签 - 增强版 */}
+      <p className="s1-top-label">
+        <span className="label-prefix">SYSTEM LOG</span>
+        <span className="label-divider">—</span>
+        <span className="label-suffix">7B SELF-CHECK</span>
+      </p>
 
       <div className="screen-front-content">
         {/* 主标题 */}
@@ -283,15 +289,16 @@ export default function ScreenOneFront() {
           ]))}
         </div>
 
-        {/* Assessment ready 状态标签 */}
+        {/* 状态标签 - 替换文案 */}
         <p className="s1-status-label">
           <span className="status-dot"></span>
-          Black Book ready
+          Self-check engine ready
         </p>
 
-        {/* 新增：社会认证元素 */}
+        {/* 社会认证元素 - 增强版 */}
         <p className="s1-members-count">
-          2,847 members inside this month
+          <span className="count-number">487</span>
+          <span className="count-text">7B signatures logged this cycle</span>
         </p>
 
         {/* CTA 按钮区域 */}
@@ -304,13 +311,13 @@ export default function ScreenOneFront() {
             aria-label="Continue to assessment"
             aria-describedby="privacy-note"
           >
-            <span className="s1-cta-text">Unlock the Black Book</span>
+            <span className="s1-cta-text">Generate My Debug Report</span>
             <span className="s1-cta-arrow">→</span>
           </button>
           
-          {/* 隐私提示 */}
+          {/* 隐私提示 - 替换文案 */}
           <p id="privacy-note" className="s1-privacy-note">
-            Private. One-time access.
+            Encrypted. One-time generation. Not therapy.
           </p>
         </div>
 
@@ -356,6 +363,77 @@ export default function ScreenOneFront() {
           padding: 24px;
           box-sizing: border-box;
           background: var(--dark-blue);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           新增：顶部小字标签样式 - 增强版
+           ═══════════════════════════════════════════════════════════════════ */
+        .s1-top-label {
+          position: absolute;
+          top: 60px;
+          left: 50%;
+          transform: translateX(-50%);
+          margin: 0;
+          padding: 0;
+          font-size: 10px;
+          line-height: 1.5;
+          font-family: 'Courier New', monospace;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          opacity: 0;
+          animation: topLabelReveal 800ms ease 200ms forwards;
+        }
+
+        .label-prefix {
+          color: rgba(184, 149, 106, 0.5);
+          position: relative;
+          animation: glitchText 8s infinite;
+        }
+
+        .label-divider {
+          color: rgba(184, 149, 106, 0.3);
+          font-weight: 100;
+        }
+
+        .label-suffix {
+          color: rgba(212, 184, 150, 0.7);
+          position: relative;
+          font-weight: 600;
+          text-shadow: 0 0 10px rgba(212, 184, 150, 0.2);
+        }
+
+        /* 故障文字效果 */
+        @keyframes glitchText {
+          0%, 100% { 
+            text-shadow: none;
+            opacity: 1;
+          }
+          92% {
+            text-shadow: 
+              -1px 0 rgba(255, 0, 0, 0.3),
+              1px 0 rgba(0, 255, 255, 0.3);
+            opacity: 0.9;
+          }
+          93% {
+            text-shadow: none;
+            opacity: 1;
+          }
+        }
+
+        @keyframes topLabelReveal {
+          0% { 
+            opacity: 0;
+            transform: translateX(-50%) translateY(-5px);
+            filter: blur(4px);
+          }
+          100% { 
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            filter: blur(0);
+          }
         }
 
         .screen-front-content {
@@ -585,21 +663,65 @@ export default function ScreenOneFront() {
           z-index: 1;
         }
 
-        /* 新增：社会认证元素 */
+        /* ═══════════════════════════════════════════════════════════════════
+           社会认证元素 - 增强版
+           ═══════════════════════════════════════════════════════════════════ */
         .s1-members-count {
-          display: block;
+          display: flex;
+          align-items: baseline;
+          justify-content: center;
+          gap: 6px;
           margin: -8px 0 20px 0;
           font-size: 11px;
-          color: rgba(245, 245, 240, 0.4);
           text-align: center;
-          font-family: system-ui, -apple-system, sans-serif;
-          letter-spacing: 0.03em;
+          font-family: 'Courier New', monospace;
+          letter-spacing: 0.05em;
           opacity: 0;
-          animation: membersFade 400ms ease 1400ms forwards;
+          animation: membersReveal 600ms ease 1400ms forwards;
+          position: relative;
         }
 
-        @keyframes membersFade {
-          to { opacity: 1; }
+        .count-number {
+          font-size: 14px;
+          font-weight: 700;
+          color: rgba(212, 184, 150, 0.8);
+          text-shadow: 
+            0 0 20px rgba(212, 184, 150, 0.4),
+            0 0 40px rgba(184, 149, 106, 0.2);
+          animation: numberPulse 3s ease-in-out infinite;
+        }
+
+        .count-text {
+          color: rgba(245, 245, 240, 0.35);
+          text-transform: uppercase;
+          font-size: 10px;
+          font-weight: 400;
+        }
+
+        @keyframes membersReveal {
+          0% { 
+            opacity: 0;
+            transform: scale(0.95) translateY(5px);
+          }
+          100% { 
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        @keyframes numberPulse {
+          0%, 100% { 
+            opacity: 0.8;
+            text-shadow: 
+              0 0 20px rgba(212, 184, 150, 0.4),
+              0 0 40px rgba(184, 149, 106, 0.2);
+          }
+          50% { 
+            opacity: 1;
+            text-shadow: 
+              0 0 25px rgba(212, 184, 150, 0.6),
+              0 0 50px rgba(184, 149, 106, 0.3);
+          }
         }
 
         @keyframes statusFade {
@@ -857,6 +979,13 @@ export default function ScreenOneFront() {
            响应式适配
            ═══════════════════════════════════════════════════════════════════ */
         @media (min-width: 769px) {
+          .s1-top-label {
+            top: 80px;
+            font-size: 11px;
+          }
+          .label-suffix {
+            font-size: 12px;
+          }
           .screen-front-title { 
             font-size: 42px; 
             line-height: 1.22;
@@ -873,6 +1002,15 @@ export default function ScreenOneFront() {
           }
           .s1-status-label { 
             font-size: 13px;
+          }
+          .s1-members-count {
+            font-size: 12px;
+          }
+          .count-number {
+            font-size: 16px;
+          }
+          .count-text {
+            font-size: 11px;
           }
           .s1-cta-btn { 
             height: 54px;
@@ -891,6 +1029,9 @@ export default function ScreenOneFront() {
 
         /* 极小屏适配 */
         @media (max-width: 359px) {
+          .s1-top-label {
+            font-size: 9px;
+          }
           .s1-cta-btn { 
             height: 46px; 
             padding: 0 22px;
@@ -900,6 +1041,12 @@ export default function ScreenOneFront() {
           }
           .screen-front-keypoints {
             font-size: 12px;
+          }
+          .count-number {
+            font-size: 13px;
+          }
+          .count-text {
+            font-size: 9px;
           }
         }
 
@@ -914,7 +1061,7 @@ export default function ScreenOneFront() {
           }
           
           .h1-chunk, .subline, .screen-front-keypoints, 
-          .s1-status-label, .cta-container {
+          .s1-status-label, .cta-container, .s1-top-label, .s1-members-count {
             opacity: 1 !important;
             transform: none !important;
           }

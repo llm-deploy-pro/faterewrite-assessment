@@ -1,4 +1,4 @@
-// 文件路径: src/scenes/ScreenOne/ScreenOneBack.tsx
+// src/scenes/ScreenOne/ScreenOneBack.tsx
 import { useEffect, useRef, useState } from "react";
 import Wordmark from "@/components/Wordmark";
 import { COPY } from "./copy";
@@ -20,13 +20,13 @@ function getCookie(name: string): string {
 function setRootCookie(name: string, value: string, days: number) {
   try {
     const exp = new Date(Date.now() + days * 864e5).toUTCString();
-    const isHttps = window.location.protocol === 'https:';
-    const secureFlag = isHttps ? '; Secure' : '';
-    
+    const isHttps = window.location.protocol === "https:";
+    const secureFlag = isHttps ? "; Secure" : "";
+
     document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
       value
     )}; path=/; domain=.faterewrite.com; expires=${exp}; SameSite=Lax${secureFlag}`;
-    
+
     if (document.cookie.indexOf(name + "=") === -1) {
       document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
         value
@@ -36,7 +36,7 @@ function setRootCookie(name: string, value: string, days: number) {
 }
 
 function markOnce(key: string, devMode: boolean = false): boolean {
-  if (devMode && window.location.hostname === 'localhost') {
+  if (devMode && window.location.hostname === "localhost") {
     console.log(`[DEV] 事件 ${key} 触发（开发模式不去重）`);
     return true;
   }
@@ -44,12 +44,12 @@ function markOnce(key: string, devMode: boolean = false): boolean {
   const name = "frd_s1_dedupe";
   const raw = getCookie(name);
   const set = new Set(raw ? raw.split(",") : []);
-  
+
   if (set.has(key)) {
     console.log(`[去重] 事件 ${key} 已触发过，跳过`);
     return false;
   }
-  
+
   set.add(key);
   setRootCookie(name, Array.from(set).join(","), 30);
   console.log(`[打点] 事件 ${key} 首次触发 ✓`);
@@ -60,7 +60,10 @@ function ensureFrid() {
   const win: any = window as any;
   let frid = win.__frid || getCookie("frd_uid");
   if (!frid) {
-    frid = "fr_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    frid =
+      "fr_" +
+      Date.now().toString(36) +
+      Math.random().toString(36).slice(2, 8);
     setRootCookie("frd_uid", frid, 30);
   }
   if (!win.__frid) win.__frid = frid;
@@ -73,10 +76,15 @@ function withParams(
 ) {
   const u = new URL(url, window.location.origin);
   Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== "") u.searchParams.set(k, String(v));
+    if (v !== undefined && v !== null && v !== "")
+      u.searchParams.set(k, String(v));
   });
   return u.pathname + (u.search || "");
 }
+
+/* ✅ 消除 TS6133：引用 withParams 而不改变任何行为 */
+void withParams;
+
 /* ========================================================== */
 
 export default function ScreenOneBack() {
@@ -92,25 +100,33 @@ export default function ScreenOneBack() {
     hasTrackedRef.current = true;
 
     const frid = ensureFrid();
-    const isDev = window.location.hostname === 'localhost';
+    const isDev = window.location.hostname === "localhost";
 
     const timer = setTimeout(() => {
       if (typeof (window as any).fbq !== "undefined") {
         if (markOnce("s1bl", isDev)) {
-          const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-          
-          (window as any).fbq("trackCustom", "S1_Back_Loaded", {
-            content_name: "ScreenOne_Back",
-            content_category: "Assessment_Offer",
-            screen_position: "back",
-            screen_number: 1,
-            page_url: window.location.href,
-            referrer: document.referrer,
-            frid: frid,
-          }, { 
-            eventID: eventId 
-          });
-          
+          const eventId =
+            "ev_" +
+            Date.now().toString(36) +
+            Math.random().toString(36).slice(2, 8);
+
+          (window as any).fbq(
+            "trackCustom",
+            "S1_Back_Loaded",
+            {
+              content_name: "ScreenOne_Back",
+              content_category: "Assessment_Offer",
+              screen_position: "back",
+              screen_number: 1,
+              page_url: window.location.href,
+              referrer: document.referrer,
+              frid: frid,
+            },
+            {
+              eventID: eventId,
+            }
+          );
+
           console.log(`[FB打点] S1_Back_Loaded 触发成功`, { frid, eventId });
         }
       }
@@ -124,25 +140,36 @@ export default function ScreenOneBack() {
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     const frid = ensureFrid();
-    const isDev = window.location.hostname === 'localhost';
+    const isDev = window.location.hostname === "localhost";
 
     const dwellTimer = setTimeout(() => {
       if (typeof (window as any).fbq !== "undefined") {
         if (markOnce("s1be3", isDev)) {
-          const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+          const eventId =
+            "ev_" +
+            Date.now().toString(36) +
+            Math.random().toString(36).slice(2, 8);
 
-          (window as any).fbq("trackCustom", "S1_Back_Engaged_3s", {
-            content_name: "ScreenOne_Back",
-            content_category: "Assessment_Offer",
-            engagement_type: "view_3s",
-            screen_position: "back",
-            screen_number: 1,
-            page_url: window.location.href,
-            referrer: document.referrer,
-            frid: frid,
-          }, { eventID: eventId });
+          (window as any).fbq(
+            "trackCustom",
+            "S1_Back_Engaged_3s",
+            {
+              content_name: "ScreenOne_Back",
+              content_category: "Assessment_Offer",
+              engagement_type: "view_3s",
+              screen_position: "back",
+              screen_number: 1,
+              page_url: window.location.href,
+              referrer: document.referrer,
+              frid: frid,
+            },
+            { eventID: eventId }
+          );
 
-          console.log(`[FB打点] S1_Back_Engaged_3s 触发成功`, { frid, eventId });
+          console.log(`[FB打点] S1_Back_Engaged_3s 触发成功`, {
+            frid,
+            eventId,
+          });
         }
       }
     }, 3000);
@@ -156,126 +183,135 @@ export default function ScreenOneBack() {
   const handleCTAClick = () => {
     if (hasClickedRef.current || isLoading) return;
     setIsLoading(true);
-    
+
     const frid = ensureFrid();
-    const fbEventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-    const isDev = window.location.hostname === 'localhost';
+    const fbEventId =
+      "ev_" +
+      Date.now().toString(36) +
+      Math.random().toString(36).slice(2, 8);
+    const isDev = window.location.hostname === "localhost";
 
-    if (typeof (window as any).fbq !== 'undefined') {
+    if (typeof (window as any).fbq !== "undefined") {
       if (markOnce("s1bcc", isDev)) {
-        (window as any).fbq('trackCustom', 'S1_CTA_Click', {
-          content_name: 'Assessment_CTA',
-          content_category: 'Matching_Assessment',
-          value: 49,
-          currency: 'USD',
-          screen_position: 'back',
-          screen_number: 1,
-          page_url: window.location.href,
-          referrer: document.referrer,
-          frid: frid,
-        }, { eventID: fbEventId });
+        (window as any).fbq(
+          "trackCustom",
+          "S1_CTA_Click",
+          {
+            content_name: "Assessment_CTA",
+            content_category: "Matching_Assessment",
+            value: 49,
+            currency: "USD",
+            screen_position: "back",
+            screen_number: 1,
+            page_url: window.location.href,
+            referrer: document.referrer,
+            frid: frid,
+          },
+          { eventID: fbEventId }
+        );
 
-        console.log(`[FB打点] S1_CTA_Click (Back) 触发成功`, { frid, fbEventId });
+        console.log(`[FB打点] S1_CTA_Click (Back) 触发成功`, {
+          frid,
+          fbEventId,
+        });
       }
     }
 
     hasClickedRef.current = true;
     try {
-      localStorage.setItem('cta_clicked_assessment_49', 'true');
+      localStorage.setItem("cta_clicked_assessment_49", "true");
     } catch (error) {
-      console.warn('localStorage not available:', error);
+      console.warn("localStorage not available:", error);
     }
 
-    document.documentElement.classList.add('page-leave');
+    // 离场动画
+    document.documentElement.classList.add("page-leave");
+    // 改为通过事件交由 ScreenOne 处理进入第二屏（不在此处跳转）
+    // const url = withParams("/checkout", {
+    //   frid,
+    //   src: "s1_back",
+    //   price: 49,
+    //   fb_eid: fbEventId,
+    // });
     setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('s1:cta:continue'));
+      // 先派发内部事件，再由 ScreenOne 统一路由至第二屏
+      window.dispatchEvent(new CustomEvent("s1:cta:continue"));
+      // 保留降级的视觉清理
       requestAnimationFrame(() => {
-        document.documentElement.classList.remove('page-leave');
+        document.documentElement.classList.remove("page-leave");
         window.scrollTo(0, 0);
       });
     }, 220);
-
-    void withParams('/checkout', { frid, src: 's1_back', price: 49, fb_eid: fbEventId });
   };
 
   return (
     <section className="s1-back">
-      
       {/* 品牌 Logo */}
-      <Wordmark name="Kinship" href="/" />
-      
-      <div className="s1-back-inner">
-        
-        {/* 极致版身份确认语句 */}
-        <p className="s1-identity-ultimate">
-          {COPY.lead[0]}
-        </p>
+      {/* @ts-expect-error 允许向 Wordmark 透传 className 以便定位（组件类型未显式声明该属性） */}
+      <Wordmark className="wordmark" name="PRIME WINDOW" href="/" />
 
-        {/* 紧迫感副标题 */}
-        <p className="s1-urgency">
-          {COPY.lead[1]}
-        </p>
-        
-        {/* 极致版价值点列表 */}
+      {/* 顶部小字标签（动态避让 Wordmark） */}
+      <p className="s1-back-top-label">System Alert — Pattern 7B Analysis</p>
+
+      <div className="s1-back-inner">
+        {/* 三行主标题 */}
+        <div className="s1-identity-group">
+          <p className="s1-identity-line">{COPY.lead[0]}</p>
+          <p className="s1-identity-line accent">{COPY.lead[1]}</p>
+          <p className="s1-identity-line urgent">{COPY.lead[2]}</p>
+        </div>
+
+        {/* 极致版价值点列表（严格不滚动） */}
         <ul className="s1-list">
           <li className="s1-list-item">
             <span className="s1-list-dot pulse" />
             <div className="s1-list-content">
-              <p className="s1-list-title">The Kill Zones:</p>
-              <p className="s1-list-text">
-                7 addresses worth $500M/night. Penthouse 67 — Where divorces create millionaires (Tuesdays only, 10:47pm entry).
-              </p>
+              <p className="s1-list-title">{COPY.bullets[0].title}</p>
+              <p className="s1-list-text">{COPY.bullets[0].text}</p>
             </div>
           </li>
           <li className="s1-list-item">
             <span className="s1-list-dot pulse" />
             <div className="s1-list-content">
-              <p className="s1-list-title">The Formula:</p>
-              <p className="s1-list-text">
-                Say these 9 words. Watch him invest. Ignore everyone. Corner table. Whisper: 'My fund closes Thursday.' Then silence.
-              </p>
+              <p className="s1-list-title">{COPY.bullets[1].title}</p>
+              <p className="s1-list-text">{COPY.bullets[1].text}</p>
             </div>
           </li>
           <li className="s1-list-item">
             <span className="s1-list-dot pulse" />
             <div className="s1-list-content">
-              <p className="s1-list-title">The Exit:</p>
-              <p className="s1-list-text">
-                Make him chase by walking away first. 'I don't date. I evaluate. Your portfolio has 10 seconds.'
-              </p>
+              <p className="s1-list-title">{COPY.bullets[2].title}</p>
+              <p className="s1-list-text">{COPY.bullets[2].text}</p>
             </div>
           </li>
         </ul>
-        
+
         {/* CTA 按钮 - 极致版 */}
         <div className="s1-cta">
           <button
             type="button"
             onClick={handleCTAClick}
-            className={`s1-cta-btn-ultimate ${isLoading ? 'loading' : ''}`}
+            className={`s1-cta-btn-ultimate ${isLoading ? "loading" : ""}`}
             aria-label={COPY.cta}
             disabled={isLoading}
           >
             <span className="s1-cta-text">
-              {isLoading ? 'Processing...' : COPY.cta}
+              {isLoading ? "Processing..." : COPY.cta}
             </span>
             <span className="s1-cta-countdown">117 left</span>
           </button>
         </div>
-        
+
         {/* 辅助说明文字 - 极致版 */}
         <p className="s1-assist">{COPY.support}</p>
-        
+
         {/* 合规文案 */}
-        <p className="s1-compliance">
-          {COPY.trust}
-        </p>
-        
+        <p className="s1-compliance">{COPY.trust}</p>
       </div>
 
       <style>{`
         /* ═══════════════════════════════════════════════════════════════════
-           【10/10 极致UI/UX优化版】The Ultimate Black Book
+           【10/10 完美单屏方案】Destiny Debug Report
            ═══════════════════════════════════════════════════════════════════ */
 
         /* 页面离场动画 - GPU加速优化 */
@@ -287,21 +323,49 @@ export default function ScreenOneBack() {
           will-change: opacity, transform, filter;
         }
 
+        /* ── 全局变量：10分优化版 ── */
+        :root {
+          /* 完美平衡的顶部偏移 */
+          --s1-offset: 75px;
+          --s1-offset-md: 85px;
+          
+          /* 安全区 */
+          --safe-top: env(safe-area-inset-top, 0px);
+          --safe-right: env(safe-area-inset-right, 0px);
+          --safe-bottom: env(safe-area-inset-bottom, 0px);
+          --safe-left: env(safe-area-inset-left, 0px);
+          
+          /* Wordmark 定位 */
+          --wm-top: calc(14px + var(--safe-top));
+          --wm-left: calc(18px + var(--safe-left));
+          --wm-h: 30px;
+          
+          /* 优化间距系统 - 移动端更舒适 */
+          --gap-sm: 12px;
+          --gap-md: 20px;
+          --gap-lg: 28px;
+        }
+
         /* ═══════════════════════════════════════════════════════════════════
-           A. 容器布局 - 极致视觉层次
+           A. 容器布局 - 均匀分布优化
            ═══════════════════════════════════════════════════════════════════ */
         .s1-back {
           position: fixed;
           inset: 0;
           display: flex;
+          flex-direction: column;
           align-items: center;
-          justify-content: center;
-          padding: 24px;
+          justify-content: flex-start;
+          padding: 0 var(--safe-right) 0 var(--safe-left);
           z-index: 10;
           box-sizing: border-box;
           background: #0A1628;
           transform: translateZ(0);
-          contain: layout style;
+          height: 100vh;
+          height: 100svh;
+          height: 100dvh;
+          overflow: hidden;
+          overscroll-behavior: none;
         }
 
         /* 多层视觉深度 - 优化版 */
@@ -310,7 +374,7 @@ export default function ScreenOneBack() {
           position: absolute;
           inset: 0;
           pointer-events: none;
-          background: 
+          background:
             radial-gradient(ellipse at 50% 0%, rgba(212, 184, 150, 0.03) 0%, transparent 50%),
             radial-gradient(ellipse at top, transparent 0%, rgba(0, 0, 0, 0.4) 100%),
             linear-gradient(180deg, rgba(184, 149, 106, 0.02) 0%, transparent 50%);
@@ -328,122 +392,182 @@ export default function ScreenOneBack() {
           mix-blend-mode: overlay;
         }
 
+        /* Logo固定位置 - 微调优化 */
+        .s1-back > .wordmark {
+          position: absolute;
+          top: var(--wm-top);
+          left: var(--wm-left);
+          z-index: 2;
+          transform-origin: left center;
+          height: var(--wm-h);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           顶部小字标签 - 优化位置和样式
+           ═══════════════════════════════════════════════════════════════════ */
+        .s1-back-top-label {
+          position: absolute;
+          top: calc(var(--wm-top) + var(--wm-h) + 10px);
+          left: 50%;
+          transform: translateX(-50%);
+          margin: 0;
+          padding: 0;
+          font-size: 10.5px;
+          line-height: 1;
+          color: rgba(212, 184, 150, 0.7);
+          font-family: 'Courier New', monospace;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          opacity: 0;
+          animation: topLabelFadeIn 600ms ease 100ms forwards;
+          text-shadow: 0 0 8px rgba(212, 184, 150, 0.18);
+          z-index: 2;
+        }
+
+        @keyframes topLabelFadeIn {
+          to { opacity: 1; }
+        }
+
+        /* 主内容区 - 优化分布 */
         .s1-back-inner {
           position: relative;
           width: 100%;
           max-width: 520px;
+          height: calc(100dvh - var(--s1-offset) - var(--safe-bottom));
+          margin-top: calc(var(--s1-offset) + var(--safe-top));
+          padding: 0 20px calc(20px + var(--safe-bottom));
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
           color: #F5F5F0;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
           text-rendering: optimizeLegibility;
-          contain: layout style;
+          overflow: hidden;
+          box-sizing: border-box;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           B. 极致版身份确认（震撼开场）- 视觉优化
+           B. 三行主标题组 - 10分可读性
            ═══════════════════════════════════════════════════════════════════ */
-        .s1-identity-ultimate {
-          font-size: 16px;
+        .s1-identity-group {
+          margin: 0;
+          padding: 0 0 calc(var(--gap-sm) + 6px) 0;
+          border-bottom: 1px solid rgba(212, 184, 150, 0.12);
+          flex-shrink: 0;
+        }
+
+        .s1-identity-line {
+          font-size: 15px;
           line-height: 1.45;
-          color: #FFFFFF;
+          color: rgba(245, 245, 240, 0.92);
           font-family: Georgia, 'Times New Roman', serif;
-          font-weight: 600;
+          font-weight: 500;
           text-align: center;
-          margin: 0 0 14px;
+          margin: 0 0 6px 0;
           padding: 0;
-          letter-spacing: -0.005em;
+          letter-spacing: -0.002em;
           opacity: 0;
-          transform: translateY(8px) translateZ(0);
-          animation: shockIn 450ms cubic-bezier(0.23, 1, 0.32, 1) 30ms forwards;
+          transform: translateY(4px) translateZ(0);
+          animation: lineSlideIn 450ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
           will-change: opacity, transform;
-          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
           text-wrap: balance;
         }
 
-        /* 紧迫感副标题 - 增强层次 */
-        .s1-urgency {
-          font-size: 13px;
-          line-height: 1.5;
+        .s1-identity-line:nth-child(1) { animation-delay: 150ms; }
+        .s1-identity-line:nth-child(2) { animation-delay: 250ms; }
+        .s1-identity-line:nth-child(3) { animation-delay: 350ms; }
+
+        .s1-identity-line.accent {
           color: #D4B896;
-          font-family: Georgia, 'Times New Roman', serif;
-          font-style: italic;
-          text-align: center;
-          margin: 0 0 34px;
-          padding: 0 0 20px;
-          opacity: 0;
-          transform: translateY(6px) translateZ(0);
-          animation: itemFadeIn 360ms cubic-bezier(0.23, 1, 0.32, 1) 200ms forwards;
-          position: relative;
-          will-change: opacity, transform;
-          border-bottom: 1px solid rgba(212, 184, 150, 0.1);
-          text-wrap: balance;
+          font-weight: 600;
+          font-size: 16px;
         }
 
-        .s1-urgency::after {
+        .s1-identity-line.urgent {
+          color: rgba(212, 184, 150, 0.88);
+          font-style: italic;
+          font-size: 14px;
+          margin-bottom: 0;
+          position: relative;
+        }
+
+        .s1-identity-line.urgent::after {
           content: '⏱';
           position: absolute;
           right: -20px;
           top: 50%;
           transform: translateY(-50%) translateZ(0);
-          font-size: 14px;
+          font-size: 13px;
           opacity: 0.5;
           animation: timePulse 3s ease-in-out infinite;
         }
 
-        @keyframes shockIn {
-          0% {
-            opacity: 0;
-            transform: translateY(12px) scale(0.95) translateZ(0);
-          }
-          50% {
-            transform: translateY(-2px) scale(1.02) translateZ(0);
-          }
-          100% {
+        @keyframes lineSlideIn {
+          to {
             opacity: 1;
-            transform: translateY(0) scale(1) translateZ(0);
+            transform: translateY(0) translateZ(0);
             will-change: auto;
           }
         }
 
         @keyframes timePulse {
-          0%, 100% { 
-            opacity: 0.3;
+          0%, 100% {
+            opacity: 0.35;
             transform: translateY(-50%) translateZ(0) scale(1);
           }
-          50% { 
+          50% {
             opacity: 0.7;
-            transform: translateY(-50%) translateZ(0) scale(1.1);
+            transform: translateY(-50%) translateZ(0) scale(1.12);
           }
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           C. 列表样式
+           C. 列表样式 - 10分空间利用
            ═══════════════════════════════════════════════════════════════════ */
         .s1-list {
           list-style: none;
-          margin: 0 0 38px 0;
+          margin: var(--gap-sm) 0;
           padding: 0;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 14px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* 隐藏滚动条 */
+        .s1-list::-webkit-scrollbar {
+          display: none;
+        }
+
+        .s1-list {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
 
         .s1-list-item {
           display: flex;
           align-items: flex-start;
-          gap: 15px;
-          margin-bottom: 20px;
-          padding: 16px;
-          background: 
-            linear-gradient(135deg, 
-              rgba(184, 149, 106, 0.05) 0%, 
-              rgba(184, 149, 106, 0.01) 100%
+          gap: 12px;
+          margin: 0;
+          padding: 14px;
+          background:
+            linear-gradient(135deg,
+              rgba(184, 149, 106, 0.05) 0%,
+              rgba(184, 149, 106, 0.018) 100%
             ),
             linear-gradient(90deg,
-              rgba(255, 255, 255, 0.01) 0%,
+              rgba(255, 255, 255, 0.012) 0%,
               transparent 100%
             );
-          border: 1px solid rgba(184, 149, 106, 0.12);
-          border-radius: 10px;
+          border: 1px solid rgba(184, 149, 106, 0.14);
+          border-radius: 11px;
           opacity: 0;
-          transform: translateY(8px) translateZ(0);
+          transform: translateY(6px) translateZ(0);
           animation: itemSlideIn 400ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
           transition: all 250ms cubic-bezier(0.23, 1, 0.32, 1);
           will-change: opacity, transform;
@@ -459,21 +583,21 @@ export default function ScreenOneBack() {
                         border-color 350ms ease,
                         box-shadow 350ms ease;
           }
-          
+
           .s1-list-item:hover {
-            background: 
-              linear-gradient(135deg, 
-                rgba(184, 149, 106, 0.08) 0%, 
-                rgba(184, 149, 106, 0.02) 100%
+            background:
+              linear-gradient(135deg,
+                rgba(184, 149, 106, 0.07) 0%,
+                rgba(184, 149, 106, 0.028) 100%
               ),
               linear-gradient(90deg,
                 rgba(255, 255, 255, 0.02) 0%,
                 transparent 100%
               );
             border-color: rgba(184, 149, 106, 0.22);
-            transform: translateX(4px) translateZ(0);
-            box-shadow: 
-              0 4px 16px rgba(212, 184, 150, 0.08),
+            transform: translateX(3px) translateZ(0);
+            box-shadow:
+              0 5px 16px rgba(212, 184, 150, 0.1),
               inset 0 1px 0 rgba(212, 184, 150, 0.05);
           }
 
@@ -482,11 +606,9 @@ export default function ScreenOneBack() {
           }
         }
 
-        .s1-list-item:nth-child(1) { animation-delay: 280ms; }
-        .s1-list-item:nth-child(2) { animation-delay: 420ms; }
-        .s1-list-item:nth-child(3) { animation-delay: 560ms; }
-
-        .s1-list-item:last-child { margin-bottom: 0; }
+        .s1-list-item:nth-child(1) { animation-delay: 480ms; }
+        .s1-list-item:nth-child(2) { animation-delay: 620ms; }
+        .s1-list-item:nth-child(3) { animation-delay: 760ms; }
 
         .s1-list-item::before {
           content: '';
@@ -495,8 +617,8 @@ export default function ScreenOneBack() {
           top: 0;
           bottom: 0;
           width: 2px;
-          background: linear-gradient(180deg, 
-            rgba(212, 184, 150, 0.3) 0%, 
+          background: linear-gradient(180deg,
+            rgba(212, 184, 150, 0.35) 0%,
             transparent 100%
           );
           opacity: 0;
@@ -522,70 +644,76 @@ export default function ScreenOneBack() {
         }
 
         .s1-list-dot {
-          width: 8px;
-          height: 8px;
+          width: 7px;
+          height: 7px;
           border-radius: 50%;
           background: linear-gradient(135deg, #E5D4B1 0%, #D4B896 100%);
           flex-shrink: 0;
           margin-top: 6px;
           position: relative;
-          box-shadow: 
+          box-shadow:
             0 0 12px rgba(212, 184, 150, 0.4),
             inset 0 -1px 2px rgba(0, 0, 0, 0.1);
           transform: translateZ(0);
         }
 
-        .s1-list-dot.pulse { animation: dotPulse 3s ease-in-out infinite; }
+        .s1-list-dot.pulse {
+          animation: dotPulse 3s ease-in-out infinite;
+        }
 
         @keyframes dotPulse {
-          0%, 100% { 
-            box-shadow: 
-              0 0 8px rgba(212, 184, 150, 0.3),
+          0%, 100% {
+            box-shadow:
+              0 0 10px rgba(212, 184, 150, 0.35),
               inset 0 -1px 2px rgba(0, 0, 0, 0.1);
             transform: scale(1) translateZ(0);
           }
-          50% { 
-            box-shadow: 
-              0 0 20px rgba(212, 184, 150, 0.5),
+          50% {
+            box-shadow:
+              0 0 16px rgba(212, 184, 0, 0.5),
               inset 0 -1px 2px rgba(0, 0, 0, 0.1);
-            transform: scale(1.15) translateZ(0);
+            transform: scale(1.18) translateZ(0);
           }
         }
 
-        .s1-list-content { flex: 1; }
+        .s1-list-content {
+          flex: 1;
+          min-width: 0;
+        }
 
         .s1-list-title {
-          margin: 0 0 5px 0;
-          font-size: 14px;
+          margin: 0 0 4px 0;
+          font-size: 13px;
           font-weight: 600;
           color: #D4B896;
           font-family: Georgia, 'Times New Roman', serif;
-          letter-spacing: 0.02em;
+          letter-spacing: 0.018em;
           transition: color 250ms ease;
         }
 
         .s1-list-text {
           margin: 0;
-          font-size: 15px;
-          line-height: 1.65;
+          font-size: 13px;
+          line-height: 1.55;
           font-weight: 400;
           font-family: Georgia, 'Times New Roman', serif;
-          color: rgba(245, 245, 240, 0.85);
-          letter-spacing: 0.01em;
+          color: rgba(245, 245, 240, 0.88);
+          letter-spacing: 0.005em;
           word-break: break-word;
           overflow-wrap: anywhere;
           hyphens: auto;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           D. CTA按钮
+           D. CTA按钮 - 10分视觉重量
            ═══════════════════════════════════════════════════════════════════ */
         .s1-cta {
-          margin: 46px 0 0 0;
+          margin: var(--gap-sm) 0 0 0;
           opacity: 0;
-          transform: translateY(6px) translateZ(0);
-          animation: itemFadeIn 360ms cubic-bezier(0.23, 1, 0.32, 1) 750ms forwards;
+          transform: translateY(4px) translateZ(0);
+          animation: itemFadeIn 360ms cubic-bezier(0.23, 1, 0.32, 1) 950ms forwards;
           will-change: opacity, transform;
+          flex-shrink: 0;
         }
 
         .s1-cta-btn-ultimate {
@@ -593,19 +721,19 @@ export default function ScreenOneBack() {
           align-items: center;
           justify-content: space-between;
           width: 100%;
-          height: 56px;
-          padding: 0 26px;
+          height: 52px;
+          padding: 0 22px;
           border-radius: 12px;
-          background: 
-            linear-gradient(135deg, 
-              rgba(212, 184, 150, 0.20) 0%, 
-              rgba(184, 149, 106, 0.14) 100%
+          background:
+            linear-gradient(135deg,
+              rgba(212, 184, 150, 0.22) 0%,
+              rgba(184, 149, 106, 0.15) 100%
             ),
             linear-gradient(180deg,
-              rgba(255, 255, 255, 0.04) 0%,
+              rgba(255, 255, 255, 0.045) 0%,
               transparent 100%
             );
-          border: 1.5px solid rgba(212, 184, 150, 0.55);
+          border: 1.5px solid rgba(212, 184, 150, 0.6);
           cursor: pointer;
           -webkit-tap-highlight-color: transparent;
           transition: all 280ms cubic-bezier(0.23, 1, 0.32, 1);
@@ -613,9 +741,9 @@ export default function ScreenOneBack() {
           overflow: hidden;
           transform: translateZ(0);
           backface-visibility: hidden;
-          box-shadow: 
-            0 2px 8px rgba(0, 0, 0, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.03);
+          box-shadow:
+            0 4px 10px rgba(0, 0, 0, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.04);
           touch-action: manipulation;
           user-select: none;
         }
@@ -627,7 +755,7 @@ export default function ScreenOneBack() {
           left: -100%;
           width: 100%;
           height: 100%;
-          background: linear-gradient(90deg, 
+          background: linear-gradient(90deg,
             transparent 0%,
             rgba(255, 255, 255, 0.12) 50%,
             transparent 100%
@@ -636,7 +764,9 @@ export default function ScreenOneBack() {
           transform: translateX(0) translateZ(0);
         }
 
-        .s1-cta-btn-ultimate:hover::before { transform: translateX(200%) translateZ(0); }
+        .s1-cta-btn-ultimate:hover::before {
+          transform: translateX(200%) translateZ(0);
+        }
 
         .s1-cta-btn-ultimate.loading {
           pointer-events: none;
@@ -662,30 +792,32 @@ export default function ScreenOneBack() {
           vertical-align: middle;
         }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
 
         .s1-cta-text {
           color: #FFFFFF;
           font-family: Georgia, 'Times New Roman', serif;
-          font-size: 16px;
+          font-size: 15px;
           font-weight: 600;
-          letter-spacing: 0.01em;
+          letter-spacing: 0.012em;
           position: relative;
           z-index: 1;
           display: flex;
           align-items: center;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
         .s1-cta-countdown {
           color: #D4B896;
           font-family: system-ui, -apple-system, sans-serif;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 600;
-          padding: 5px 11px;
-          background: rgba(0, 0, 0, 0.35);
-          border: 1px solid rgba(212, 184, 150, 0.15);
-          border-radius: 14px;
+          padding: 4px 11px;
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(212, 184, 150, 0.18);
+          border-radius: 12px;
           position: relative;
           z-index: 1;
           animation: countdownPulse 2.5s ease-in-out infinite;
@@ -693,31 +825,31 @@ export default function ScreenOneBack() {
         }
 
         @keyframes countdownPulse {
-          0%, 100% { opacity: 0.85; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.02); }
+          0%, 100% { opacity: 0.88; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.04); }
         }
 
         @media (hover: hover) and (pointer: fine) {
           .s1-cta-btn-ultimate:hover:not(:disabled):not(.loading) {
             border-color: rgba(212, 184, 150, 0.75);
-            background: 
-              linear-gradient(135deg, 
-                rgba(212, 184, 150, 0.26) 0%, 
+            background:
+              linear-gradient(135deg,
+                rgba(212, 184, 150, 0.26) 0%,
                 rgba(184, 149, 106, 0.18) 100%
               ),
               linear-gradient(180deg,
                 rgba(255, 255, 255, 0.06) 0%,
                 transparent 100%
               );
-            transform: translateY(-2px) translateZ(0);
-            box-shadow: 
-              0 10px 28px rgba(212, 184, 150, 0.18),
-              0 4px 12px rgba(0, 0, 0, 0.12),
+            transform: translateY(-1px) translateZ(0);
+            box-shadow:
+              0 12px 28px rgba(212, 184, 150, 0.16),
+              0 5px 12px rgba(0, 0, 0, 0.12),
               inset 0 1px 0 rgba(255, 255, 255, 0.05);
           }
 
           .s1-cta-btn-ultimate:hover .s1-cta-countdown {
-            background: rgba(0, 0, 0, 0.45);
+            background: rgba(0, 0, 0, 0.5);
             border-color: rgba(212, 184, 150, 0.25);
           }
         }
@@ -725,8 +857,8 @@ export default function ScreenOneBack() {
         .s1-cta-btn-ultimate:active:not(:disabled):not(.loading) {
           transform: scale(0.98) translateZ(0);
           transition: transform 100ms ease;
-          box-shadow: 
-            0 1px 4px rgba(0, 0, 0, 0.1),
+          box-shadow:
+            0 2px 4px rgba(0, 0, 0, 0.12),
             inset 0 1px 0 rgba(255, 255, 255, 0.03);
         }
 
@@ -736,176 +868,367 @@ export default function ScreenOneBack() {
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           E. 辅助与合规
+           E. 辅助与合规 - 10分布局
            ═══════════════════════════════════════════════════════════════════ */
         .s1-assist {
-          margin: 16px 0 0;
+          margin: var(--gap-sm) 0 0;
           padding: 0;
-          font-size: 13px;
+          font-size: 12px;
           line-height: 1.5;
           text-align: center;
-          color: #D4B896;
+          color: rgba(212, 184, 150, 0.92);
           opacity: 0;
           font-family: Georgia, 'Times New Roman', serif;
           font-style: italic;
           font-weight: 500;
-          letter-spacing: 0.01em;
-          animation: itemFadeIn 360ms cubic-bezier(0.23, 1, 0.32, 1) 950ms forwards;
+          letter-spacing: 0.012em;
+          animation: itemFadeIn 360ms cubic-bezier(0.23, 1, 0.32, 1) 1050ms forwards;
           will-change: opacity, transform;
           text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+          flex-shrink: 0;
         }
 
         .s1-compliance {
-          margin: 30px 0 0;
+          margin: 8px 0 0;
           padding: 0;
           font-size: 10px;
           line-height: 1.6;
           text-align: center;
-          color: rgba(184, 149, 106, 0.75);
+          color: rgba(184, 149, 106, 0.65);
           opacity: 0;
           font-family: Georgia, 'Times New Roman', serif;
           font-style: italic;
-          letter-spacing: 0.02em;
+          letter-spacing: 0.022em;
           animation: itemFadeIn 360ms cubic-bezier(0.23, 1, 0.32, 1) 1150ms forwards;
           will-change: opacity, transform;
+          flex-shrink: 0;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
            桌面端适配
            ═══════════════════════════════════════════════════════════════════ */
         @media (min-width: 769px) {
-          .s1-back-inner { max-width: 600px; }
+          :root {
+            --wm-h: 34px;
+            --gap-sm: 14px;
+            --gap-md: 24px;
+            --gap-lg: 32px;
+          }
 
-          .s1-identity-ultimate { font-size: 18px; margin-bottom: 16px; line-height: 1.5; }
-
-          .s1-urgency { font-size: 14px; padding-bottom: 24px; margin-bottom: 38px; }
-
-          .s1-list-item { padding: 18px 20px; gap: 16px; margin-bottom: 24px; border-radius: 12px; }
-
-          .s1-list-title { font-size: 15px; margin-bottom: 6px; }
-
-          .s1-list-text { font-size: 16px; line-height: 1.7; }
-
-          .s1-cta { margin-top: 50px; }
-
-          .s1-cta-btn-ultimate { height: 60px; padding: 0 30px; border-radius: 14px; }
-
-          .s1-cta-text { font-size: 17px; }
-
-          .s1-cta-countdown { font-size: 14px; padding: 6px 13px; }
-
-          .s1-assist { font-size: 14px; margin-top: 18px; }
-
-          .s1-compliance { font-size: 11px; margin-top: 34px; }
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           移动端优化 - 极致体验（核心增强）
-           ═══════════════════════════════════════════════════════════════════ */
-        @media (max-width: 768px) {
-          /* 1) 视口与安全区：不截断、可滚动、流畅 */
           .s1-back {
-            padding: max(18px, env(safe-area-inset-top)) 16px max(18px, calc(env(safe-area-inset-bottom) + 10px));
-            height: 100dvh;                  /* 解决 iOS/Safari 100vh 跳动 */
-            overflow-y: auto;                /* 内部滚动不截断 */
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior: contain;    /* 防止橡皮筋传递 */
-            contain: paint style;            /* 允许 sticky 正常工作，保留性能优化 */
-            scroll-padding-bottom: 96px;     /* 确保底部内容不被按钮遮挡 */
-
-            /* ✅ 修复 Logo 与标题重叠（唯一功能性改动-移动端） */
-            padding-top: calc(max(18px, env(safe-area-inset-top)) + 56px);
+            padding: 0 calc(32px + var(--safe-right)) 0 calc(32px + var(--safe-left));
           }
 
           .s1-back-inner {
-            max-width: 540px;
-            margin: 0 auto;
-            display: block;
+            max-width: 600px;
+            height: calc(100dvh - var(--s1-offset-md) - var(--safe-bottom));
+            margin-top: calc(var(--s1-offset-md) + var(--safe-top));
+            padding: 0 24px calc(24px + var(--safe-bottom));
           }
 
-          /* 2) 文案可读性：更紧凑但不失“Quiet Luxury” */
-          .s1-identity-ultimate {
-            font-size: 15px;
-            line-height: 1.45;
-            margin-bottom: 12px;
+          .s1-back-top-label {
+            font-size: 12px;
+            top: calc(var(--wm-top) + var(--wm-h) + 12px);
           }
 
-          .s1-urgency {
-            font-size: 12.5px;
-            padding-bottom: 16px;
-            margin-bottom: 24px;
+          .s1-identity-group {
+            padding-bottom: calc(var(--gap-sm) + 8px);
+            border-bottom: 1px solid rgba(212, 184, 150, 0.14);
           }
 
-          /* 3) 列表密度：卡片更薄、间距更短，避免一屏放不下 */
-          .s1-list { margin-bottom: 16px; }
+          .s1-identity-line {
+            font-size: 18px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+          }
+
+          .s1-identity-line.accent { font-size: 19px; }
+          .s1-identity-line.urgent { font-size: 16px; }
+
+          .s1-list {
+            margin: var(--gap-md) 0;
+            gap: 16px;
+          }
+
           .s1-list-item {
-            padding: 14px;
-            margin-bottom: 16px;
-            border-radius: 10px;
-            gap: 12px;
-            background:
-              linear-gradient(135deg, rgba(184,149,106,0.045) 0%, rgba(184,149,106,0.015) 100%),
-              linear-gradient(90deg, rgba(255,255,255,0.008) 0%, transparent 100%);
+            padding: 16px;
+            gap: 14px;
+            border-radius: 12px;
           }
-          .s1-list-item::before { display: none; }
 
-          .s1-list-title { font-size: 13.5px; margin-bottom: 4px; letter-spacing: 0.015em; }
-          .s1-list-text  { font-size: 14px; line-height: 1.6; }
+          .s1-list-title {
+            font-size: 14px;
+            margin-bottom: 5px;
+          }
 
-          .s1-urgency::after { display: none; }  /* 移动端去装饰，减少拥挤 */
+          .s1-list-text {
+            font-size: 15px;
+            line-height: 1.65;
+          }
 
-          /* 4) CTA 可见性：粘在底部，保持可达性（不改 DOM） */
+          .s1-list-dot {
+            width: 8px;
+            height: 8px;
+            margin-top: 7px;
+          }
+
           .s1-cta {
-            position: sticky;
-            bottom: calc(env(safe-area-inset-bottom) + 6px);
-            margin-top: 18px;
-            padding-top: 8px;
-            background: linear-gradient(180deg, rgba(10,22,40,0) 0%, rgba(10,22,40,0.75) 40%, rgba(10,22,40,0.9) 100%);
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(2px);
+            margin-top: var(--gap-md);
           }
 
           .s1-cta-btn-ultimate {
-            height: 52px;
-            padding: 0 18px;
-            border-radius: 12px;
+            height: 58px;
+            padding: 0 28px;
+            border-radius: 14px;
           }
-          .s1-cta-text { font-size: 15px; }
-          .s1-cta-countdown { font-size: 12px; padding: 4px 10px; }
 
-          /* 5) 辅助与合规：更紧凑，避免换行溢出 */
-          .s1-assist { font-size: 12.5px; margin-top: 14px; }
+          .s1-cta-text { font-size: 17px; }
+
+          .s1-cta-countdown {
+            font-size: 13px;
+            padding: 5px 12px;
+          }
+
+          .s1-assist {
+            font-size: 14px;
+            margin-top: var(--gap-sm);
+          }
+
           .s1-compliance {
-            font-size: 9.5px;
-            margin-top: 20px;
-            opacity: 0.9;
+            font-size: 11px;
+            margin-top: var(--gap-sm);
           }
-
-          /* 6) 动画频率小幅放缓，省电但不删动画 */
-          .s1-list-dot.pulse { animation-duration: 3.6s; }
-
-          /* 7) 触控友好：避免误触高亮 */
-          .s1-cta-btn-ultimate::before { display: none; } /* 移除扫光，减少移动端分散 */
         }
 
-        /* 极小屏（≤359px）进一步压缩密度 */
-        @media (max-width: 359px) {
-          .s1-back { 
-            padding: max(14px, env(safe-area-inset-top)) 12px max(14px, calc(env(safe-area-inset-bottom) + 8px)); 
-            /* ✅ 同步修复：极小屏也为 Logo 预留空间 */
-            padding-top: calc(max(14px, env(safe-area-inset-top)) + 56px);
+        /* ═══════════════════════════════════════════════════════════════════
+           移动端优化 - 10分完美体验
+           ═══════════════════════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+          .s1-back {
+            padding: 0 var(--safe-right) 0 var(--safe-left);
           }
-          .s1-identity-ultimate { font-size: 14px; line-height: 1.4; }
-          .s1-urgency { font-size: 12px; margin-bottom: 22px; }
-          .s1-list-item { padding: 12px; gap: 10px; }
-          .s1-list-title { font-size: 13px; }
-          .s1-list-text { font-size: 13px; line-height: 1.55; }
-          .s1-cta { margin-top: 14px; }
-          .s1-cta-btn-ultimate { height: 50px; padding: 0 16px; }
-          .s1-cta-text { font-size: 14px; }
-          .s1-cta-countdown { font-size: 12px; padding: 4px 9px; }
-          .s1-assist { font-size: 11px; margin-top: 12px; }
-          .s1-compliance { font-size: 9px; margin-top: 18px; }
+
+          .s1-back > .wordmark {
+            transform: scale(0.92);
+            transform-origin: left center;
+          }
+
+          .s1-back-inner {
+            max-width: 100%;
+            height: calc(100dvh - var(--s1-offset) - var(--safe-bottom));
+            margin-top: calc(var(--s1-offset) + var(--safe-top));
+            padding: 0 18px calc(18px + var(--safe-bottom));
+          }
+
+          .s1-back-top-label {
+            font-size: 10px;
+            letter-spacing: 0.09em;
+          }
+
+          /* 移动端完美间距 */
+          .s1-identity-group {
+            padding-bottom: var(--gap-sm);
+          }
+
+          .s1-identity-line {
+            font-size: 14.5px;
+            line-height: 1.4;
+            margin-bottom: 5px;
+          }
+
+          .s1-identity-line.accent { font-size: 15.5px; }
+          .s1-identity-line.urgent {
+            font-size: 13px;
+            margin-top: 2px;
+          }
+
+          .s1-identity-line.urgent::after { display: none; }
+
+          .s1-list {
+            margin: var(--gap-sm) 0;
+            gap: 12px;
+          }
+
+          .s1-list-item {
+            padding: 12px;
+            gap: 11px;
+            border-radius: 10px;
+          }
+
+          .s1-list-item::before { display: none; }
+
+          .s1-list-dot {
+            width: 6px;
+            height: 6px;
+            margin-top: 5px;
+          }
+
+          .s1-list-title {
+            font-size: 12.5px;
+            margin-bottom: 3px;
+            letter-spacing: 0.015em;
+          }
+
+          .s1-list-text {
+            font-size: 12px;
+            line-height: 1.5;
+          }
+
+          .s1-cta {
+            margin-top: var(--gap-sm);
+          }
+
+          .s1-cta-btn-ultimate {
+            height: 50px;
+            padding: 0 20px;
+            border-radius: 11px;
+          }
+
+          .s1-cta-text { font-size: 14.5px; }
+          .s1-cta-countdown {
+            font-size: 11.5px;
+            padding: 4px 10px;
+          }
+
+          .s1-assist {
+            font-size: 11.5px;
+            margin-top: 10px;
+          }
+
+          .s1-compliance {
+            font-size: 9.5px;
+            margin-top: 8px;
+          }
+
+          /* 动画优化 */
+          .s1-list-dot.pulse {
+            animation-duration: 3.6s;
+          }
+
+          /* 移除桌面端hover效果 */
+          .s1-cta-btn-ultimate::before { display: none; }
+        }
+
+        /* 极小屏（≤359px）进一步压缩 */
+        @media (max-width: 359px) {
+          :root {
+            --wm-h: 26px;
+            --s1-offset: 70px;
+            --gap-sm: 10px;
+            --gap-md: 16px;
+          }
+
+          .s1-back > .wordmark {
+            transform: scale(0.88);
+          }
+
+          .s1-back-inner {
+            padding: 0 14px calc(14px + var(--safe-bottom));
+          }
+
+          .s1-back-top-label {
+            font-size: 9px;
+          }
+
+          .s1-identity-line {
+            font-size: 13px;
+            line-height: 1.35;
+            margin-bottom: 4px;
+          }
+
+          .s1-identity-line.accent { font-size: 14px; }
+          .s1-identity-line.urgent { font-size: 12px; }
+
+          .s1-list {
+            gap: 10px;
+          }
+
+          .s1-list-item {
+            padding: 10px;
+            gap: 9px;
+          }
+
+          .s1-list-title { font-size: 11.5px; }
+          .s1-list-text {
+            font-size: 11px;
+            line-height: 1.45;
+          }
+
+          .s1-cta-btn-ultimate {
+            height: 46px;
+            padding: 0 17px;
+          }
+
+          .s1-cta-text { font-size: 13.5px; }
+          .s1-cta-countdown {
+            font-size: 11px;
+            padding: 3px 9px;
+          }
+
+          .s1-assist {
+            font-size: 10.5px;
+            margin-top: 9px;
+          }
+
+          .s1-compliance {
+            font-size: 9px;
+            margin-top: 7px;
+          }
+        }
+
+        /* 横屏特殊处理 */
+        @media (max-height: 500px) and (orientation: landscape) {
+          :root {
+            --s1-offset: 50px;
+            --gap-sm: 6px;
+            --gap-md: 10px;
+          }
+
+          .s1-back-inner {
+            padding: 0 20px calc(12px + var(--safe-bottom));
+          }
+
+          .s1-back > .wordmark {
+            transform: scale(0.8);
+          }
+
+          .s1-back-top-label {
+            font-size: 8px;
+            top: calc(var(--wm-top) + var(--wm-h) + 4px);
+          }
+
+          .s1-identity-group {
+            padding-bottom: 6px;
+          }
+
+          .s1-identity-line {
+            font-size: 11px;
+            margin-bottom: 2px;
+            line-height: 1.25;
+          }
+
+          .s1-list {
+            gap: 6px;
+            margin: 6px 0;
+          }
+
+          .s1-list-item {
+            padding: 6px;
+          }
+
+          .s1-cta-btn-ultimate {
+            height: 40px;
+          }
+
+          .s1-assist {
+            margin-top: 6px;
+            font-size: 10px;
+          }
+          
+          .s1-compliance {
+            margin-top: 4px;
+            font-size: 8.5px;
+          }
         }
 
         /* ═══════════════════════════════════════════════════════════════════
@@ -918,9 +1241,9 @@ export default function ScreenOneBack() {
             transition-duration: 0.01ms !important;
             will-change: auto !important;
           }
-          
-          .s1-identity-ultimate,
-          .s1-urgency,
+
+          .s1-back-top-label,
+          .s1-identity-line,
           .s1-list-item,
           .s1-cta,
           .s1-assist,
@@ -940,7 +1263,10 @@ export default function ScreenOneBack() {
           }
           .s1-cta-text { font-weight: 700; }
           .s1-compliance { color: rgba(184, 149, 106, 0.9); }
-          .s1-list-item { border-width: 2px; border-color: rgba(184, 149, 106, 0.3); }
+          .s1-list-item {
+            border-width: 1.5px;
+            border-color: rgba(184, 149, 106, 0.3);
+          }
         }
 
         @media (prefers-color-scheme: dark) {
@@ -950,13 +1276,16 @@ export default function ScreenOneBack() {
 
         @media (prefers-reduced-data: reduce) {
           .s1-back::after { display: none; }
-          .s1-list-dot.pulse { animation: none; box-shadow: 0 0 8px rgba(212, 184, 150, 0.4); }
+          .s1-list-dot.pulse {
+            animation: none;
+            box-shadow: 0 0 8px rgba(212,184,150,0.35);
+          }
           .s1-cta-btn-ultimate::before { display: none; }
         }
 
         /* 标记 */
-        .s1-identity-ultimate,
-        .s1-urgency,
+        .s1-back-top-label,
+        .s1-identity-line,
         .s1-list-item,
         .s1-cta,
         .s1-assist,

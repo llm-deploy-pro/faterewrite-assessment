@@ -17,7 +17,7 @@ function getCookie(name: string): string {
     const eq = item.indexOf('=');
     if (eq === -1) continue;
     const k = decodeURIComponent(item.slice(0, eq));
-    const v = decodeURIComponent(item.slice(eq + 1));
+    const v = decodeURIComponent(item.slice( eq + 1));
     if (k === name) return v;
   }
   return '';
@@ -209,7 +209,7 @@ const ScreenTwoBack: React.FC<ScreenTwoBackProps> = ({ onCheckout }) => {
 
     // 跳转至支付域名
     try {
-      const dest = new URL('https://secure.faterewrite.com/');
+      const dest = new URL('https://pay.faterewrite.com/');
       const { fbp, fbc } = readFbParams();
       const frid = ensureFrid();
 
@@ -238,7 +238,7 @@ const ScreenTwoBack: React.FC<ScreenTwoBackProps> = ({ onCheckout }) => {
 
       <div className="s2-single-wrapper">
         <div className="s2-single-header">
-          <Wordmark name="Kinship" href="/" />
+          <Wordmark name="PRIME WINDOW" href="/" />
         </div>
 
         <div className="s2-single-content">
@@ -293,7 +293,7 @@ const ScreenTwoBack: React.FC<ScreenTwoBackProps> = ({ onCheckout }) => {
           {/* Footer */}
           <div className="s2-footer-section">
             <p className="s2-footer-text">
-              {COPY.back.footer.text}
+              {""}
             </p>
           </div>
 
@@ -903,8 +903,8 @@ const ScreenTwoBack: React.FC<ScreenTwoBackProps> = ({ onCheckout }) => {
            ✅ 4. 清单可读性：小屏字号兜底 + 行距微调
            ✅ 5. CTA：移动端粘底 + 安全区填充（文案零改）
            ✅ 6. 视口与滚动：100svh/100dvh + overscroll-behavior
-        */
-      `}</style>
+        `}
+      </style>
     </>
   );
 };

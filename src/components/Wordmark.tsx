@@ -8,7 +8,7 @@ interface WordmarkProps {
 }
 
 export default function Wordmark({
-  name = "Kinship",
+  name = "PRIME WINDOW",
   href = "/",
 }: WordmarkProps) {
   return (
@@ -16,7 +16,7 @@ export default function Wordmark({
       <div
         className="wm-brand"
         role="banner"
-        aria-label="Kinship - Find your circles"
+        aria-label={`${name} - Find your circles`}
       >
         <a
           className="wm-brand__link"

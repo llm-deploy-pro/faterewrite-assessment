@@ -7,34 +7,34 @@ export const SCREEN_TWO_COPY = {
     
     // Headline（强证据）
     headline: {
-      main: "When you’re in the right room, it moves fast.",
-      sub: "Field notes this week — Los Angeles, New York, Miami"
+      main: "Patch the right code. Reality moves fast.",
+      sub: "Field notes this cycle — Debugger #284 · #079 · #412"
     },
     
     // Recent Reader Notes（以证言容器呈现）
     testimonial: {
       quote:
-        "Los Angeles · Fri 8:34 PM — “Stood in the zone; bartender glanced twice. Conversation opened in under 10 minutes.”  •  New York · Thu 7:52 PM — “R2 timing hit. Two intros without trying—felt native, not ‘trying’.”  •  Miami · Sat 9:18 PM — “Opener #2 worked instantly. Stayed 70 minutes, left high.”",
-      author: "Recent Reader Notes"
+        "LA · Fri 8:34 PM — “Deployed Override-1. Old loop surfaced; ignored. Opened target convo in <3 min.”  •  NYC · Thu 7:52 PM — “Two high-value intros with zero pitch—felt like a system update.”  •  MIA · Sat 9:18 PM — “97% crash pattern triggered. Used Constraint Key #2. Exited with asset.”",
+      author: "Recent Field Logs"
     },
     
     // Final Checklist（最终交付物清单）
     valueList: [
-      "This month’s 3 rooms that matter",
-      "Prime-time window and the exact stand zone",
-      "Entry cues that read as “of the room”",
-      "One-line opener that lands"
+      "This cycle’s 3 structural misroutes",
+      "The prime-failure window & recurring decoy loop",
+      "Your “out of sync” signature analysis",
+      "The 48-hour override command that lands"
     ],
     
     // Final CTA
     cta: {
-      button: "Unlock the Black Book",
-      microcopy: ""
+      button: "Unlock Protocol →",
+      microcopy: "Validated across 17,839 protocol runs. 11h window remains. Private PDF. Intel, not outcomes. Not therapy."
     },
     
     // Footer（保持原有安心文案，以免版式突变）
     footer: {
-      text: "Trusted clarity for 30,000+ women. Your room is waiting."
+      text: "Trusted clarity for 30,000+ readers. Your route is waiting."
     }
   },
   
