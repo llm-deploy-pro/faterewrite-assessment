@@ -1,6 +1,6 @@
+// src/scenes/ScreenOne/ScreenOneFront.tsx
 import { useEffect, useRef, useState } from "react";
 import Wordmark from "@/components/Wordmark";
-import { COPY } from "./copy";
 
 /* ===================== 跨子域去重工具 ===================== */
 function getCookie(name: string): string {
@@ -243,12 +243,7 @@ export default function ScreenOneFront() {
 
   // 文案分片 - 适配新的标题
   const titleChunks = (() => {
-    const t = COPY.title;
-    // 在破折号处分割，保持视觉平衡
-    const dashIndex = t.indexOf(" — ");
-    if (dashIndex > -1) {
-      return [t.slice(0, dashIndex), t.slice(dashIndex)];
-    }
+    const t = "Timeline Calibration Protocol";
     // 备用：在最后一个空格处分割
     const idx = t.lastIndexOf(" ");
     if (idx > 0) return [t.slice(0, idx), t.slice(idx + 1)];
@@ -256,7 +251,7 @@ export default function ScreenOneFront() {
   })();
 
   // 完整显示副标题
-  const sub1FirstSentence = COPY.sub1;
+  const sub1FirstSentence = "Destiny is a system. Debug it.";
 
   return (
     <section className="screen-front-container">
@@ -265,13 +260,13 @@ export default function ScreenOneFront() {
       {/* 新增：顶部小字标签 - 增强版 */}
       <p className="s1-top-label">
         <span className="label-prefix">SYSTEM LOG</span>
-        <span className="label-divider">—</span>
-        <span className="label-suffix">7B SELF-CHECK</span>
+        <span className="label-divider">//</span>
+        <span className="label-suffix">CALIBRATION</span>
       </p>
 
       <div className="screen-front-content">
         {/* 主标题 */}
-        <h1 className="screen-front-title" aria-label={COPY.title}>
+        <h1 className="screen-front-title" aria-label="Timeline Calibration Protocol">
           <span className="h1-chunk">{titleChunks[0]}</span>
           <span className="h1-chunk">{titleChunks[1]}</span>
         </h1>
@@ -281,25 +276,29 @@ export default function ScreenOneFront() {
           <span className="subline">{sub1FirstSentence}</span>
         </p>
 
+        {/* 新增：EXECUTIVE BRIEFING 标题 */}
+        <p className="executive-briefing-label">EXECUTIVE BRIEFING:</p>
+
         {/* 核心价值点（最终策略版本 - 来自 COPY.keyPoints）*/}
         <div className="screen-front-keypoints">
-          {COPY.keyPoints.flatMap((text, i) => ([
-            <span className="keypoint" key={`kp-${i}`}>{text}</span>,
-            i < COPY.keyPoints.length - 1 ? <span className="keypoint-dot" key={`dot-${i}`}>•</span> : null
-          ]))}
+          <span className="keypoint">Identifies the vector of your 7B hijack</span>
+          <span className="keypoint-dot">•</span>
+          <span className="keypoint">Calculates your signal-to-noise ratio ("out of sync")</span>
+          <span className="keypoint-dot">•</span>
+          <span className="keypoint">Generates the 48-hour override key</span>
         </div>
 
         {/* 状态标签 - 替换文案 */}
         <p className="s1-status-label">
           <span className="status-dot"></span>
-          Self-check engine ready
+          {/* ✅ START: 修改为滚动文本 */}
+          <span className="status-text-scroller">
+            SYSTEM STATUS: STANDBY. 487 SIGNATURES LOGGED THIS CYCLE. ENGINE NOMINAL.
+          </span>
+          {/* ✅ END: 修改为滚动文本 */}
         </p>
 
         {/* 社会认证元素 - 增强版 */}
-        <p className="s1-members-count">
-          <span className="count-number">487</span>
-          <span className="count-text">7B signatures logged this cycle</span>
-        </p>
 
         {/* CTA 按钮区域 */}
         <div className={`cta-container ${ctaVisible ? 'visible' : ''}`}>
@@ -311,13 +310,13 @@ export default function ScreenOneFront() {
             aria-label="Continue to assessment"
             aria-describedby="privacy-note"
           >
-            <span className="s1-cta-text">Generate My Debug Report</span>
+            <span className="s1-cta-text">Access the Self-Check Interface</span>
             <span className="s1-cta-arrow">→</span>
           </button>
           
           {/* 隐私提示 - 替换文案 */}
           <p id="privacy-note" className="s1-privacy-note">
-            Encrypted. One-time generation. Not therapy.
+            Proprietary framework. One-time protocol generation. Not therapy or astrological advice.
           </p>
         </div>
 
@@ -360,9 +359,13 @@ export default function ScreenOneFront() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 24px;
+          padding: 20px;
+          padding-top: 80px;
+          padding-bottom: 40px;
           box-sizing: border-box;
           background: var(--dark-blue);
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
@@ -370,7 +373,7 @@ export default function ScreenOneFront() {
            ═══════════════════════════════════════════════════════════════════ */
         .s1-top-label {
           position: absolute;
-          top: 60px;
+          top: 85px;
           left: 50%;
           transform: translateX(-50%);
           margin: 0;
@@ -444,6 +447,7 @@ export default function ScreenOneFront() {
           color: var(--cream);
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
+          padding-top: 20px;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
@@ -451,14 +455,14 @@ export default function ScreenOneFront() {
            ═══════════════════════════════════════════════════════════════════ */
         
         .screen-front-title {
-          margin: 0 0 24px 0;
+          margin: 0 0 20px 0;
           padding: 0;
-          font-size: 26px;
-          line-height: 1.25;
+          font-size: 28px;
+          line-height: 1.18;
           font-weight: 600;
-          letter-spacing: -0.01em;
+          letter-spacing: -0.015em;
           color: var(--cream);
-          font-family: Georgia, 'Times New Roman', serif;
+          font-family: -apple-system, BlinkMacSystemFont, Georgia, 'Times New Roman', serif;
         }
 
         .h1-chunk {
@@ -478,7 +482,7 @@ export default function ScreenOneFront() {
         }
 
         .screen-front-subtitle {
-          margin: 0 0 20px 0;
+          margin: 0 0 24px 0;
           padding: 0;
           font-size: 17px;
           line-height: 1.55;
@@ -502,24 +506,43 @@ export default function ScreenOneFront() {
         }
 
         /* ═══════════════════════════════════════════════════════════════════
+           EXECUTIVE BRIEFING 标签样式
+           ═══════════════════════════════════════════════════════════════════ */
+        .executive-briefing-label {
+          margin: 0 0 12px 0;
+          padding: 0;
+          font-size: 11px;
+          line-height: 1.5;
+          color: rgba(184, 149, 106, 0.6);
+          font-family: 'Courier New', monospace;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          font-weight: 600;
+          opacity: 0;
+          animation: briefingFade 350ms cubic-bezier(0.23,1,0.32,1) 800ms forwards;
+        }
+
+        @keyframes briefingFade {
+          to { opacity: 1; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
            核心价值点（新增的Key Points）- 优雅的响应式布局 + 10分优化
            ═══════════════════════════════════════════════════════════════════ */
         .screen-front-keypoints {
           margin: 0 0 28px 0;
           padding: 0;
-          font-size: 13px;
-          line-height: 1.6;
+          font-size: 12.5px;
+          line-height: 1.65;
           color: var(--cream);
           opacity: 0;
-          font-family: Georgia, 'Times New Roman', serif;
-          font-style: italic;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          font-style: normal;
           font-weight: 400;
           animation: keypointsIn 350ms cubic-bezier(0.23,1,0.32,1) 900ms forwards;
           display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          justify-content: center;
-          gap: 8px 10px;
+          flex-direction: column;
+          gap: 10px;
           position: relative;
         }
 
@@ -546,42 +569,43 @@ export default function ScreenOneFront() {
         }
 
         .keypoint {
-          opacity: 0.72;
-          white-space: nowrap;
+          opacity: 0.8;
           position: relative;
+          padding-left: 16px;
           transition: all 280ms cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        
+        .keypoint::before {
+          content: '▸';
+          position: absolute;
+          left: 0;
+          color: var(--gold);
+          opacity: 0.7;
+          font-size: 10px;
+          transform: translateY(1px);
         }
 
         /* 新增：悬停时的优雅高亮 */
         .keypoint:hover {
-          opacity: 0.95;
-          color: var(--gold-bright);
-          cursor: default;
+          opacity: 1;
+          color: var(--cream-bright);
+          padding-left: 18px;
+        }
+        
+        .keypoint:hover::before {
+          opacity: 1;
+          transform: translateX(2px) translateY(1px);
         }
 
         .keypoint-dot {
-          color: var(--gold);
-          opacity: 0.4;
-          font-size: 10px;
-          transition: all 280ms ease;
+          display: none;
         }
 
         /* 移动端优化：垂直排列 + 加分优化 */
         @media (max-width: 480px) {
           .screen-front-keypoints {
-            flex-direction: column;
             gap: 8px;
-            align-items: flex-start;
-            padding: 12px 16px;
-            background: linear-gradient(to right,
-              rgba(184, 149, 106, 0.03) 0%,
-              transparent 100%
-            );
-            border-left: 1px solid rgba(184, 149, 106, 0.15);
-            border-radius: 0 4px 4px 0;
-            margin-left: -16px;
-            margin-right: -16px;
-            padding-left: 32px;
+            margin-bottom: 20px;
           }
           
           .keypoint-dot {
@@ -589,19 +613,9 @@ export default function ScreenOneFront() {
           }
           
           .keypoint {
-            position: relative;
-            padding-left: 14px;
             font-size: 12.5px;
-            line-height: 1.8;
-          }
-          
-          .keypoint::before {
-            content: '•';
-            position: absolute;
-            left: 0;
-            color: var(--gold);
-            opacity: 0.6;
-            font-size: 12px;
+            line-height: 1.7;
+            opacity: 0.85;
           }
         }
 
@@ -618,24 +632,46 @@ export default function ScreenOneFront() {
         .s1-status-label {
           display: flex;
           align-items: center;
-          justify-content: center;
-          gap: 8px;
-          margin: 0 0 16px 0;
-          padding: 0;
-          font-size: 12px;
-          line-height: 1.5;
-          text-align: center;
-          color: var(--gold-bright);
+          justify-content: flex-start;
+          gap: 6px;
+          margin: 0 0 20px 0;
+          padding: 8px 12px;
+          font-size: 10px;
+          line-height: 1.4;
+          text-align: left;
+          color: rgba(212, 184, 150, 0.75);
           opacity: 0;
-          font-family: Georgia, 'Times New Roman', serif;
-          font-style: italic;
-          font-weight: 400;
-          letter-spacing: 0.02em;
+          font-family: 'Courier New', monospace;
+          font-style: normal;
+          font-weight: 500;
+          letter-spacing: 0.03em;
           animation: statusFade 450ms ease 1100ms forwards;
           position: relative;
+          background: linear-gradient(90deg, 
+            rgba(184, 149, 106, 0.04) 0%,
+            transparent 100%
+          );
+          border-left: 2px solid rgba(184, 149, 106, 0.3);
+          white-space: nowrap;
+          overflow: hidden; /* ✅ 修改: 隐藏溢出内容以配合动画 */
+        }
+        
+        /* ✅ START: 新增滚动文本动画 */
+        .status-text-scroller {
+          display: inline-block;
+          animation: scroll-status-text 12s linear infinite;
+          padding-right: 20px; /* 防止动画循环时文字紧贴 */
         }
 
-        /* 新增：状态标签的高级感背景 */
+        @keyframes scroll-status-text {
+          0%   { transform: translateX(0); }
+          20%  { transform: translateX(0); }
+          60%  { transform: translateX(-140px); }
+          80%  { transform: translateX(-140px); }
+          100% { transform: translateX(0); }
+        }
+        /* ✅ END: 新增滚动文本动画 */
+
         .s1-status-label::before {
           content: '';
           position: absolute;
@@ -663,67 +699,6 @@ export default function ScreenOneFront() {
           z-index: 1;
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           社会认证元素 - 增强版
-           ═══════════════════════════════════════════════════════════════════ */
-        .s1-members-count {
-          display: flex;
-          align-items: baseline;
-          justify-content: center;
-          gap: 6px;
-          margin: -8px 0 20px 0;
-          font-size: 11px;
-          text-align: center;
-          font-family: 'Courier New', monospace;
-          letter-spacing: 0.05em;
-          opacity: 0;
-          animation: membersReveal 600ms ease 1400ms forwards;
-          position: relative;
-        }
-
-        .count-number {
-          font-size: 14px;
-          font-weight: 700;
-          color: rgba(212, 184, 150, 0.8);
-          text-shadow: 
-            0 0 20px rgba(212, 184, 150, 0.4),
-            0 0 40px rgba(184, 149, 106, 0.2);
-          animation: numberPulse 3s ease-in-out infinite;
-        }
-
-        .count-text {
-          color: rgba(245, 245, 240, 0.35);
-          text-transform: uppercase;
-          font-size: 10px;
-          font-weight: 400;
-        }
-
-        @keyframes membersReveal {
-          0% { 
-            opacity: 0;
-            transform: scale(0.95) translateY(5px);
-          }
-          100% { 
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
-
-        @keyframes numberPulse {
-          0%, 100% { 
-            opacity: 0.8;
-            text-shadow: 
-              0 0 20px rgba(212, 184, 150, 0.4),
-              0 0 40px rgba(184, 149, 106, 0.2);
-          }
-          50% { 
-            opacity: 1;
-            text-shadow: 
-              0 0 25px rgba(212, 184, 150, 0.6),
-              0 0 50px rgba(184, 149, 106, 0.3);
-          }
-        }
-
         @keyframes statusFade {
           to { opacity: 0.85; }
         }
@@ -743,7 +718,7 @@ export default function ScreenOneFront() {
            CTA 容器与按钮（完美版）
            ═══════════════════════════════════════════════════════════════════ */
         .cta-container {
-          margin: 0 0 20px 0;
+          margin: 32px 0 24px 0;
           opacity: 0;
           transform: translateY(6px);
           transition: all 250ms cubic-bezier(0.23, 1, 0.32, 1);
@@ -760,19 +735,22 @@ export default function ScreenOneFront() {
           justify-content: center;
           gap: 10px;
           width: 100%;
-          height: 50px;
-          padding: 0 28px;
-          border-radius: 12px;
+          height: 52px;
+          padding: 0 24px;
+          border-radius: 26px;
           background: linear-gradient(135deg, 
-            rgba(184, 149, 106, 0.08) 0%, 
-            rgba(184, 149, 106, 0.03) 100%
+            rgba(184, 149, 106, 0.15) 0%, 
+            rgba(212, 184, 150, 0.08) 100%
           );
-          border: 1.5px solid var(--gold-border);
+          border: 1.5px solid rgba(212, 184, 150, 0.85);
           cursor: pointer;
           -webkit-tap-highlight-color: transparent;
           transition: all 280ms cubic-bezier(0.23, 1, 0.32, 1);
           position: relative;
           overflow: hidden;
+          box-shadow: 
+            0 2px 12px rgba(184, 149, 106, 0.08),
+            0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         /* 按钮光晕效果 - 增强版 */
@@ -980,7 +958,7 @@ export default function ScreenOneFront() {
            ═══════════════════════════════════════════════════════════════════ */
         @media (min-width: 769px) {
           .s1-top-label {
-            top: 80px;
+            top: 100px;
             font-size: 11px;
           }
           .label-suffix {
@@ -989,32 +967,35 @@ export default function ScreenOneFront() {
           .screen-front-title { 
             font-size: 42px; 
             line-height: 1.22;
+            margin-bottom: 24px;
           }
           .screen-front-subtitle { 
             font-size: 18px;
+            margin-bottom: 28px;
+          }
+          .executive-briefing-label {
+            font-size: 12px;
+            margin-bottom: 14px;
           }
           .screen-front-keypoints {
             font-size: 14px;
             gap: 8px 14px;
+            margin-bottom: 32px;
           }
           .screen-front-content { 
             max-width: 580px;
+            padding-top: 30px;
           }
           .s1-status-label { 
             font-size: 13px;
+            margin-bottom: 24px;
           }
-          .s1-members-count {
-            font-size: 12px;
-          }
-          .count-number {
-            font-size: 16px;
-          }
-          .count-text {
-            font-size: 11px;
+          .cta-container {
+            margin: 40px 0 32px 0;
           }
           .s1-cta-btn { 
             height: 54px;
-            border-radius: 14px;
+            border-radius: 27px;
           }
           .s1-cta-text { 
             font-size: 16px;
@@ -1042,12 +1023,6 @@ export default function ScreenOneFront() {
           .screen-front-keypoints {
             font-size: 12px;
           }
-          .count-number {
-            font-size: 13px;
-          }
-          .count-text {
-            font-size: 9px;
-          }
         }
 
         /* ═══════════════════════════════════════════════════════════════════
@@ -1060,8 +1035,8 @@ export default function ScreenOneFront() {
             transition-duration: 0.01ms !important;
           }
           
-          .h1-chunk, .subline, .screen-front-keypoints, 
-          .s1-status-label, .cta-container, .s1-top-label, .s1-members-count {
+          .h1-chunk, .subline, .executive-briefing-label, .screen-front-keypoints, 
+          .s1-status-label, .cta-container, .s1-top-label {
             opacity: 1 !important;
             transform: none !important;
           }

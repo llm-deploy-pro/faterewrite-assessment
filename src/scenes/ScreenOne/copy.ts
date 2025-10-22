@@ -1,20 +1,21 @@
-﻿// ScreenOne · copy (EN only) — Destiny Debug Report Edition
-export const COPY = {
-  // 第一屏文案（保持不变）
-  topLabel: "System Log — 7B Self-Check",
-  title: "Destiny Debug Report — be in the right timeline.",
-  sub1: "This cycle's debug shortlist: 3 structural misroutes in your source code, the prime-failure window, the exact recurring decoy loop, and the override that lands.",
-  keyPoints: [
-    "where the 7B hijack hits your route",
-    "how you read as \"out of sync\"", 
-    "the 48-hour override"
-  ],
-  statusLabel: "Self-check engine ready",
-  membersCount: "487 7B signatures logged this cycle",
-  ctaText: "Generate My Debug Report",
-  privacyNote: "Encrypted. One-time generation. Not therapy.",
+﻿// ScreenOne · copy (EN only) — Timeline Calibration Protocol Edition
 
-  // 第二屏文案（全部替换）
+export const COPY = {
+  // Phase A · Hero (Front Screen)
+  topLabel: "SYSTEM LOG // CALIBRATION",
+  title: "Timeline Calibration Protocol",
+  sub1: "Destiny is a system. Debug it.",
+  executiveBriefingLabel: "EXECUTIVE BRIEFING:",
+  keyPoints: [
+    "Identifies the vector of your 7B hijack",
+    "Calculates your signal-to-noise ratio (\"out of sync\")",
+    "Generates the 48-hour override key"
+  ],
+  statusLabel: "SYSTEM STATUS: STANDBY. 487 SIGNATURES LOGGED THIS CYCLE. ENGINE NOMINAL.",
+  ctaText: "Access the Self-Check Interface",
+  privacyNote: "Proprietary framework. One-time protocol generation. Not therapy or astrological advice.",
+  
+  // Phase B · Back Screen (Not shown in current component but included for completeness)
   backTopLabel: "System Alert — Pattern 7B Analysis",
   
   lead: [
@@ -22,7 +23,7 @@ export const COPY = {
     "129 stalled at 97% — their routes went dark.",
     "Your self-check window (expires in 11h)."
   ],
-
+  
   bullets: [
     {
       title: "The Glitch Zone:",
@@ -37,7 +38,7 @@ export const COPY = {
       text: "Exit first to reframe: \"My time is allocated.\" Not a rejection—a calibration. Presumed value > proven value. Your Debug Protocol contains the full 48-hour script and timing marks."
     }
   ],
-
+  
   cta: "Generate Protocol →",
   ctaAlt: "See who's single this week →",
   support: "117 protocol files remain. Private PDF access expires at lockdown.",
