@@ -102,44 +102,112 @@ const trinityComponents = [
   },
 ];
 
-// 类型定义
-type FeedEventType = 
-  | { type: 'SIGNATURE'; actions: string[]; signatures: string[]; messages?: never; }
-  | { type: 'SYSTEM' | 'NETWORK' | 'WARN'; messages: string[]; actions?: never; signatures?: never; };
+// 🔥 六色分级日志系统
+type LogType = 'INFO' | 'SYSTEM' | 'SUCCESS' | 'NETWORK' | 'WARN' | 'CRITICAL';
 
-// 动态数据流的数据源
-const feedEventTypes: FeedEventType[] = [
-  { type: 'SIGNATURE', actions: ['AUTHENTICATED', 'VALIDATED', 'SECURED'], signatures: ['7G4-B', '9K1-F', 'A3X-R', 'C8V-M', 'Z5P-L'] },
-  { type: 'SYSTEM', messages: ['CALIBRATING RESONANCE FIELD... OK', 'CONNECTION TO AKASHIC NODE STABLE', 'FIELD STABLE. AWAITING ACTIVATION DATA...', 'CHRONOSIGNATURE VERIFIED'] },
-  { type: 'NETWORK', messages: ['QUANTUM LINK ESTABLISHED', 'UPLINKING TO STARLIGHT MATRIX...', 'DECRYPTION LAYER ACTIVE'] },
-  { type: 'WARN', messages: ['MINOR TEMPORAL FLUX DETECTED... AUTO-CORRECTING', 'ENERGY DECOY SIGNATURE DETECTED... NEUTRALIZING'] }
-];
+interface LogEvent {
+  id: number;
+  type: LogType;
+  text: string;
+  timestamp: string;
+}
 
-const feedLocations = [
-  "NEW YORK, US", "LONDON, UK", "TOKYO, JP", "SYDNEY, AU", "PARIS, FR",
-  "BERLIN, DE", "SINGAPORE, SG", "SEOUL, KR", "DUBAI, AE", "TORONTO, CA"
-];
+// 日志内容库 - 40+条变体
+const logLibrary = {
+  INFO: [
+    'Allocating memory buffer... 2048KB',
+    'Synchronizing with time server...',
+    'Loading resonance matrix cache...',
+    'Processing activation queue...',
+    'Updating frequency database...',
+    'Initializing quantum entanglement protocols...',
+  ],
+  SYSTEM: [
+    'CALIBRATING RESONANCE FIELD... OK',
+    'CONNECTION TO AKASHIC NODE STABLE',
+    'FIELD STABLE. AWAITING ACTIVATION DATA...',
+    'CHRONOSIGNATURE VERIFIED',
+    'DIMENSIONAL ANCHOR LOCKED',
+    'TIMELINE COHERENCE: 98.7%',
+    'REALITY MATRIX SYNCHRONIZED',
+  ],
+  SUCCESS: [
+    'SIGNATURE 7G4-B AUTHENTICATED... [NEW YORK, US]',
+    'SIGNATURE 9K1-F VALIDATED... [LONDON, UK]',
+    'SIGNATURE A3X-R SECURED... [TOKYO, JP]',
+    'SIGNATURE C8V-M AUTHENTICATED... [SYDNEY, AU]',
+    'SIGNATURE Z5P-L VALIDATED... [PARIS, FR]',
+    'SIGNATURE 4RT-N SECURED... [BERLIN, DE]',
+    'SIGNATURE 8HX-K AUTHENTICATED... [SINGAPORE, SG]',
+    'SIGNATURE 2PM-W VALIDATED... [SEOUL, KR]',
+  ],
+  NETWORK: [
+    'QUANTUM LINK ESTABLISHED',
+    'UPLINKING TO STARLIGHT MATRIX...',
+    'DECRYPTION LAYER ACTIVE',
+    'AKASHIC BRIDGE CONNECTED',
+    'NEURAL RELAY SYNCHRONIZED',
+    'COSMIC BANDWIDTH: OPTIMAL',
+  ],
+  WARN: [
+    'MINOR TEMPORAL FLUX DETECTED... AUTO-CORRECTING',
+    'ENERGY DECOY SIGNATURE DETECTED... NEUTRALIZING',
+    'Latency spike +23ms... compensating...',
+    'Timeline variance detected... stabilizing...',
+    'Frequency interference... filtering...',
+  ],
+  CRITICAL: [
+    '⚠ NEXT AKASHIC WINDOW CLOSES IN: 09H 47M 12S',
+    '⚠ ONLY 3 ACTIVATION SLOTS REMAINING',
+    '⚠ HIGH DEMAND: 247 USERS IN QUEUE',
+    '⚠ TIMELINE CONVERGENCE IN: 08H 32M 55S',
+  ],
+};
 
-// 动态数据流生成器
-const generateNewLine = () => {
+// 🔥 智能日志生成器
+const generateNewLog = (forceCritical: boolean = false): LogEvent => {
   const pad = (n: number) => n.toString().padStart(2, '0');
   const now = new Date();
-  const time = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
+  const timestamp = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
   
-  const event = feedEventTypes[Math.floor(Math.random() * feedEventTypes.length)];
-  let line = `[${time} UTC] `;
-
-  if (event.type === 'SIGNATURE') {
-    const action = event.actions[Math.floor(Math.random() * event.actions.length)];
-    const signature = event.signatures[Math.floor(Math.random() * event.signatures.length)];
-    const location = feedLocations[Math.floor(Math.random() * feedLocations.length)];
-    line += `SIGNATURE ${signature} ${action}... [${location}]`;
+  let type: LogType;
+  let message: string;
+  
+  if (forceCritical) {
+    type = 'CRITICAL';
+    message = logLibrary.CRITICAL[Math.floor(Math.random() * logLibrary.CRITICAL.length)];
   } else {
-    const message = event.messages[Math.floor(Math.random() * event.messages.length)];
-    line += `[${event.type}] > ${message}`;
+    // 权重分布：INFO 30%, SYSTEM 25%, SUCCESS 20%, NETWORK 15%, WARN 8%, CRITICAL 2%
+    const rand = Math.random() * 100;
+    if (rand < 30) {
+      type = 'INFO';
+      message = logLibrary.INFO[Math.floor(Math.random() * logLibrary.INFO.length)];
+    } else if (rand < 55) {
+      type = 'SYSTEM';
+      message = logLibrary.SYSTEM[Math.floor(Math.random() * logLibrary.SYSTEM.length)];
+    } else if (rand < 75) {
+      type = 'SUCCESS';
+      message = logLibrary.SUCCESS[Math.floor(Math.random() * logLibrary.SUCCESS.length)];
+    } else if (rand < 90) {
+      type = 'NETWORK';
+      message = logLibrary.NETWORK[Math.floor(Math.random() * logLibrary.NETWORK.length)];
+    } else if (rand < 98) {
+      type = 'WARN';
+      message = logLibrary.WARN[Math.floor(Math.random() * logLibrary.WARN.length)];
+    } else {
+      type = 'CRITICAL';
+      message = logLibrary.CRITICAL[Math.floor(Math.random() * logLibrary.CRITICAL.length)];
+    }
   }
   
-  return { id: Date.now() + Math.random(), text: line };
+  const text = `[${timestamp} UTC] [${type}] > ${message}`;
+  
+  return {
+    id: Date.now() + Math.random(),
+    type,
+    text,
+    timestamp,
+  };
 };
 
 
@@ -150,10 +218,14 @@ export default function ScreenOneBack() {
   const [isLoading, setIsLoading] = useState(false);
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
 
-  // 动态数据流状态
-  const [feedLines, setFeedLines] = useState([{ id: 1, text: '[SYSTEM] > INITIALIZING STARLIGHT MATRIX FEED...' }]);
+  // 🔥 动态数据流状态
+  const [feedLines, setFeedLines] = useState<LogEvent[]>([
+    { id: 1, type: 'SYSTEM', text: '[SYSTEM] > INITIALIZING STARLIGHT MATRIX FEED...', timestamp: '' }
+  ]);
   const [matrixPulse, setMatrixPulse] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const criticalShownRef = useRef(false);
+  const nextCriticalTimeRef = useRef(Date.now() + 60000); // 首次60秒后
 
 
   // ═══════════════════════════════════════════════════════════════
@@ -176,11 +248,27 @@ export default function ScreenOneBack() {
     return () => clearTimeout(timer);
   }, []);
 
-  // 数据流自动更新逻辑 - 打字机效果
+  // 🔥 数据流自动更新逻辑 - 随机频率 + 首次必出CRITICAL
   const addNewFeedLine = useCallback(() => {
     setFeedLines((prev) => {
-      const newLine = generateNewLine();
-      const updated = [newLine, ...prev].slice(0, 8);
+      let newLog: LogEvent;
+      
+      // 首次必出CRITICAL
+      if (!criticalShownRef.current) {
+        criticalShownRef.current = true;
+        newLog = generateNewLog(true);
+      } 
+      // 周期性CRITICAL（每60秒）
+      else if (Date.now() >= nextCriticalTimeRef.current) {
+        nextCriticalTimeRef.current = Date.now() + 60000;
+        newLog = generateNewLog(true);
+      }
+      // 普通日志
+      else {
+        newLog = generateNewLog(false);
+      }
+      
+      const updated = [newLog, ...prev].slice(0, 8);
       return updated;
     });
     setMatrixPulse(true);
@@ -188,8 +276,27 @@ export default function ScreenOneBack() {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(addNewFeedLine, 3500);
-    return () => clearInterval(interval);
+    // 🔥 首次3秒后生成CRITICAL
+    const firstTimer = setTimeout(() => {
+      addNewFeedLine();
+    }, 3000);
+    
+    // 🔥 随机间隔生成日志（1.2-2秒）
+    const scheduleNext = () => {
+      const randomDelay = 1200 + Math.random() * 800; // 1.2s - 2s
+      const timer = setTimeout(() => {
+        addNewFeedLine();
+        scheduleNext();
+      }, randomDelay);
+      return timer;
+    };
+    
+    const intervalTimer = scheduleNext();
+    
+    return () => {
+      clearTimeout(firstTimer);
+      clearTimeout(intervalTimer);
+    };
   }, [addNewFeedLine]);
 
   // 卡片展开逻辑 - 不滚动，只切换状态 + 打点
@@ -225,7 +332,7 @@ export default function ScreenOneBack() {
     }
   }, []);
 
-  // CTA按钮点击逻辑
+  // 🔥 CTA按钮点击逻辑 - 跳转支付页面
   const handleClickCTA = useCallback(() => {
     if (hasClickedRef.current || isLoading) return;
     hasClickedRef.current = true;
@@ -248,11 +355,14 @@ export default function ScreenOneBack() {
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
-      const nextUrl = "/screen-two";
-      const link = withParams(nextUrl, { frid });
+      // 🔥 跳转到支付页面
+      const paymentUrl = "https://pay.faterewrite.com/";
+      const fullUrl = new URL(paymentUrl);
+      fullUrl.searchParams.set("frid", frid);
+      
       document.body.classList.add("page-leave");
       setTimeout(() => {
-        window.location.href = link;
+        window.location.href = fullUrl.toString();
       }, 300);
     }, 1200);
   }, [isLoading]);
@@ -297,13 +407,17 @@ export default function ScreenOneBack() {
           ))}
         </div>
 
-        {/* Starlight Matrix 数据流 - 带动态效果 */}
+        {/* 🔥 Starlight Matrix 数据流 - 终极版 */}
         <div className={`starlight-matrix ${matrixPulse ? "pulse" : ""}`}>
           <div className="matrix-title">STARLIGHT MATRIX: LIVE ACTIVATION FEED</div>
           <div className="matrix-feed" role="log" aria-live="polite" aria-atomic="false">
-            {feedLines.map((line) => (
-              <div key={line.id} className="feed-line">
-                {line.text}
+            {feedLines.map((log) => (
+              <div 
+                key={log.id} 
+                className={`feed-line feed-line-${log.type.toLowerCase()}`}
+                data-log-type={log.type}
+              >
+                {log.text}
               </div>
             ))}
           </div>
@@ -327,7 +441,7 @@ export default function ScreenOneBack() {
       </div>
 
       {/* 样式 */}
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         /* ═══════════════════════════════════════════════════════════════════
            CSS 变量 & 全局重置
            ═══════════════════════════════════════════════════════════════════ */
@@ -586,7 +700,7 @@ export default function ScreenOneBack() {
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           🌟 Starlight Matrix 数据流 - 终极动态版本
+           🔥🔥🔥 Starlight Matrix 数据流 - 终极10分版本
            ═══════════════════════════════════════════════════════════════════ */
         .starlight-matrix {
           background: linear-gradient(135deg, 
@@ -676,12 +790,11 @@ export default function ScreenOneBack() {
           z-index: 1;
         }
 
-        /* 🔥 数据流容器 - 打字机滚动 */
+        /* 🔥 数据流容器 - 中速滚动 */
         .matrix-feed {
           font-family: "SF Mono", "Menlo", "Monaco", "Consolas", "Courier New", monospace;
           font-size: 9px;
           line-height: 1.6;
-          color: rgba(100, 200, 255, 0.85);
           letter-spacing: 0.02em;
           height: 110px;
           overflow: hidden;
@@ -699,7 +812,57 @@ export default function ScreenOneBack() {
           padding: 1.5px 0;
           animation: feed-line-in 0.5s ease-out both;
           flex-shrink: 0;
+        }
+
+        /* 🔥🔥🔥 六色分级系统 */
+        .feed-line-info {
+          color: rgba(180, 190, 200, 0.85);
+          text-shadow: 0 0 6px rgba(180, 190, 200, 0.2);
+        }
+
+        .feed-line-system {
+          color: rgba(100, 200, 255, 0.9);
           text-shadow: 0 0 8px rgba(100, 200, 255, 0.3);
+        }
+
+        .feed-line-success {
+          color: rgba(100, 255, 150, 0.9);
+          text-shadow: 0 0 8px rgba(100, 255, 150, 0.3);
+        }
+
+        .feed-line-network {
+          color: rgba(100, 220, 255, 0.9);
+          text-shadow: 0 0 8px rgba(100, 220, 255, 0.3);
+        }
+
+        .feed-line-warn {
+          color: rgba(255, 200, 100, 0.9);
+          text-shadow: 0 0 8px rgba(255, 200, 100, 0.3);
+        }
+
+        /* 🔥🔥🔥 CRITICAL - 红色闪烁 */
+        .feed-line-critical {
+          color: rgba(255, 100, 120, 1);
+          font-weight: 600;
+          text-shadow: 
+            0 0 12px rgba(255, 100, 120, 0.6),
+            0 0 6px rgba(255, 100, 120, 0.4);
+          animation: feed-line-in 0.5s ease-out both, critical-blink 0.8s ease-in-out infinite;
+        }
+
+        @keyframes critical-blink {
+          0%, 100% { 
+            opacity: 1; 
+            text-shadow: 
+              0 0 12px rgba(255, 100, 120, 0.6),
+              0 0 6px rgba(255, 100, 120, 0.4);
+          }
+          50% { 
+            opacity: 0.7;
+            text-shadow: 
+              0 0 20px rgba(255, 100, 120, 0.8),
+              0 0 10px rgba(255, 100, 120, 0.6);
+          }
         }
 
         @keyframes feed-line-in {
@@ -1130,6 +1293,9 @@ export default function ScreenOneBack() {
           .feed-line { 
             animation: none; 
           }
+          .feed-line-critical {
+            animation: none;
+          }
           .s1-back.is-executing * { 
             animation: none !important; 
           }
@@ -1152,7 +1318,7 @@ export default function ScreenOneBack() {
             border-color: rgba(184, 149, 106, 0.3); 
           } 
         }
-      `}</style>
+      `}}/>
     </section>
   );
 }
