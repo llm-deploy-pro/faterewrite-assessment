@@ -8,7 +8,7 @@ interface WordmarkProps {
 }
 
 export default function Wordmark({
-  name = "PRIME WINDOW",
+  name = "Resonance",
   href = "/",
 }: WordmarkProps) {
   return (

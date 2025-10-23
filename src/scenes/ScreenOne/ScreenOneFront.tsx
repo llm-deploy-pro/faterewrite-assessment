@@ -1,5 +1,5 @@
 // src/scenes/ScreenOne/ScreenOneFront.tsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Wordmark from "@/components/Wordmark";
 
 /* ===================== 跨子域去重工具 ===================== */
@@ -68,6 +68,11 @@ function ensureFrid() {
 
 export default function ScreenOneFront() {
   const startTimeRef = useRef<number>(0);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  
+  // 倒计时状态
+  const [countdown, setCountdown] = useState<number>(12);
+  const [countdownStarted, setCountdownStarted] = useState(false);
   
   // CTA 状态管理
   const [ctaVisible, setCtaVisible] = useState(false);
@@ -75,69 +80,37 @@ export default function ScreenOneFront() {
   const [shouldPulse, setShouldPulse] = useState(false);
 
   // ═══════════════════════════════════════════════════════════════
-  // 进度条动画逻辑（仅视觉效果）
+  // 倒计时逻辑 - MVP核心交互
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
-    const TOTAL = 3500; // 3.5秒到达等待状态
-    const DELAY = 500;
-    const startAt = DELAY;
-    const at85 = DELAY + Math.round(TOTAL * 0.85);
-    const atDone = DELAY + TOTAL;
-
-    const emit = (name: string, detail?: any) =>
-      window.dispatchEvent(new CustomEvent(`s1:${name}`, { detail }));
-
-    const t0 = window.setTimeout(() => emit("progress:start"), startAt);
-    const t1 = window.setTimeout(() => emit("progress:85"), at85);
-    const t2 = window.setTimeout(() => emit("progress:waiting"), atDone);
-
-    return () => {
-      window.clearTimeout(t0);
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-    };
-  }, []);
-
-  // ═══════════════════════════════════════════════════════════════
-  // CTA 延迟出现逻辑（1.2秒后淡入，更快响应）
-  // ═══════════════════════════════════════════════════════════════
-  useEffect(() => {
-    const showTimer = setTimeout(() => {
+    // 1.5秒后启动倒计时
+    const startTimer = setTimeout(() => {
+      setCountdownStarted(true);
       setCtaVisible(true);
       
-      // CTA 出现印象事件
-      const sessionKey = 's1_cta_shown';
-      const alreadyShown = sessionStorage.getItem(sessionKey) === 'true';
-      
-      if (!alreadyShown && typeof window.fbq !== "undefined") {
-        const frid = ensureFrid();
-        const isDev = window.location.hostname === 'localhost';
-        if (markOnce("s1ci", isDev)) {
-          const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-          window.fbq("trackCustom", "S1_CTA_Impression", {
-            content_name: "Assessment_CTA",
-            content_category: "Matching_Assessment",
-            frid: frid,
-          }, { eventID: eventId });
-          console.log(`[FB打点] S1_CTA_Impression 触发成功`, { frid, eventId });
-          sessionStorage.setItem(sessionKey, 'true');
-        }
+      // 开始倒计时
+      countdownIntervalRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            // 倒计时结束
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current);
+              countdownIntervalRef.current = null;
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }, 1500);
+
+    return () => {
+      clearTimeout(startTimer);
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
       }
-      
-      // 2秒后触发轻微脉动提示（仅一次）
-      setTimeout(() => {
-        if (!hasClicked) {
-          setShouldPulse(true);
-          // 动画结束后自动清除
-          setTimeout(() => setShouldPulse(false), 800);
-        }
-      }, 2000);
-    }, 1200); // 缩短至1.2秒
-
-    return () => clearTimeout(showTimer);
-  }, [hasClicked]);
-
-  // ⚠️ 无自动跳转 - 必须点击CTA才能继续
+    };
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════
   // 前屏加载成功事件
@@ -191,9 +164,19 @@ export default function ScreenOneFront() {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
+  // 修改：脉冲动画提前触发逻辑
+  // ═══════════════════════════════════════════════════════════════
+  useEffect(() => {
+    // 当倒计时小于或等于4秒时，开始脉冲动画
+    if (countdown <= 4) {
+      setShouldPulse(true);
+    }
+  }, [countdown]);
+
+  // ═══════════════════════════════════════════════════════════════
   // CTA 点击处理（唯一的导航入口）
   // ═══════════════════════════════════════════════════════════════
-  const handleCTAClick = () => {
+  const handleCTAClick = useCallback(() => {
     if (hasClicked) return;
     
     const frid = ensureFrid();
@@ -212,15 +195,22 @@ export default function ScreenOneFront() {
           screen_number: 1,
           page_url: window.location.href,
           referrer: document.referrer,
+          countdown_value: countdown,
           frid: frid,
         }, { eventID: fbEventId });
-        console.log(`[FB打点] S1_Front_CTA_Click 触发成功`, { frid, fbEventId });
+        console.log(`[FB打点] S1_Front_CTA_Click 触发成功`, { frid, fbEventId, countdown });
       }
     }
 
     // 标记已点击
     setHasClicked(true);
     setShouldPulse(false);
+    
+    // 停止倒计时
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
     
     try {
       localStorage.setItem('cta_clicked_assessment_49', 'true');
@@ -232,795 +222,790 @@ export default function ScreenOneFront() {
     document.documentElement.classList.add('page-leave');
     
     setTimeout(() => {
-      // ✅ 改为发出事件，由 ScreenOne.tsx 监听后切换到后屏
+      // 发出事件，由 ScreenOne.tsx 监听后切换到后屏
       window.dispatchEvent(new CustomEvent('s1:cta:continue'));
       requestAnimationFrame(() => {
         document.documentElement.classList.remove('page-leave');
         window.scrollTo(0, 0);
       });
     }, 220);
-  };
+  }, [hasClicked, countdown]);
 
-  // 文案分片 - 适配新的标题
-  const titleChunks = (() => {
-    const t = "Timeline Calibration Protocol";
-    // 备用：在最后一个空格处分割
-    const idx = t.lastIndexOf(" ");
-    if (idx > 0) return [t.slice(0, idx), t.slice(idx + 1)];
-    return [t, ""];
-  })();
-
-  // 完整显示副标题
-  const sub1FirstSentence = "Destiny is a system. Debug it.";
+  // ═══════════════════════════════════════════════════════════════
+  // 倒计时结束后自动跳转
+  // ═══════════════════════════════════════════════════════════════
+  useEffect(() => {
+    // 当倒计时归零且用户尚未点击时，自动触发与点击按钮相同的行为
+    if (countdown === 0 && !hasClicked) {
+      handleCTAClick();
+    }
+  }, [countdown, hasClicked, handleCTAClick]);
 
   return (
     <section className="screen-front-container">
-      <Wordmark name="PRIME WINDOW" href="/" />
+      {/* Logo 区域 - 独立固定头部 */}
+      <div className="logo-header">
+        <Wordmark name="Resonance" href="/" />
+      </div>
       
-      {/* 新增：顶部小字标签 - 增强版 */}
-      <p className="s1-top-label">
-        <span className="label-prefix">SYSTEM LOG</span>
+      {/* 顶部系统信息 */}
+      <div className="s1-top-label">
+        <span className="label-prefix">SOURCE-LEVEL DATA</span>
         <span className="label-divider">//</span>
-        <span className="label-suffix">CALIBRATION</span>
-      </p>
+        <span className="label-suffix">AKASHIC DIRECTIVE</span>
+      </div>
 
       <div className="screen-front-content">
-        {/* 主标题 */}
-        <h1 className="screen-front-title" aria-label="Timeline Calibration Protocol">
-          <span className="h1-chunk">{titleChunks[0]}</span>
-          <span className="h1-chunk">{titleChunks[1]}</span>
-        </h1>
-
-        {/* 副标题（完整版）*/}
-        <p className="screen-front-subtitle">
-          <span className="subline">{sub1FirstSentence}</span>
-        </p>
-
-        {/* 新增：EXECUTIVE BRIEFING 标题 */}
-        <p className="executive-briefing-label">EXECUTIVE BRIEFING:</p>
-
-        {/* 核心价值点（最终策略版本 - 来自 COPY.keyPoints）*/}
-        <div className="screen-front-keypoints">
-          <span className="keypoint">Identifies the vector of your 7B hijack</span>
-          <span className="keypoint-dot">•</span>
-          <span className="keypoint">Calculates your signal-to-noise ratio ("out of sync")</span>
-          <span className="keypoint-dot">•</span>
-          <span className="keypoint">Generates the 48-hour override key</span>
+        {/* 核心图腾 (文字替代) */}
+        <div className="project-sigil">
+          [ PROJECT STARLIGHT SIGIL ]
+        </div>
+        
+        {/* 权威认证文本 */}
+        <div className="auth-protocol">
+          Access Protocol Authenticated: Project Starlight
         </div>
 
-        {/* 状态标签 - 替换文案 */}
-        <p className="s1-status-label">
-          <span className="status-dot"></span>
-          {/* ✅ START: 修改为滚动文本 */}
-          <span className="status-text-scroller">
-            SYSTEM STATUS: STANDBY. 487 SIGNATURES LOGGED THIS CYCLE. ENGINE NOMINAL.
-          </span>
-          {/* ✅ END: 修改为滚动文本 */}
-        </p>
+        {/* 解码日志摘录 - 优化移动端尺寸 */}
+        <div className="decoded-log-entry">
+          <p className="log-text">
+            "Log Entry 777. For the first time, we have successfully isolated and decoded a readable fragment of a core soul signature from the Akashic Field. The data confirms our primary hypothesis: individual timelines are not random walks, but are governed by a pre-encoded 'Vibrational Contract.'"
+          </p>
+          <p className="log-text log-continuation">
+            "Distortions ('glitches') are not failures, but deviations from this contract, often amplified by low-resonance environmental matrices. The only path to realignment is a direct activation of the contract's core resonant frequencies. We now possess the key."
+          </p>
+          <p className="log-signature">
+            — From the Declassified Logs of Project Starlight
+          </p>
+        </div>
 
-        {/* 社会认证元素 - 增强版 */}
+        {/* 交互核心：倒计时与行动号召 */}
+        <div className={`interaction-core ${ctaVisible ? 'visible' : ''}`}>
+          {/* 紧迫感声明 */}
+          <p className="urgency-statement">
+            A unique activation window has opened. The portal to your decoded analysis is closing.
+          </p>
 
-        {/* CTA 按钮区域 */}
-        <div className={`cta-container ${ctaVisible ? 'visible' : ''}`}>
+          {/* 倒计时器 */}
+          <div className={`countdown-timer ${countdownStarted ? 'active' : ''} ${shouldPulse ? 'expired' : ''}`}>
+            <span className="countdown-number">{countdown}</span>
+          </div>
+
+          {/* CTA 按钮 */}
           <button
             type="button"
             onClick={handleCTAClick}
             disabled={hasClicked}
-            className={`s1-cta-btn ${shouldPulse ? 'pulse' : ''}`}
-            aria-label="Continue to assessment"
-            aria-describedby="privacy-note"
+            className={`s1-cta-btn ${shouldPulse ? 'pulse' : ''} ${shouldPulse ? 'urgent' : ''}`}
+            aria-label="Access your decoded analysis"
           >
-            <span className="s1-cta-text">Access the Self-Check Interface</span>
+            <span className="s1-cta-text">ACCESS YOUR DECODED ANALYSIS</span>
             <span className="s1-cta-arrow">→</span>
           </button>
-          
-          {/* 隐私提示 - 替换文案 */}
-          <p id="privacy-note" className="s1-privacy-note">
-            Proprietary framework. One-time protocol generation. Not therapy or astrological advice.
-          </p>
-        </div>
-
-        {/* 进度条（优化为等待状态）*/}
-        <div className="s1-progress" aria-hidden="true">
-          <div className="s1-progress-track"></div>
-          <div className="s1-progress-fill"></div>
         </div>
       </div>
 
-      <style>{`
+      {/* @ts-ignore - styled-jsx specific attribute */}
+      <style jsx>{`
         /* ═══════════════════════════════════════════════════════════════════
-           10/10 完美优化版 - 视觉与交互体验拉满
+           设计系统 - 奢华品牌配色
            ═══════════════════════════════════════════════════════════════════ */
-
         :root {
-          --s1-total: 3500ms;
-          --s1-delay: 500ms;
-          --gold: #B8956A;
-          --gold-bright: #D4B896;
-          --gold-border: rgba(184, 149, 106, 0.75);
-          --gold-hover: rgba(212, 184, 150, 0.85);
-          --cream: #F5F5F0;
-          --cream-bright: rgba(245, 245, 240, 0.95);
-          --dark-blue: #0A1628;
+          --bg-primary: #0a0f1b;
+          --bg-secondary: #141922;
+          --gold: #b8956a;
+          --gold-bright: #d4b896;
+          --gold-hover: #c4a57c;
+          --gold-border: rgba(184, 149, 106, 0.3);
+          --cream: #f5f5f0;
+          --cream-bright: #fafaf5;
+          --cream-dim: rgba(245, 245, 240, 0.7);
+          --cream-muted: rgba(245, 245, 240, 0.5);
         }
 
-        /* 页面离场动画 */
-        .page-leave .screen-front-container {
-          opacity: 0;
-          transform: translateY(-8px) scale(0.98);
-          filter: blur(4px);
-          transition: all 220ms cubic-bezier(0.23, 1, 0.32, 1);
+        /* 禁止滚动 - 严格执行 */
+        :global(html), :global(body) {
+          overflow: hidden !important;
+          height: 100% !important;
+          position: fixed !important;
+          width: 100% !important;
         }
 
+        /* ═══════════════════════════════════════════════════════════════════
+           容器基础 - 奢华背景强化
+           ═══════════════════════════════════════════════════════════════════ */
         .screen-front-container {
           position: fixed;
           inset: 0;
-          z-index: 10;
+          width: 100vw;
+          height: 100vh;
+          height: 100dvh;
           display: flex;
+          flex-direction: column;
           align-items: center;
-          justify-content: center;
-          padding: 20px;
-          padding-top: 80px;
-          padding-bottom: 40px;
-          box-sizing: border-box;
-          background: var(--dark-blue);
-          overflow-y: auto;
-          -webkit-overflow-scrolling: touch;
+          justify-content: flex-start;
+          background: linear-gradient(135deg, 
+            var(--bg-primary) 0%, 
+            var(--bg-secondary) 100%
+          );
+          overflow: hidden;
+          padding: 0;
+        }
+
+        /* 高级星尘背景效果 - 增强 */
+        .screen-front-container::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: 
+            radial-gradient(circle at 20% 30%, rgba(184, 149, 106, 0.06) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(212, 184, 150, 0.04) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(184, 149, 106, 0.02) 0%, transparent 70%);
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        /* 微妙噪点纹理 */
+        .screen-front-container::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+          opacity: 0.03;
+          pointer-events: none;
+          z-index: 1;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           新增：顶部小字标签样式 - 增强版
+           Logo 头部 - 独立区域避免重叠
+           ═══════════════════════════════════════════════════════════════════ */
+        .logo-header {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 100;
+          padding: 20px;
+          background: linear-gradient(to bottom,
+            rgba(10, 15, 27, 0.95) 0%,
+            rgba(10, 15, 27, 0.85) 60%,
+            transparent 100%
+          );
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           顶部标签 - 调整位置避免与Logo重叠
            ═══════════════════════════════════════════════════════════════════ */
         .s1-top-label {
-          position: absolute;
-          top: 85px;
+          position: fixed;
+          top: 75px;
           left: 50%;
           transform: translateX(-50%);
-          margin: 0;
-          padding: 0;
-          font-size: 10px;
-          line-height: 1.5;
-          font-family: 'Courier New', monospace;
-          letter-spacing: 0.15em;
+          z-index: 90;
+          font-size: 9px;
+          line-height: 1.4;
+          font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+          font-weight: 500;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          display: flex;
-          align-items: center;
-          gap: 8px;
+          white-space: nowrap;
           opacity: 0;
-          animation: topLabelReveal 800ms ease 200ms forwards;
+          animation: topLabelReveal 600ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+          /* 增强视觉效果 */
+          padding: 8px 16px;
+          background: rgba(20, 25, 35, 0.6);
+          border: 1px solid rgba(184, 149, 106, 0.2);
+          border-radius: 20px;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          box-shadow: 
+            0 2px 12px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
         .label-prefix {
-          color: rgba(184, 149, 106, 0.5);
-          position: relative;
-          animation: glitchText 8s infinite;
+          color: rgba(184, 149, 106, 0.6);
         }
 
         .label-divider {
           color: rgba(184, 149, 106, 0.3);
-          font-weight: 100;
+          margin: 0 6px;
         }
 
         .label-suffix {
-          color: rgba(212, 184, 150, 0.7);
-          position: relative;
+          color: rgba(212, 184, 150, 0.9);
           font-weight: 600;
-          text-shadow: 0 0 10px rgba(212, 184, 150, 0.2);
-        }
-
-        /* 故障文字效果 */
-        @keyframes glitchText {
-          0%, 100% { 
-            text-shadow: none;
-            opacity: 1;
-          }
-          92% {
-            text-shadow: 
-              -1px 0 rgba(255, 0, 0, 0.3),
-              1px 0 rgba(0, 255, 255, 0.3);
-            opacity: 0.9;
-          }
-          93% {
-            text-shadow: none;
-            opacity: 1;
-          }
+          text-shadow: 0 0 12px rgba(212, 184, 150, 0.3);
         }
 
         @keyframes topLabelReveal {
           0% { 
             opacity: 0;
-            transform: translateX(-50%) translateY(-5px);
-            filter: blur(4px);
+            transform: translateX(-50%) translateY(-8px);
           }
           100% { 
             opacity: 1;
             transform: translateX(-50%) translateY(0);
-            filter: blur(0);
           }
         }
 
+        /* ═══════════════════════════════════════════════════════════════════
+           主内容容器 - 调整顶部间距
+           ═══════════════════════════════════════════════════════════════════ */
         .screen-front-content {
           position: relative;
           width: 100%;
-          max-width: 520px;
-          text-align: left;
+          max-width: 600px;
+          text-align: center;
           color: var(--cream);
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-          padding-top: 20px;
+          padding: 125px 16px 20px;
+          z-index: 2;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          overflow-x: hidden;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* 隐藏滚动条 */
+        .screen-front-content::-webkit-scrollbar {
+          width: 0;
+          display: none;
+        }
+
+        .screen-front-content {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           文字部分
+           核心图腾 (文字版) - 视觉强化
            ═══════════════════════════════════════════════════════════════════ */
-        
-        .screen-front-title {
-          margin: 0 0 20px 0;
-          padding: 0;
-          font-size: 28px;
-          line-height: 1.18;
-          font-weight: 600;
-          letter-spacing: -0.015em;
-          color: var(--cream);
-          font-family: -apple-system, BlinkMacSystemFont, Georgia, 'Times New Roman', serif;
-        }
-
-        .h1-chunk {
-          display: block;
-          opacity: 0;
-          transform: translateY(12px);
-          animation: chunkIn 450ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
-        }
-        .h1-chunk:nth-child(1) { animation-delay: 60ms; }
-        .h1-chunk:nth-child(2) { animation-delay: 240ms; }
-
-        @keyframes chunkIn {
-          to { 
-            opacity: 1; 
-            transform: translateY(0);
-          }
-        }
-
-        .screen-front-subtitle {
-          margin: 0 0 24px 0;
-          padding: 0;
-          font-size: 17px;
-          line-height: 1.55;
-          color: var(--cream-bright);
-          font-weight: 400;
-          font-family: Georgia, 'Times New Roman', serif;
-        }
-
-        .subline {
-          display: block;
-          opacity: 0;
-          transform: translateY(8px);
-          animation: subIn 400ms cubic-bezier(0.23,1,0.32,1) 480ms forwards;
-        }
-
-        @keyframes subIn {
-          to { 
-            opacity: 1; 
-            transform: translateY(0);
-          }
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           EXECUTIVE BRIEFING 标签样式
-           ═══════════════════════════════════════════════════════════════════ */
-        .executive-briefing-label {
+        .project-sigil {
           margin: 0 0 12px 0;
-          padding: 0;
-          font-size: 11px;
-          line-height: 1.5;
-          color: rgba(184, 149, 106, 0.6);
-          font-family: 'Courier New', monospace;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          font-weight: 600;
+          padding: 10px 18px;
+          font-size: 13px;
+          line-height: 1;
+          color: var(--gold-bright);
+          font-family: 'Bodoni MT', 'Didot', Georgia, serif;
+          letter-spacing: 0.12em;
+          font-weight: 400;
+          text-align: center;
+          position: relative;
           opacity: 0;
-          animation: briefingFade 350ms cubic-bezier(0.23,1,0.32,1) 800ms forwards;
+          animation: sigilReveal 800ms cubic-bezier(0.23, 1, 0.32, 1) 200ms forwards;
+          display: inline-block;
+          /* 增强背景 */
+          background: linear-gradient(135deg,
+            rgba(184, 149, 106, 0.05) 0%,
+            rgba(184, 149, 106, 0.02) 100%
+          );
+          border-radius: 4px;
+          box-shadow: 
+            0 2px 12px rgba(184, 149, 106, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
-        @keyframes briefingFade {
+        /* 装饰性边框 - 增强 */
+        .project-sigil::before,
+        .project-sigil::after {
+          content: '';
+          position: absolute;
+          width: 26px;
+          height: 26px;
+          border: 1.5px solid rgba(184, 149, 106, 0.4);
+          transition: all 300ms ease;
+        }
+
+        .project-sigil::before {
+          top: -2px;
+          left: -2px;
+          border-right: none;
+          border-bottom: none;
+        }
+
+        .project-sigil::after {
+          bottom: -2px;
+          right: -2px;
+          border-left: none;
+          border-top: none;
+        }
+
+        @keyframes sigilReveal {
+          0% {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           权威认证文本 - 视觉增强
+           ═══════════════════════════════════════════════════════════════════ */
+        .auth-protocol {
+          margin: 0 0 16px 0;
+          padding: 0;
+          font-size: 10px;
+          line-height: 1.4;
+          color: var(--cream-muted);
+          font-family: 'SF Mono', monospace;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          font-weight: 500;
+          text-align: center;
+          opacity: 0;
+          animation: authFade 600ms cubic-bezier(0.23,1,0.32,1) 400ms forwards;
+          /* 添加微妙光晕 */
+          text-shadow: 0 0 20px rgba(184, 149, 106, 0.15);
+        }
+
+        @keyframes authFade {
           to { opacity: 1; }
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           核心价值点（新增的Key Points）- 优雅的响应式布局 + 10分优化
+           解码日志摘录 - 奢华卡片强化
            ═══════════════════════════════════════════════════════════════════ */
-        .screen-front-keypoints {
-          margin: 0 0 28px 0;
-          padding: 0;
-          font-size: 12.5px;
-          line-height: 1.65;
-          color: var(--cream);
-          opacity: 0;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-          font-style: normal;
-          font-weight: 400;
-          animation: keypointsIn 350ms cubic-bezier(0.23,1,0.32,1) 900ms forwards;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          position: relative;
-        }
-
-        /* 新增：价值点容器的微妙背光效果 */
-        .screen-front-keypoints::before {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          width: 120%;
-          height: 200%;
-          background: radial-gradient(ellipse at center,
-            rgba(184, 149, 106, 0.02) 0%,
-            transparent 70%
+        .decoded-log-entry {
+          margin: 0 0 18px 0;
+          padding: 16px 18px;
+          background: linear-gradient(135deg, 
+            rgba(20, 25, 35, 0.6) 0%, 
+            rgba(15, 20, 30, 0.5) 100%
           );
-          transform: translate(-50%, -50%);
-          pointer-events: none;
-          animation: subtleGlow 4s ease-in-out infinite alternate;
+          border: 1px solid rgba(184, 149, 106, 0.25);
+          border-radius: 8px;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          opacity: 0;
+          animation: logEntryFade 700ms cubic-bezier(0.23,1,0.32,1) 600ms forwards;
+          width: 100%;
+          max-width: 480px;
+          /* 奢华阴影 */
+          box-shadow: 
+            0 4px 20px rgba(0, 0, 0, 0.3),
+            0 1px 4px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.03);
         }
 
-        @keyframes subtleGlow {
-          0% { opacity: 0.3; }
-          100% { opacity: 0.7; }
-        }
-
-        .keypoint {
-          opacity: 0.8;
-          position: relative;
-          padding-left: 16px;
-          transition: all 280ms cubic-bezier(0.23, 1, 0.32, 1);
-        }
-        
-        .keypoint::before {
-          content: '▸';
-          position: absolute;
-          left: 0;
-          color: var(--gold);
-          opacity: 0.7;
-          font-size: 10px;
-          transform: translateY(1px);
-        }
-
-        /* 新增：悬停时的优雅高亮 */
-        .keypoint:hover {
-          opacity: 1;
-          color: var(--cream-bright);
-          padding-left: 18px;
-        }
-        
-        .keypoint:hover::before {
-          opacity: 1;
-          transform: translateX(2px) translateY(1px);
-        }
-
-        .keypoint-dot {
-          display: none;
-        }
-
-        /* 移动端优化：垂直排列 + 加分优化 */
-        @media (max-width: 480px) {
-          .screen-front-keypoints {
-            gap: 8px;
-            margin-bottom: 20px;
+        @keyframes logEntryFade {
+          0% {
+            opacity: 0;
+            transform: translateY(12px);
           }
-          
-          .keypoint-dot {
-            display: none;
-          }
-          
-          .keypoint {
-            font-size: 12.5px;
-            line-height: 1.7;
-            opacity: 0.85;
-          }
-        }
-
-        @keyframes keypointsIn {
-          to { 
+          100% {
             opacity: 1;
             transform: translateY(0);
           }
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           状态标签（增强版 + 认证徽章）
-           ═══════════════════════════════════════════════════════════════════ */
-        .s1-status-label {
-          display: flex;
-          align-items: center;
-          justify-content: flex-start;
-          gap: 6px;
-          margin: 0 0 20px 0;
-          padding: 8px 12px;
-          font-size: 10px;
-          line-height: 1.4;
+        .log-text {
+          margin: 0 0 10px 0;
+          padding: 0;
+          font-size: 12px;
+          line-height: 1.6;
+          color: rgba(245, 245, 240, 0.9);
+          font-family: Georgia, 'Times New Roman', serif;
+          font-style: italic;
+          letter-spacing: 0.01em;
           text-align: left;
-          color: rgba(212, 184, 150, 0.75);
-          opacity: 0;
-          font-family: 'Courier New', monospace;
-          font-style: normal;
-          font-weight: 500;
-          letter-spacing: 0.03em;
-          animation: statusFade 450ms ease 1100ms forwards;
-          position: relative;
-          background: linear-gradient(90deg, 
-            rgba(184, 149, 106, 0.04) 0%,
-            transparent 100%
-          );
-          border-left: 2px solid rgba(184, 149, 106, 0.3);
-          white-space: nowrap;
-          overflow: hidden; /* ✅ 修改: 隐藏溢出内容以配合动画 */
-        }
-        
-        /* ✅ START: 新增滚动文本动画 */
-        .status-text-scroller {
-          display: inline-block;
-          animation: scroll-status-text 12s linear infinite;
-          padding-right: 20px; /* 防止动画循环时文字紧贴 */
         }
 
-        @keyframes scroll-status-text {
-          0%   { transform: translateX(0); }
-          20%  { transform: translateX(0); }
-          60%  { transform: translateX(-140px); }
-          80%  { transform: translateX(-140px); }
-          100% { transform: translateX(0); }
-        }
-        /* ✅ END: 新增滚动文本动画 */
-
-        .s1-status-label::before {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 140px;
-          height: 28px;
-          background: radial-gradient(ellipse at center,
-            rgba(184, 149, 106, 0.06) 0%,
-            transparent 100%
-          );
-          border-radius: 14px;
-          pointer-events: none;
+        .log-text.log-continuation {
+          margin-bottom: 14px;
         }
 
-        .status-dot {
-          display: inline-block;
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: var(--gold);
-          animation: statusPulse 2s ease-in-out infinite;
-          position: relative;
-          z-index: 1;
-        }
-
-        @keyframes statusFade {
-          to { opacity: 0.85; }
-        }
-
-        @keyframes statusPulse {
-          0%, 100% { 
-            opacity: 0.5;
-            transform: scale(1);
-          }
-          50% { 
-            opacity: 1;
-            transform: scale(1.2);
-          }
+        .log-signature {
+          margin: 0;
+          padding: 0;
+          font-size: 11px;
+          line-height: 1.4;
+          color: var(--gold-bright);
+          font-family: Georgia, 'Times New Roman', serif;
+          font-style: italic;
+          text-align: right;
+          letter-spacing: 0.02em;
+          opacity: 0.85;
+          text-shadow: 0 0 15px rgba(184, 149, 106, 0.2);
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           CTA 容器与按钮（完美版）
+           交互核心区域
            ═══════════════════════════════════════════════════════════════════ */
-        .cta-container {
-          margin: 32px 0 24px 0;
+        .interaction-core {
           opacity: 0;
-          transform: translateY(6px);
-          transition: all 250ms cubic-bezier(0.23, 1, 0.32, 1);
+          transform: translateY(8px);
+          transition: all 600ms cubic-bezier(0.23, 1, 0.32, 1);
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin-bottom: 10px;
         }
 
-        .cta-container.visible {
+        .interaction-core.visible {
           opacity: 1;
           transform: translateY(0);
         }
 
+        /* 紧迫感声明 - 视觉强化 */
+        .urgency-statement {
+          margin: 0 0 14px 0;
+          padding: 0 10px;
+          font-size: 13px;
+          line-height: 1.5;
+          color: var(--cream);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 400;
+          letter-spacing: 0.01em;
+          text-align: center;
+          /* 添加微妙光晕 */
+          text-shadow: 0 1px 8px rgba(184, 149, 106, 0.1);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           倒计时器 - 奢华强化
+           ═══════════════════════════════════════════════════════════════════ */
+        .countdown-timer {
+          margin: 0 0 16px 0;
+          padding: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transform: scale(0.8);
+          transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
+          /* 奢华背景 */
+          background: linear-gradient(135deg,
+            rgba(184, 149, 106, 0.08) 0%,
+            rgba(184, 149, 106, 0.03) 100%
+          );
+          border: 2px solid rgba(184, 149, 106, 0.25);
+          border-radius: 16px;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          box-shadow: 
+            0 4px 20px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .countdown-timer.active {
+          opacity: 1;
+          transform: scale(1);
+        }
+
+        .countdown-timer.expired {
+          animation: countdownPulse 1.5s ease-in-out infinite;
+          border-color: rgba(184, 149, 106, 0.4);
+        }
+
+        @keyframes countdownPulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 
+              0 4px 20px rgba(0, 0, 0, 0.2),
+              0 0 0 0 rgba(184, 149, 106, 0.4);
+          }
+          50% {
+            transform: scale(1.03);
+            box-shadow: 
+              0 4px 20px rgba(0, 0, 0, 0.2),
+              0 0 20px 8px rgba(184, 149, 106, 0.2);
+          }
+        }
+
+        .countdown-number {
+          font-size: 56px;
+          line-height: 1;
+          font-weight: 300;
+          color: var(--gold-bright);
+          font-family: -apple-system, BlinkMacSystemFont, Georgia, serif;
+          letter-spacing: -0.02em;
+          text-shadow: 
+            0 0 30px rgba(184, 149, 106, 0.6),
+            0 0 60px rgba(184, 149, 106, 0.4),
+            0 2px 4px rgba(0, 0, 0, 0.3);
+          position: relative;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           CTA 按钮 - 奢华品牌强化
+           ═══════════════════════════════════════════════════════════════════ */
         .s1-cta-btn {
+          width: 100%;
+          max-width: 360px;
+          height: 52px;
+          margin: 0 auto;
+          border-radius: 26px;
+          background: linear-gradient(135deg, 
+            rgba(184, 149, 106, 0.15) 0%, 
+            rgba(184, 149, 106, 0.08) 100%
+          );
+          border: 2px solid var(--gold-border);
+          color: var(--cream-bright);
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          cursor: pointer;
+          transition: all 300ms cubic-bezier(0.23, 1, 0.32, 1);
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 10px;
-          width: 100%;
-          height: 52px;
-          padding: 0 24px;
-          border-radius: 26px;
-          background: linear-gradient(135deg, 
-            rgba(184, 149, 106, 0.15) 0%, 
-            rgba(212, 184, 150, 0.08) 100%
-          );
-          border: 1.5px solid rgba(212, 184, 150, 0.85);
-          cursor: pointer;
-          -webkit-tap-highlight-color: transparent;
-          transition: all 280ms cubic-bezier(0.23, 1, 0.32, 1);
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          text-transform: uppercase;
           position: relative;
           overflow: hidden;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          /* 奢华阴影 */
           box-shadow: 
-            0 2px 12px rgba(184, 149, 106, 0.08),
-            0 1px 3px rgba(0, 0, 0, 0.05);
+            0 4px 20px rgba(0, 0, 0, 0.25),
+            0 2px 8px rgba(0, 0, 0, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
-        /* 按钮光晕效果 - 增强版 */
+        /* 按钮光晕边框 - 增强 */
         .s1-cta-btn::before {
           content: '';
           position: absolute;
-          top: 50%;
-          left: 50%;
-          width: 100%;
-          height: 100%;
-          background: radial-gradient(circle, 
-            rgba(212, 184, 150, 0.15) 0%, 
-            transparent 70%
+          inset: -2px;
+          border-radius: 26px;
+          padding: 2px;
+          background: linear-gradient(90deg, 
+            transparent,
+            var(--gold-bright),
+            transparent
           );
-          transform: translate(-50%, -50%) scale(0);
-          transition: transform 450ms cubic-bezier(0.23, 1, 0.32, 1);
-          pointer-events: none;
-        }
-
-        /* 新增：按钮微光动画 */
-        .s1-cta-btn::after {
-          content: '';
-          position: absolute;
-          top: -2px;
-          left: -2px;
-          right: -2px;
-          bottom: -2px;
-          background: linear-gradient(45deg, 
-            transparent 30%,
-            rgba(212, 184, 150, 0.1) 50%,
-            transparent 70%
-          );
-          border-radius: 14px;
+          -webkit-mask: 
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+          mask: 
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
           opacity: 0;
-          transform: translateX(-100%);
-          transition: all 600ms cubic-bezier(0.23, 1, 0.32, 1);
-          pointer-events: none;
+          transition: opacity 300ms ease;
+          animation: shimmer 3s linear infinite;
         }
 
-        .s1-cta-btn:hover::before {
-          transform: translate(-50%, -50%) scale(1.5);
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
         }
 
-        .s1-cta-btn:hover::after {
-          opacity: 1;
-          transform: translateX(100%);
-          transition-delay: 100ms;
+        .s1-cta-btn.urgent::before {
+          opacity: 0.7;
         }
 
-        /* CTA 文字 */
         .s1-cta-text {
           color: var(--cream-bright);
-          font-family: Georgia, 'Times New Roman', serif;
-          font-size: 15px;
-          font-weight: 500;
-          letter-spacing: 0.01em;
+          transition: color 200ms ease;
           position: relative;
           z-index: 1;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
-        /* CTA 箭头 */
         .s1-cta-arrow {
           color: var(--gold-bright);
           font-size: 18px;
-          opacity: 0.9;
-          transition: all 280ms cubic-bezier(0.23, 1, 0.32, 1);
+          transition: transform 200ms ease;
           position: relative;
           z-index: 1;
         }
 
-        /* 脉动动画（更优雅）*/
-        @keyframes gentlePulse {
+        /* 强脉动动画 - 增强 */
+        @keyframes urgentPulse {
           0%, 100% { 
             transform: scale(1);
-            border-color: var(--gold-border);
+            box-shadow: 
+              0 4px 20px rgba(0, 0, 0, 0.25),
+              0 0 0 0 rgba(184, 149, 106, 0.6);
           }
           50% { 
             transform: scale(1.02);
-            border-color: var(--gold-hover);
+            box-shadow: 
+              0 6px 28px rgba(184, 149, 106, 0.35),
+              0 0 25px 12px rgba(184, 149, 106, 0.25);
           }
         }
 
         .s1-cta-btn.pulse {
-          animation: gentlePulse 800ms ease-in-out 1;
+          animation: urgentPulse 1.5s ease-in-out infinite;
+          border-color: var(--gold-bright);
         }
 
-        /* 悬停效果（增强版）*/
-        @media (hover: hover) and (pointer: fine) {
+        /* 悬停效果 - 增强 */
+        @media (hover: hover) {
           .s1-cta-btn:hover:not(:disabled) {
-            border-color: var(--gold-hover);
+            border-color: var(--gold-bright);
             background: linear-gradient(135deg, 
-              rgba(212, 184, 150, 0.12) 0%, 
-              rgba(184, 149, 106, 0.06) 100%
+              rgba(212, 184, 150, 0.25) 0%, 
+              rgba(184, 149, 106, 0.15) 100%
             );
-            transform: translateY(-1px);
+            transform: translateY(-2px);
             box-shadow: 
-              0 4px 20px rgba(184, 149, 106, 0.12),
-              0 2px 8px rgba(0, 0, 0, 0.1);
+              0 8px 32px rgba(184, 149, 106, 0.35),
+              0 4px 12px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+          }
+
+          .s1-cta-btn:hover:not(:disabled)::before {
+            opacity: 0.5;
           }
 
           .s1-cta-btn:hover:not(:disabled) .s1-cta-arrow {
-            transform: translateX(3px);
-            opacity: 1;
+            transform: translateX(4px);
           }
 
-          .s1-cta-btn:hover:not(:disabled) .s1-cta-text {
-            color: #FFFFFF;
+          .project-sigil:hover::before,
+          .project-sigil:hover::after {
+            border-color: rgba(184, 149, 106, 0.6);
           }
         }
 
         /* 点击状态 */
         .s1-cta-btn:active:not(:disabled) {
           transform: scale(0.98);
-          transition: all 100ms ease;
-        }
-
-        /* 聚焦状态 */
-        .s1-cta-btn:focus-visible {
-          outline: 2px solid var(--gold);
-          outline-offset: 3px;
         }
 
         /* 禁用状态 */
         .s1-cta-btn:disabled {
           opacity: 0.3;
           cursor: not-allowed;
-        }
-
-        /* 隐私提示 */
-        .s1-privacy-note {
-          margin: 12px 0 0 0;
-          padding: 0;
-          font-size: 12px;
-          line-height: 1.5;
-          text-align: center;
-          color: rgba(245, 245, 240, 0.55);
-          font-family: system-ui, -apple-system, sans-serif;
-          letter-spacing: 0.02em;
+          animation: none;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           进度条（优雅等待状态 + 品质提升）
-           ═══════════════════════════════════════════════════════════════════ */
-        .s1-progress {
-          position: relative;
-          width: 64px;
-          height: 3px;
-          margin: 0 auto;
-          opacity: 0;
-          animation: s1ProgFade 400ms ease var(--s1-delay) forwards;
-        }
-
-        @keyframes s1ProgFade {
-          to { opacity: 1; }
-        }
-
-        .s1-progress-track {
-          position: absolute;
-          inset: 0;
-          border-radius: 999px;
-          background: rgba(200, 200, 192, 0.08);
-          overflow: hidden;
-          box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-
-        .s1-progress-fill {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          border-radius: 999px;
-          background: linear-gradient(90deg, 
-            transparent 0%, 
-            var(--gold) 50%, 
-            transparent 100%
-          );
-          transform: scaleX(0);
-          transform-origin: left center;
-          animation: 
-            s1Fill var(--s1-total) cubic-bezier(0.4, 0, 0.2, 1) var(--s1-delay) forwards,
-            s1Waiting 2s ease-in-out calc(var(--s1-delay) + var(--s1-total)) infinite;
-          box-shadow: 0 0 8px rgba(184, 149, 106, 0.3);
-        }
-
-        @keyframes s1Fill {
-          0%   { transform: scaleX(0); }
-          85%  { transform: scaleX(0.85); }
-          100% { transform: scaleX(0.85); }
-        }
-
-        @keyframes s1Waiting {
-          0%, 100% { 
-            opacity: 0.4;
-            transform: scaleX(0.75);
-          }
-          50% { 
-            opacity: 0.8;
-            transform: scaleX(0.9);
-          }
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           响应式适配
+           响应式适配 - 桌面端增强
            ═══════════════════════════════════════════════════════════════════ */
         @media (min-width: 769px) {
+          .logo-header {
+            padding: 28px 40px;
+          }
+
           .s1-top-label {
-            top: 100px;
-            font-size: 11px;
+            top: 95px;
+            font-size: 10px;
+            padding: 10px 20px;
           }
-          .label-suffix {
-            font-size: 12px;
+          
+          .screen-front-content {
+            padding: 145px 40px 30px;
+            max-width: 680px;
           }
-          .screen-front-title { 
-            font-size: 42px; 
-            line-height: 1.22;
-            margin-bottom: 24px;
-          }
-          .screen-front-subtitle { 
-            font-size: 18px;
-            margin-bottom: 28px;
-          }
-          .executive-briefing-label {
-            font-size: 12px;
-            margin-bottom: 14px;
-          }
-          .screen-front-keypoints {
-            font-size: 14px;
-            gap: 8px 14px;
-            margin-bottom: 32px;
-          }
-          .screen-front-content { 
-            max-width: 580px;
-            padding-top: 30px;
-          }
-          .s1-status-label { 
-            font-size: 13px;
-            margin-bottom: 24px;
-          }
-          .cta-container {
-            margin: 40px 0 32px 0;
-          }
-          .s1-cta-btn { 
-            height: 54px;
-            border-radius: 27px;
-          }
-          .s1-cta-text { 
+          
+          .project-sigil {
             font-size: 16px;
+            padding: 14px 24px;
+            margin-bottom: 16px;
           }
+          
+          .project-sigil::before,
+          .project-sigil::after {
+            width: 32px;
+            height: 32px;
+          }
+          
+          .auth-protocol {
+            font-size: 11px;
+            margin-bottom: 24px;
+          }
+          
+          .decoded-log-entry {
+            padding: 24px 30px;
+            margin-bottom: 28px;
+            max-width: 560px;
+          }
+          
+          .log-text {
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 12px;
+          }
+          
+          .log-signature {
+            font-size: 12px;
+          }
+          
+          .urgency-statement {
+            font-size: 15px;
+            margin-bottom: 20px;
+          }
+          
+          .countdown-timer {
+            margin-bottom: 24px;
+            padding: 16px;
+          }
+          
+          .countdown-number {
+            font-size: 76px;
+          }
+          
+          .s1-cta-btn { 
+            height: 56px;
+            font-size: 14px;
+            max-width: 420px;
+          }
+          
           .s1-cta-arrow { 
             font-size: 20px;
           }
-          .s1-progress { 
-            width: 72px;
-          }
         }
 
-        /* 极小屏适配 */
+        /* 超小屏适配 */
         @media (max-width: 359px) {
+          .logo-header {
+            padding: 16px;
+          }
+
           .s1-top-label {
-            font-size: 9px;
+            font-size: 8px;
+            top: 65px;
+            padding: 6px 12px;
           }
+          
+          .screen-front-content {
+            padding: 110px 12px 15px;
+          }
+          
+          .project-sigil {
+            font-size: 11px;
+            padding: 8px 12px;
+          }
+          
+          .decoded-log-entry {
+            padding: 12px 14px;
+          }
+          
+          .log-text {
+            font-size: 11px;
+          }
+          
+          .urgency-statement {
+            font-size: 12px;
+          }
+          
+          .countdown-number {
+            font-size: 48px;
+          }
+          
           .s1-cta-btn { 
-            height: 46px; 
-            padding: 0 22px;
-          }
-          .s1-cta-text { 
-            font-size: 14px;
-          }
-          .screen-front-keypoints {
+            height: 48px;
             font-size: 12px;
           }
         }
@@ -1035,35 +1020,29 @@ export default function ScreenOneFront() {
             transition-duration: 0.01ms !important;
           }
           
-          .h1-chunk, .subline, .executive-briefing-label, .screen-front-keypoints, 
-          .s1-status-label, .cta-container, .s1-top-label {
+          .project-sigil, .auth-protocol, .decoded-log-entry,
+          .interaction-core, .countdown-timer, .s1-top-label {
             opacity: 1 !important;
             transform: none !important;
-          }
-          
-          .s1-progress-fill {
-            transform: scaleX(0.85) !important;
           }
         }
 
         /* 高对比度模式 */
         @media (prefers-contrast: high) {
           .s1-cta-btn {
-            border-width: 2px;
+            border-width: 3px;
             border-color: var(--gold-bright);
-            background: rgba(184, 149, 106, 0.15);
+            background: rgba(184, 149, 106, 0.25);
           }
           
-          .s1-cta-text {
-            color: #FFFFFF;
-            font-weight: 600;
+          .countdown-number {
+            color: var(--gold-bright);
           }
-        }
-
-        /* 打印隐藏 */
-        @media print {
-          .s1-cta-btn, .s1-progress {
-            display: none;
+          
+          .decoded-log-entry,
+          .s1-top-label {
+            border-width: 2px;
+            border-color: rgba(184, 149, 106, 0.4);
           }
         }
       `}</style>
