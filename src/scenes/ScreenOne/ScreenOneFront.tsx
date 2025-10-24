@@ -2,21 +2,42 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import Wordmark from "@/components/Wordmark";
 
-/* ===================== 跨子域去重工具 ===================== */
+/* ===================== 优化的跨子域去重工具 ===================== */
+
+/**
+ * 增强的ID生成 - 更高的唯一性保证
+ */
+function generateSecureId(prefix: string): string {
+  const timestamp = Date.now().toString(36);
+  const randomPart = Math.random().toString(36).slice(2, 11);
+  const extraEntropy = Math.random().toString(36).slice(2, 11);
+  return `${prefix}_${timestamp}_${randomPart}${extraEntropy}`;
+}
+
+/**
+ * Cookie读取 - 增强错误处理
+ */
 function getCookie(name: string): string {
   if (typeof document === "undefined") return "";
-  const list = (document.cookie || "").split("; ");
-  for (const item of list) {
-    const eq = item.indexOf("=");
-    if (eq === -1) continue;
-    const k = decodeURIComponent(item.slice(0, eq));
-    const v = decodeURIComponent(item.slice(eq + 1));
-    if (k === name) return v;
+  try {
+    const list = (document.cookie || "").split("; ");
+    for (const item of list) {
+      const eq = item.indexOf("=");
+      if (eq === -1) continue;
+      const k = decodeURIComponent(item.slice(0, eq));
+      const v = decodeURIComponent(item.slice(eq + 1));
+      if (k === name) return v;
+    }
+  } catch (error) {
+    console.error(`[Cookie读取错误] ${name}:`, error);
   }
   return "";
 }
 
-function setRootCookie(name: string, value: string, days: number) {
+/**
+ * Cookie设置 - 增强可靠性和错误检测
+ */
+function setRootCookie(name: string, value: string, days: number): boolean {
   try {
     const exp = new Date(Date.now() + days * 864e5).toUTCString();
     const isHttps = window.location.protocol === 'https:';
@@ -31,39 +52,229 @@ function setRootCookie(name: string, value: string, days: number) {
         value
       )}; path=/; expires=${exp}; SameSite=Lax${secureFlag}`;
     }
-  } catch {}
+    
+    const success = document.cookie.indexOf(name + "=") !== -1;
+    if (!success) {
+      console.error(`[Cookie设置失败] ${name}`);
+    }
+    return success;
+  } catch (error) {
+    console.error(`[Cookie设置异常] ${name}:`, error);
+    return false;
+  }
 }
 
-function markOnce(key: string, devMode: boolean = false): boolean {
-  if (devMode && window.location.hostname === 'localhost') {
-    console.log(`[DEV] 事件 ${key} 触发（开发模式不去重）`);
-    return true;
+/**
+ * LocalStorage去重记录
+ */
+interface DedupeRecord {
+  key: string;
+  timestamp: number;
+  eventId: string;
+}
+
+function getLocalDedupeRecords(): DedupeRecord[] {
+  try {
+    const raw = localStorage.getItem("frd_s1_dedupe_v2");
+    if (!raw) return [];
+    const records: DedupeRecord[] = JSON.parse(raw);
+    const cutoff = Date.now() - 30 * 864e5;
+    const cleaned = records.filter(r => r.timestamp > cutoff);
+    if (cleaned.length !== records.length) {
+      localStorage.setItem("frd_s1_dedupe_v2", JSON.stringify(cleaned));
+    }
+    return cleaned;
+  } catch (error) {
+    console.error("[LocalStorage读取错误]:", error);
+    return [];
   }
-  const name = "frd_s1_dedupe";
-  const raw = getCookie(name);
-  const set = new Set(raw ? raw.split(",") : []);
+}
+
+function addLocalDedupeRecord(key: string, eventId: string): boolean {
+  try {
+    const records = getLocalDedupeRecords();
+    records.push({ key, timestamp: Date.now(), eventId });
+    localStorage.setItem("frd_s1_dedupe_v2", JSON.stringify(records));
+    return true;
+  } catch (error) {
+    console.error("[LocalStorage写入错误]:", error);
+    return false;
+  }
+}
+
+function hasLocalDedupeRecord(key: string): boolean {
+  const records = getLocalDedupeRecords();
+  return records.some(r => r.key === key);
+}
+
+/**
+ * 增强的去重检查 - Cookie + LocalStorage双重保障
+ */
+function markOnce(key: string, devMode: boolean = false): { canTrack: boolean; eventId: string } {
+  const eventId = generateSecureId("ev");
   
-  if (set.has(key)) {
-    console.log(`[去重] 事件 ${key} 已触发过，跳过`);
+  if (devMode && window.location.hostname === 'localhost') {
+    console.log(`[DEV] 事件 ${key} 触发（开发模式不去重）`, { eventId });
+    return { canTrack: true, eventId };
+  }
+  
+  const hasLocalRecord = hasLocalDedupeRecord(key);
+  const cookieName = "frd_s1_dedupe";
+  const raw = getCookie(cookieName);
+  const cookieSet = new Set(raw ? raw.split(",") : []);
+  const hasCookieRecord = cookieSet.has(key);
+  
+  if (hasLocalRecord || hasCookieRecord) {
+    console.log(`[去重] 事件 ${key} 已触发过，跳过`, { 
+      localStorage: hasLocalRecord, 
+      cookie: hasCookieRecord,
+      eventId 
+    });
+    return { canTrack: false, eventId };
+  }
+  
+  let successCount = 0;
+  if (addLocalDedupeRecord(key, eventId)) successCount++;
+  
+  cookieSet.add(key);
+  const cookieArray = Array.from(cookieSet);
+  if (cookieArray.length > 20) cookieArray.shift();
+  if (setRootCookie(cookieName, cookieArray.join(","), 30)) successCount++;
+  
+  if (successCount > 0) {
+    console.log(`[打点] 事件 ${key} 首次触发 ✓`, { 
+      eventId,
+      storedIn: successCount === 2 ? 'Cookie+LocalStorage' : '部分存储'
+    });
+    return { canTrack: true, eventId };
+  } else {
+    console.error(`[存储失败] 事件 ${key}，仍允许追踪`, { eventId });
+    return { canTrack: true, eventId };
+  }
+}
+
+/**
+ * 增强的用户ID管理 - 多层存储
+ */
+function ensureFrid(): string {
+  const win: any = window as any;
+  
+  if (win.__frid) return win.__frid;
+  
+  let frid = getCookie("frd_uid");
+  
+  if (!frid) {
+    try {
+      frid = localStorage.getItem("frd_uid") || "";
+    } catch (error) {
+      console.warn("[LocalStorage读取frid失败]:", error);
+    }
+  }
+  
+  if (!frid) {
+    frid = generateSecureId("fr");
+    setRootCookie("frd_uid", frid, 365);
+    try {
+      localStorage.setItem("frd_uid", frid);
+    } catch (error) {
+      console.warn("[LocalStorage保存frid失败]:", error);
+    }
+    console.log("[用户ID] 新用户首次访问", { frid });
+  }
+  
+  win.__frid = frid;
+  return frid;
+}
+
+/**
+ * 离线队列支持
+ */
+interface TrackingEvent {
+  eventName: string;
+  eventData: any;
+  eventId: string;
+  timestamp: number;
+  retryCount: number;
+}
+
+const pendingEvents: TrackingEvent[] = [];
+let isProcessingQueue = false;
+
+function sendToFacebook(eventName: string, eventData: any, eventId: string): boolean {
+  if (typeof window.fbq === "undefined") {
+    console.warn(`[FB Pixel] fbq未定义，事件 ${eventName} 无法发送`);
     return false;
   }
   
-  set.add(key);
-  setRootCookie(name, Array.from(set).join(","), 30);
-  console.log(`[打点] 事件 ${key} 首次触发 ✓`);
-  return true;
+  try {
+    window.fbq("trackCustom", eventName, eventData, { eventID: eventId });
+    console.log(`[FB打点] ${eventName} 发送成功`, { eventId, eventData });
+    return true;
+  } catch (error) {
+    console.error(`[FB打点错误] ${eventName}:`, error);
+    return false;
+  }
 }
 
-function ensureFrid() {
-  const win: any = window as any;
-  let frid = win.__frid || getCookie("frd_uid");
-  if (!frid) {
-    frid = "fr_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-    setRootCookie("frd_uid", frid, 30);
+function processEventQueue() {
+  if (isProcessingQueue || pendingEvents.length === 0) return;
+  
+  isProcessingQueue = true;
+  const event = pendingEvents[0];
+  const success = sendToFacebook(event.eventName, event.eventData, event.eventId);
+  
+  if (success) {
+    pendingEvents.shift();
+    console.log(`[队列处理] 事件已发送，剩余 ${pendingEvents.length} 个`);
+  } else {
+    event.retryCount++;
+    if (event.retryCount >= 3) {
+      console.error(`[队列处理] 事件 ${event.eventName} 重试3次失败，放弃`);
+      pendingEvents.shift();
+    } else {
+      console.warn(`[队列处理] 事件 ${event.eventName} 将重试 (${event.retryCount}/3)`);
+    }
   }
-  if (!win.__frid) win.__frid = frid;
-  return frid;
+  
+  isProcessingQueue = false;
+  if (pendingEvents.length > 0) {
+    setTimeout(processEventQueue, 2000);
+  }
 }
+
+function trackEvent(eventKey: string, eventName: string, eventData: any, isDev: boolean = false): void {
+  const { canTrack, eventId } = markOnce(eventKey, isDev);
+  if (!canTrack) return;
+  
+  const enrichedData = {
+    ...eventData,
+    frid: ensureFrid(),
+    timestamp: Date.now(),
+    page_url: window.location.href,
+    referrer: document.referrer,
+  };
+  
+  const success = sendToFacebook(eventName, enrichedData, eventId);
+  if (!success) {
+    pendingEvents.push({
+      eventName,
+      eventData: enrichedData,
+      eventId,
+      timestamp: Date.now(),
+      retryCount: 0
+    });
+    console.log(`[队列] 事件 ${eventName} 已加入待发送队列`);
+    setTimeout(processEventQueue, 2000);
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("online", () => {
+    console.log("[网络] 网络已恢复，处理待发送队列");
+    processEventQueue();
+  });
+}
+
 /* ========================================================== */
 
 export default function ScreenOneFront() {
@@ -113,45 +324,42 @@ export default function ScreenOneFront() {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
-  // 前屏加载成功事件
+  // 前屏加载成功事件 - 优化版
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
-    const frid = ensureFrid();
-    if (typeof window.fbq !== "undefined") {
-      const isDev = window.location.hostname === 'localhost';
-      if (markOnce("s1f_load", isDev)) {
-        const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-        window.fbq("trackCustom", "S1_Front_Loaded", {
-          content_name: "ScreenOne_Front",
-          content_category: "Assessment_Landing",
-          frid: frid,
-        }, { eventID: eventId });
-        console.log(`[FB打点] S1_Front_Loaded 触发成功`, { frid, eventId });
-      }
-    }
+    const isDev = window.location.hostname === 'localhost';
+    trackEvent(
+      "s1f_load",
+      "S1_Front_Loaded",
+      {
+        content_name: "ScreenOne_Front",
+        content_category: "Assessment_Landing",
+      },
+      isDev
+    );
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
-  // 3秒停留事件
+  // 3秒停留事件 - 优化版
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
-    const frid = ensureFrid();
     startTimeRef.current = Date.now();
 
     const engageTimer = setTimeout(() => {
-      if (typeof window.fbq !== "undefined") {
-        const isDev = window.location.hostname === 'localhost';
-        if (markOnce("s1e3", isDev)) {
-          const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-          window.fbq("trackCustom", "S1_Front_Engaged_3s", {
-            content_name: "ScreenOne_Front",
-            content_category: "Assessment_Landing",
-            engagement_type: "view_3s",
-            frid: frid,
-          }, { eventID: eventId });
-          console.log(`[FB打点] S1_Front_Engaged_3s 触发成功`, { frid, eventId });
-        }
-      }
+      const isDev = window.location.hostname === 'localhost';
+      const actualDuration = Math.round((Date.now() - startTimeRef.current) / 1000);
+      
+      trackEvent(
+        "s1e3",
+        "S1_Front_Engaged_3s",
+        {
+          content_name: "ScreenOne_Front",
+          content_category: "Assessment_Landing",
+          engagement_type: "view_3s",
+          actual_duration: actualDuration,
+        },
+        isDev
+      );
     }, 3000);
 
     return () => {
@@ -174,33 +382,32 @@ export default function ScreenOneFront() {
   }, [countdown]);
 
   // ═══════════════════════════════════════════════════════════════
-  // CTA 点击处理（唯一的导航入口）
+  // CTA 点击处理（唯一的导航入口）- 优化版
   // ═══════════════════════════════════════════════════════════════
   const handleCTAClick = useCallback(() => {
     if (hasClicked) return;
     
-    const frid = ensureFrid();
-    const fbEventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     const isDev = window.location.hostname === 'localhost';
+    const clickTimestamp = Date.now();
+    const timeOnPage = startTimeRef.current > 0 
+      ? Math.round((clickTimestamp - startTimeRef.current) / 1000) 
+      : 0;
 
-    // CTA点击事件
-    if (typeof window.fbq !== 'undefined') {
-      if (markOnce("s1cc", isDev)) {
-        window.fbq('trackCustom', 'S1_Front_CTA_Click', {
-          content_name: 'Assessment_CTA',
-          content_category: 'Matching_Assessment',
-          value: 49,
-          currency: 'USD',
-          screen_position: 'center',
-          screen_number: 1,
-          page_url: window.location.href,
-          referrer: document.referrer,
-          countdown_value: countdown,
-          frid: frid,
-        }, { eventID: fbEventId });
-        console.log(`[FB打点] S1_Front_CTA_Click 触发成功`, { frid, fbEventId, countdown });
-      }
-    }
+    trackEvent(
+      "s1cc",
+      "S1_Front_CTA_Click",
+      {
+        content_name: 'Assessment_CTA',
+        content_category: 'Matching_Assessment',
+        value: 49,
+        currency: 'USD',
+        screen_position: 'center',
+        screen_number: 1,
+        countdown_value: countdown,
+        time_on_page: timeOnPage,
+      },
+      isDev
+    );
 
     // 标记已点击
     setHasClicked(true);
@@ -496,68 +703,82 @@ export default function ScreenOneFront() {
           font-family: 'Bodoni MT', 'Didot', Georgia, serif;
           letter-spacing: 0.12em;
           font-weight: 400;
+          text-transform: uppercase;
           text-align: center;
           position: relative;
           opacity: 0;
-          animation: sigilReveal 800ms cubic-bezier(0.23, 1, 0.32, 1) 200ms forwards;
-          display: inline-block;
-          /* 增强背景 */
+          animation: sigilReveal 800ms cubic-bezier(0.23,1,0.32,1) 200ms forwards;
+          /* 奢华边框 */
+          border: 1px solid rgba(184, 149, 106, 0.3);
+          border-radius: 4px;
           background: linear-gradient(135deg,
-            rgba(184, 149, 106, 0.05) 0%,
+            rgba(184, 149, 106, 0.06) 0%,
             rgba(184, 149, 106, 0.02) 100%
           );
-          border-radius: 4px;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
           box-shadow: 
-            0 2px 12px rgba(184, 149, 106, 0.15),
+            0 2px 12px rgba(0, 0, 0, 0.2),
             inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        }
-
-        /* 装饰性边框 - 增强 */
-        .project-sigil::before,
-        .project-sigil::after {
-          content: '';
-          position: absolute;
-          width: 26px;
-          height: 26px;
-          border: 1.5px solid rgba(184, 149, 106, 0.4);
-          transition: all 300ms ease;
-        }
-
-        .project-sigil::before {
-          top: -2px;
-          left: -2px;
-          border-right: none;
-          border-bottom: none;
-        }
-
-        .project-sigil::after {
-          bottom: -2px;
-          right: -2px;
-          border-left: none;
-          border-top: none;
+          /* 文字光晕 */
+          text-shadow: 
+            0 0 20px rgba(184, 149, 106, 0.3),
+            0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         @keyframes sigilReveal {
           0% {
             opacity: 0;
-            transform: scale(0.95);
+            transform: scale(0.95) translateY(10px);
           }
           100% {
             opacity: 1;
-            transform: scale(1);
+            transform: scale(1) translateY(0);
           }
         }
 
+        /* 装饰角标 - 增强 */
+        .project-sigil::before,
+        .project-sigil::after {
+          content: '';
+          position: absolute;
+          width: 24px;
+          height: 24px;
+          border: 1px solid rgba(184, 149, 106, 0.25);
+          transition: border-color 300ms ease;
+        }
+
+        .project-sigil::before {
+          top: -6px;
+          left: -6px;
+          border-right: none;
+          border-bottom: none;
+          border-top-left-radius: 2px;
+        }
+
+        .project-sigil::after {
+          bottom: -6px;
+          right: -6px;
+          border-left: none;
+          border-top: none;
+          border-bottom-right-radius: 2px;
+        }
+
+        .project-sigil:hover::before,
+        .project-sigil:hover::after {
+          border-color: rgba(184, 149, 106, 0.5);
+        }
+
         /* ═══════════════════════════════════════════════════════════════════
-           权威认证文本 - 视觉增强
+           权威认证文本
            ═══════════════════════════════════════════════════════════════════ */
         .auth-protocol {
-          margin: 0 0 16px 0;
+          margin: 0 0 18px 0;
           padding: 0;
           font-size: 10px;
           line-height: 1.4;
-          color: var(--cream-muted);
-          font-family: 'SF Mono', monospace;
+          color: rgba(184, 149, 106, 0.6);
+          font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
           letter-spacing: 0.06em;
           text-transform: uppercase;
           font-weight: 500;
@@ -795,179 +1016,186 @@ export default function ScreenOneFront() {
           -webkit-mask-composite: xor;
           mask-composite: exclude;
           opacity: 0;
-          transition: opacity 300ms ease;
           animation: shimmer 3s linear infinite;
+          transition: opacity 300ms ease;
         }
 
         @keyframes shimmer {
           0% {
-            transform: translateX(-100%);
+            transform: translateX(-100%) rotate(0deg);
           }
           100% {
-            transform: translateX(100%);
+            transform: translateX(100%) rotate(0deg);
           }
         }
 
         .s1-cta-btn.urgent::before {
-          opacity: 0.7;
+          opacity: 0.5;
         }
 
         .s1-cta-text {
           color: var(--cream-bright);
-          transition: color 200ms ease;
           position: relative;
           z-index: 1;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+          transition: color 200ms ease;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
         .s1-cta-arrow {
           color: var(--gold-bright);
           font-size: 18px;
-          transition: transform 200ms ease;
           position: relative;
           z-index: 1;
+          transition: transform 200ms ease;
+          text-shadow: 0 0 10px rgba(184, 149, 106, 0.6);
         }
 
-        /* 强脉动动画 - 增强 */
-        @keyframes urgentPulse {
-          0%, 100% { 
+        /* 按钮强脉动 - 增强 */
+        @keyframes pulseDramatic {
+          0%, 100% {
             transform: scale(1);
             box-shadow: 
               0 4px 20px rgba(0, 0, 0, 0.25),
-              0 0 0 0 rgba(184, 149, 106, 0.6);
+              0 0 0 0 rgba(184, 149, 106, 0.5);
           }
-          50% { 
-            transform: scale(1.02);
+          50% {
+            transform: scale(1.025);
             box-shadow: 
               0 6px 28px rgba(184, 149, 106, 0.35),
-              0 0 25px 12px rgba(184, 149, 106, 0.25);
+              0 0 30px 12px rgba(184, 149, 106, 0.25);
           }
         }
 
         .s1-cta-btn.pulse {
-          animation: urgentPulse 1.5s ease-in-out infinite;
+          animation: pulseDramatic 1.5s ease-in-out infinite;
           border-color: var(--gold-bright);
         }
 
         /* 悬停效果 - 增强 */
         @media (hover: hover) {
           .s1-cta-btn:hover:not(:disabled) {
-            border-color: var(--gold-bright);
             background: linear-gradient(135deg, 
-              rgba(212, 184, 150, 0.25) 0%, 
+              rgba(184, 149, 106, 0.25) 0%, 
               rgba(184, 149, 106, 0.15) 100%
             );
-            transform: translateY(-2px);
+            border-color: var(--gold-bright);
+            transform: translateY(-2px) scale(1.01);
             box-shadow: 
-              0 8px 32px rgba(184, 149, 106, 0.35),
-              0 4px 12px rgba(0, 0, 0, 0.2),
+              0 8px 32px rgba(184, 149, 106, 0.4),
+              0 4px 12px rgba(0, 0, 0, 0.25),
               inset 0 1px 0 rgba(255, 255, 255, 0.15);
           }
 
           .s1-cta-btn:hover:not(:disabled)::before {
-            opacity: 0.5;
+            opacity: 0.7;
           }
 
           .s1-cta-btn:hover:not(:disabled) .s1-cta-arrow {
             transform: translateX(4px);
-          }
-
-          .project-sigil:hover::before,
-          .project-sigil:hover::after {
-            border-color: rgba(184, 149, 106, 0.6);
           }
         }
 
         /* 点击状态 */
         .s1-cta-btn:active:not(:disabled) {
           transform: scale(0.98);
+          box-shadow: 
+            0 2px 12px rgba(0, 0, 0, 0.2),
+            inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         /* 禁用状态 */
         .s1-cta-btn:disabled {
-          opacity: 0.3;
+          opacity: 0.4;
           cursor: not-allowed;
           animation: none;
+          transform: none;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
            响应式适配 - 桌面端增强
            ═══════════════════════════════════════════════════════════════════ */
-        @media (min-width: 769px) {
+        @media (min-width: 768px) {
           .logo-header {
-            padding: 28px 40px;
+            padding: 24px 32px;
           }
 
           .s1-top-label {
-            top: 95px;
+            top: 82px;
             font-size: 10px;
             padding: 10px 20px;
           }
-          
+
           .screen-front-content {
-            padding: 145px 40px 30px;
             max-width: 680px;
+            padding: 140px 32px 32px;
           }
-          
+
           .project-sigil {
-            font-size: 16px;
-            padding: 14px 24px;
-            margin-bottom: 16px;
+            font-size: 15px;
+            padding: 12px 24px;
+            margin-bottom: 14px;
           }
-          
+
           .project-sigil::before,
           .project-sigil::after {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
+            top: -7px;
+            left: -7px;
           }
-          
+
+          .project-sigil::after {
+            bottom: -7px;
+            right: -7px;
+          }
+
           .auth-protocol {
             font-size: 11px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
           }
-          
+
           .decoded-log-entry {
-            padding: 24px 30px;
-            margin-bottom: 28px;
+            padding: 20px 24px;
+            margin-bottom: 22px;
             max-width: 560px;
           }
-          
+
           .log-text {
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.7;
             margin-bottom: 12px;
           }
-          
+
           .log-signature {
             font-size: 12px;
           }
-          
+
           .urgency-statement {
-            font-size: 15px;
+            font-size: 14px;
+            margin-bottom: 16px;
+          }
+
+          .countdown-timer {
+            padding: 16px;
             margin-bottom: 20px;
           }
-          
-          .countdown-timer {
-            margin-bottom: 24px;
-            padding: 16px;
-          }
-          
+
           .countdown-number {
-            font-size: 76px;
+            font-size: 68px;
           }
-          
-          .s1-cta-btn { 
+
+          .s1-cta-btn {
             height: 56px;
-            font-size: 14px;
-            max-width: 420px;
+            max-width: 400px;
+            font-size: 13px;
           }
-          
-          .s1-cta-arrow { 
+
+          .s1-cta-arrow {
             font-size: 20px;
           }
         }
 
-        /* 超小屏适配 */
+        /* 超小屏优化 */
         @media (max-width: 359px) {
           .logo-header {
             padding: 16px;
@@ -975,38 +1203,38 @@ export default function ScreenOneFront() {
 
           .s1-top-label {
             font-size: 8px;
-            top: 65px;
+            top: 68px;
             padding: 6px 12px;
           }
-          
+
           .screen-front-content {
-            padding: 110px 12px 15px;
+            padding: 110px 12px 16px;
           }
-          
+
           .project-sigil {
             font-size: 11px;
-            padding: 8px 12px;
+            padding: 8px 14px;
           }
-          
+
           .decoded-log-entry {
             padding: 12px 14px;
           }
-          
+
           .log-text {
             font-size: 11px;
           }
-          
+
           .urgency-statement {
             font-size: 12px;
           }
-          
+
           .countdown-number {
             font-size: 48px;
           }
-          
-          .s1-cta-btn { 
+
+          .s1-cta-btn {
             height: 48px;
-            font-size: 12px;
+            font-size: 11px;
           }
         }
 
@@ -1019,30 +1247,35 @@ export default function ScreenOneFront() {
             animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
           }
-          
-          .project-sigil, .auth-protocol, .decoded-log-entry,
-          .interaction-core, .countdown-timer, .s1-top-label {
+
+          .project-sigil,
+          .auth-protocol,
+          .decoded-log-entry,
+          .interaction-core,
+          .countdown-timer,
+          .s1-top-label {
             opacity: 1 !important;
             transform: none !important;
           }
         }
 
-        /* 高对比度模式 */
+        /* 高对比度模式支持 */
         @media (prefers-contrast: high) {
           .s1-cta-btn {
             border-width: 3px;
             border-color: var(--gold-bright);
-            background: rgba(184, 149, 106, 0.25);
+            background: rgba(184, 149, 106, 0.3);
           }
-          
-          .countdown-number {
-            color: var(--gold-bright);
+
+          .countdown-timer {
+            border-width: 3px;
+            border-color: var(--gold-bright);
           }
-          
+
           .decoded-log-entry,
           .s1-top-label {
             border-width: 2px;
-            border-color: rgba(184, 149, 106, 0.4);
+            border-color: rgba(184, 149, 106, 0.5);
           }
         }
       `}</style>

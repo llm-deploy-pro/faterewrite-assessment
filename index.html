@@ -17,11 +17,12 @@
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
       fbq('init', '1456840718702401');
-      fbq('track', 'PageView');  // ✅ 添加这一行
+      // ❌ 已删除 fbq('track', 'PageView'); 
+      // ✅ PageView 将由应用代码统一管理(延迟500ms后触发)
     </script>
   </head>
   <body>
-    <!-- Facebook Pixel noscript 标签（在 body 中）-->
+    <!-- Facebook Pixel noscript 标签（JS禁用时的兜底追踪）-->
     <noscript>
       <img height="1" width="1" style="display:none"
            src="https://www.facebook.com/tr?id=1456840718702401&ev=PageView&noscript=1"/>

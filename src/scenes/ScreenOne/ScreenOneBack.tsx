@@ -333,7 +333,10 @@ export default function ScreenOneBack() {
   }, []);
 
   // 🔥 CTA按钮点击逻辑 - 跳转支付页面
-  const handleClickCTA = useCallback(() => {
+  const handleClickCTA = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    // 关键修复：阻止事件冒泡到任何可能存在的父级路由组件
+    event.stopPropagation();
+    
     if (hasClickedRef.current || isLoading) return;
     hasClickedRef.current = true;
     setIsLoading(true);
