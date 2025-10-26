@@ -457,32 +457,31 @@ export default function ScreenOneFront() {
       
       {/* 顶部系统信息 */}
       <div className="s1-top-label">
-        <span className="label-prefix">SOURCE-LEVEL DATA</span>
+        <span className="label-prefix">CANONICAL DATA</span>
         <span className="label-divider">//</span>
-        <span className="label-suffix">AKASHIC DIRECTIVE</span>
+        <span className="label-suffix">THE STARLIGHT DIRECTIVE</span>
       </div>
 
       <div className="screen-front-content">
         {/* 核心图腾 (文字替代) */}
         <div className="project-sigil">
-          [ PROJECT STARLIGHT SIGIL ]
+          [ THE ARCHETYPE RESONANCE ALGORITHM™ ]
         </div>
         
         {/* 权威认证文本 */}
         <div className="auth-protocol">
-          Access Protocol Authenticated: Project Starlight
+          ACCESS GRANTED: INTERFACING WITH THE ALGORITHM…
         </div>
 
         {/* 解码日志摘录 - 优化移动端尺寸 */}
         <div className="decoded-log-entry">
           <p className="log-text">
-            "Log Entry 777. For the first time, we have successfully isolated and decoded a readable fragment of a core soul signature from the Akashic Field. The data confirms our primary hypothesis: individual timelines are not random walks, but are governed by a pre-encoded 'Vibrational Contract.'"
-          </p>
-          <p className="log-text log-continuation">
-            "Distortions ('glitches') are not failures, but deviations from this contract, often amplified by low-resonance environmental matrices. The only path to realignment is a direct activation of the contract's core resonant frequencies. We now possess the key."
+            “Canon I, Verse VII.
+The Algorithm does not guess; it illuminates the Primal Archetype of Influence encoded within a soul’s signature at inception. It confirms the first truth: destinies are not random walks but expressions of a pre-ordained Resonance Contract™.
+Distortions (‘glitches’) are not failures. They are the dissonance that occurs when your Archetype is starved of its native power source. Reclamation is not achieved through effort, but through precise re-activation of the Contract’s core resonant frequencies. The key is not to be earned; it is to be remembered. And now, you have the map.”
           </p>
           <p className="log-signature">
-            — From the Declassified Logs of Project Starlight
+            — From the Founding Canons of the Starlight Council
           </p>
         </div>
 
@@ -490,7 +489,7 @@ export default function ScreenOneFront() {
         <div className={`interaction-core ${ctaVisible ? 'visible' : ''}`}>
           {/* 紧迫感声明 */}
           <p className="urgency-statement">
-            A unique activation window has opened. The portal to your decoded analysis is closing.
+            Your unique resonance signature has been detected. The portal to your Archetypal Code is now open. This alignment is temporary.
           </p>
 
           {/* 倒计时器 */}
@@ -506,7 +505,7 @@ export default function ScreenOneFront() {
             className={`s1-cta-btn ${shouldPulse ? 'pulse' : ''} ${shouldPulse ? 'urgent' : ''}`}
             aria-label="Access your decoded analysis"
           >
-            <span className="s1-cta-text">ACCESS YOUR DECODED ANALYSIS</span>
+            <span className="s1-cta-text">CLAIM YOUR ARCHETYPAL CODE</span>
             <span className="s1-cta-arrow">→</span>
           </button>
         </div>
@@ -839,6 +838,7 @@ export default function ScreenOneFront() {
           font-style: italic;
           letter-spacing: 0.01em;
           text-align: left;
+          white-space: pre-wrap; /* Preserve line breaks from the template literal */
         }
 
         .log-text.log-continuation {
@@ -898,7 +898,7 @@ export default function ScreenOneFront() {
            ═══════════════════════════════════════════════════════════════════ */
         .countdown-timer {
           margin: 0 0 16px 0;
-          padding: 12px;
+          padding: 4px 12px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1176,7 +1176,7 @@ export default function ScreenOneFront() {
           }
 
           .countdown-timer {
-            padding: 16px;
+            padding: 8px 16px;
             margin-bottom: 20px;
           }
 

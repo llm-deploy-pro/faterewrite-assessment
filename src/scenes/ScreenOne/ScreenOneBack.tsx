@@ -1,8 +1,9 @@
 // src/scenes/ScreenOne/ScreenOneBack.tsx
-import { useEffect, useRef, useState, useCallback } from "react";
-import Wordmark from "@/components/Wordmark";
+import { useEffect, useRef, useState } from "react";
 
-/* ===================== 跨子域去重工具 ===================== */
+/* =====================================================================
+   跨子域去重工具 - 确保事件在所有子域中只触发一次
+   ===================================================================== */
 function getCookie(name: string): string {
   if (typeof document === "undefined") return "";
   const list = (document.cookie || "").split("; ");
@@ -22,10 +23,12 @@ function setRootCookie(name: string, value: string, days: number) {
     const isHttps = window.location.protocol === "https:";
     const secureFlag = isHttps ? "; Secure" : "";
 
+    // 尝试设置根域cookie
     document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
       value
     )}; path=/; domain=.faterewrite.com; expires=${exp}; SameSite=Lax${secureFlag}`;
 
+    // 如果根域cookie设置失败，设置当前域cookie作为备选
     if (document.cookie.indexOf(name + "=") === -1) {
       document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
         value
@@ -35,6 +38,7 @@ function setRootCookie(name: string, value: string, days: number) {
 }
 
 function markOnce(key: string, devMode: boolean = false): boolean {
+  // 开发模式下允许重复触发以便测试
   if (devMode && window.location.hostname === "localhost") {
     console.log(`[DEV] 事件 ${key} 触发（开发模式不去重）`);
     return true;
@@ -69,274 +73,181 @@ function ensureFrid() {
   return frid;
 }
 
-function withParams(
-  url: string,
-  params: Record<string, string | number | undefined | null>
-) {
-  const u = new URL(url, window.location.origin);
-  Object.entries(params).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== "")
-      u.searchParams.set(k, String(v));
-  });
-  return u.pathname + (u.search || "");
-}
-void withParams;
-/* ========================================================== */
-
-// 利益点卡片数据
+/* =====================================================================
+   三大支柱数据配置 - 能量重构版本
+   每个支柱都有强烈的品牌色彩，创造视觉识别度和能量感
+   ===================================================================== */
 const trinityComponents = [
   {
-    name: "Component I: The Akashic Signal Map (Diagnostic)",
-    promise: "Stop wasting your life force on energetic decoys. This map reveals the 3 primary timeline distortions that have been secretly sabotaging your manifestations and keeping you in a loop of near-success.",
-    deliverable: "You will receive a one-page, encrypted PDF that visually maps these 3 decoys, identifying their unique vibrational signature so you can recognize and neutralize them on sight.",
+    id: "clarity",
+    number: "I",
+    name: "CLARITY",
+    subtitle: "See The Matrix",
+    content:
+      "Your blueprint recalibrates perception. Ladders fade; the chessboard appears. You begin to notice the unwritten codes that govern rooms and decision-makers— the subtle frequencies that tilt outcomes, revealing the path of least resistance that was invisible yesterday.",
+    // 冷灰蓝铂金色 - 低饱和度，昂贵质感
+    primaryColor: "#8A9BA8",
+    secondaryColor: "#A4B3BE",
+    glowColor: "138, 155, 168",
   },
   {
-    name: "Component II: The Personal Resonance Key (Corrective)",
-    promise: "This is your unique frequency—the one the universe is waiting to hear. Activating this key aligns your energetic signature with your pre-encoded 'Vibrational Contract,' making you magnetic to the opportunities, people, and realities that belong to you.",
-    deliverable: "You will receive a 7-day, step-by-step activation sequence. Each day provides a single, 5-minute micro-action designed to calibrate your frequency and lock in your new vibrational state.",
+    id: "magnetism",
+    number: "II",
+    name: "MAGNETISM",
+    subtitle: "Become The Gravity Well",
+    content:
+      "This isn't charm. It's core-Archetype activation—presence converting into social capital. Invitations, allies, and strategic partners tend to gravitate toward you; not because of what you do, but because of who you become.",
+    // 暖灰紫丝绸色 - 低饱和度，优雅质感
+    primaryColor: "#9B8B9E",
+    secondaryColor: "#B5A5B8",
+    glowColor: "155, 139, 158",
   },
   {
-    name: "Component III: The Timeline Override Script (Executive)",
-    promise: "Collapse your timeline. This script is the first command you will execute on your new path, designed to trigger an immediate cascade of synchronicity and tangible results within the first 48 hours. This is where the shift becomes real.",
-    deliverable: "You will receive a precise, 3-step action script to be executed post-compilation. It includes two conversation openers and one value-bridge statement, engineered to bypass resistance and initiate your new trajectory.",
+    id: "control",
+    number: "III",
+    name: "CONTROL",
+    subtitle: "Move Without Noise",
+    content:
+      "Receive precise directives to create outsized shifts with minimal motion. Leverage former \"glitches\" as unique assets; make decisions that ripple in your favor. This is the end of striving—and the beginning of agency.",
+    // 古铜金属色 - 低饱和度，沉稳昂贵质感
+    primaryColor: "#B8956A",
+    secondaryColor: "#CFAD85",
+    glowColor: "184, 149, 106",
   },
 ];
 
-// 🔥 六色分级日志系统
-type LogType = 'INFO' | 'SYSTEM' | 'SUCCESS' | 'NETWORK' | 'WARN' | 'CRITICAL';
-
-interface LogEvent {
-  id: number;
-  type: LogType;
-  text: string;
-  timestamp: string;
-}
-
-// 日志内容库 - 40+条变体
-const logLibrary = {
-  INFO: [
-    'Allocating memory buffer... 2048KB',
-    'Synchronizing with time server...',
-    'Loading resonance matrix cache...',
-    'Processing activation queue...',
-    'Updating frequency database...',
-    'Initializing quantum entanglement protocols...',
-  ],
-  SYSTEM: [
-    'CALIBRATING RESONANCE FIELD... OK',
-    'CONNECTION TO AKASHIC NODE STABLE',
-    'FIELD STABLE. AWAITING ACTIVATION DATA...',
-    'CHRONOSIGNATURE VERIFIED',
-    'DIMENSIONAL ANCHOR LOCKED',
-    'TIMELINE COHERENCE: 98.7%',
-    'REALITY MATRIX SYNCHRONIZED',
-  ],
-  SUCCESS: [
-    'SIGNATURE 7G4-B AUTHENTICATED... [NEW YORK, US]',
-    'SIGNATURE 9K1-F VALIDATED... [LONDON, UK]',
-    'SIGNATURE A3X-R SECURED... [TOKYO, JP]',
-    'SIGNATURE C8V-M AUTHENTICATED... [SYDNEY, AU]',
-    'SIGNATURE Z5P-L VALIDATED... [PARIS, FR]',
-    'SIGNATURE 4RT-N SECURED... [BERLIN, DE]',
-    'SIGNATURE 8HX-K AUTHENTICATED... [SINGAPORE, SG]',
-    'SIGNATURE 2PM-W VALIDATED... [SEOUL, KR]',
-  ],
-  NETWORK: [
-    'QUANTUM LINK ESTABLISHED',
-    'UPLINKING TO STARLIGHT MATRIX...',
-    'DECRYPTION LAYER ACTIVE',
-    'AKASHIC BRIDGE CONNECTED',
-    'NEURAL RELAY SYNCHRONIZED',
-    'COSMIC BANDWIDTH: OPTIMAL',
-  ],
-  WARN: [
-    'MINOR TEMPORAL FLUX DETECTED... AUTO-CORRECTING',
-    'ENERGY DECOY SIGNATURE DETECTED... NEUTRALIZING',
-    'Latency spike +23ms... compensating...',
-    'Timeline variance detected... stabilizing...',
-    'Frequency interference... filtering...',
-  ],
-  CRITICAL: [
-    '⚠ NEXT AKASHIC WINDOW CLOSES IN: 09H 47M 12S',
-    '⚠ ONLY 3 ACTIVATION SLOTS REMAINING',
-    '⚠ HIGH DEMAND: 247 USERS IN QUEUE',
-    '⚠ TIMELINE CONVERGENCE IN: 08H 32M 55S',
-  ],
-};
-
-// 🔥 智能日志生成器
-const generateNewLog = (forceCritical: boolean = false): LogEvent => {
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  const now = new Date();
-  const timestamp = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
-  
-  let type: LogType;
-  let message: string;
-  
-  if (forceCritical) {
-    type = 'CRITICAL';
-    message = logLibrary.CRITICAL[Math.floor(Math.random() * logLibrary.CRITICAL.length)];
-  } else {
-    // 权重分布：INFO 30%, SYSTEM 25%, SUCCESS 20%, NETWORK 15%, WARN 8%, CRITICAL 2%
-    const rand = Math.random() * 100;
-    if (rand < 30) {
-      type = 'INFO';
-      message = logLibrary.INFO[Math.floor(Math.random() * logLibrary.INFO.length)];
-    } else if (rand < 55) {
-      type = 'SYSTEM';
-      message = logLibrary.SYSTEM[Math.floor(Math.random() * logLibrary.SYSTEM.length)];
-    } else if (rand < 75) {
-      type = 'SUCCESS';
-      message = logLibrary.SUCCESS[Math.floor(Math.random() * logLibrary.SUCCESS.length)];
-    } else if (rand < 90) {
-      type = 'NETWORK';
-      message = logLibrary.NETWORK[Math.floor(Math.random() * logLibrary.NETWORK.length)];
-    } else if (rand < 98) {
-      type = 'WARN';
-      message = logLibrary.WARN[Math.floor(Math.random() * logLibrary.WARN.length)];
-    } else {
-      type = 'CRITICAL';
-      message = logLibrary.CRITICAL[Math.floor(Math.random() * logLibrary.CRITICAL.length)];
-    }
-  }
-  
-  const text = `[${timestamp} UTC] [${type}] > ${message}`;
-  
-  return {
-    id: Date.now() + Math.random(),
-    type,
-    text,
-    timestamp,
-  };
-};
-
-
 export default function ScreenOneBack() {
+  // 追踪refs确保事件只触发一次
   const hasTrackedRef = useRef(false);
   const hasClickedRef = useRef(false);
-  const cardClickedRef = useRef<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
-  const [expandedCard, setExpandedCard] = useState<number | null>(null);
-
-  // 🔥 动态数据流状态
-  const [feedLines, setFeedLines] = useState<LogEvent[]>([
-    { id: 1, type: 'SYSTEM', text: '[SYSTEM] > INITIALIZING STARLIGHT MATRIX FEED...', timestamp: '' }
-  ]);
-  const [matrixPulse, setMatrixPulse] = useState(false);
+  const [activePillar, setActivePillar] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const criticalShownRef = useRef(false);
-  const nextCriticalTimeRef = useRef(Date.now() + 60000); // 首次60秒后
 
-
-  // ═══════════════════════════════════════════════════════════════
-  // 🎯 核心打点与页面逻辑
-  // ═══════════════════════════════════════════════════════════════
+  /* ===================================================================
+     页面加载追踪 - 在用户看到页面600ms后触发Facebook Pixel事件
+     同时设置停留时长打点（3秒、10秒、20秒）
+     =================================================================== */
   useEffect(() => {
     if (hasTrackedRef.current) return;
     hasTrackedRef.current = true;
     const frid = ensureFrid();
     const isDev = window.location.hostname === "localhost";
-    const timer = setTimeout(() => {
+    
+    // 页面加载事件（600ms后）
+    const loadTimer = setTimeout(() => {
       if (typeof (window as any).fbq !== "undefined") {
         if (markOnce("s1bl", isDev)) {
-          const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-          (window as any).fbq("trackCustom", "S1_Back_Loaded", { content_name: "ScreenOne_Back", content_category: "Assessment_Offer", screen_position: "back", screen_number: 1, page_url: window.location.href, referrer: document.referrer, frid: frid, }, { eventID: eventId });
-          console.log(`[FB打点] S1_Back_Loaded 触发成功`, { frid, eventId });
+          const eventId =
+            "ev_" +
+            Date.now().toString(36) +
+            Math.random().toString(36).slice(2, 8);
+          (window as any).fbq(
+            "track",
+            "ViewContent",
+            {
+              content_name: "Screen1-Loaded",
+              content_category: "activation-page",
+              currency: "USD",
+              value: 47.0, // 修正为正确的价格
+              user_id: frid,
+            },
+            { eventID: eventId }
+          );
         }
       }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+    }, 600);
 
-  // 🔥 数据流自动更新逻辑 - 随机频率 + 首次必出CRITICAL
-  const addNewFeedLine = useCallback(() => {
-    setFeedLines((prev) => {
-      let newLog: LogEvent;
-      
-      // 首次必出CRITICAL
-      if (!criticalShownRef.current) {
-        criticalShownRef.current = true;
-        newLog = generateNewLog(true);
-      } 
-      // 周期性CRITICAL（每60秒）
-      else if (Date.now() >= nextCriticalTimeRef.current) {
-        nextCriticalTimeRef.current = Date.now() + 60000;
-        newLog = generateNewLog(true);
-      }
-      // 普通日志
-      else {
-        newLog = generateNewLog(false);
-      }
-      
-      const updated = [newLog, ...prev].slice(0, 8);
-      return updated;
-    });
-    setMatrixPulse(true);
-    setTimeout(() => setMatrixPulse(false), 400);
-  }, []);
-
-  useEffect(() => {
-    // 🔥 首次3秒后生成CRITICAL
-    const firstTimer = setTimeout(() => {
-      addNewFeedLine();
-    }, 3000);
-    
-    // 🔥 随机间隔生成日志（1.2-2秒）
-    const scheduleNext = () => {
-      const randomDelay = 1200 + Math.random() * 800; // 1.2s - 2s
-      const timer = setTimeout(() => {
-        addNewFeedLine();
-        scheduleNext();
-      }, randomDelay);
-      return timer;
-    };
-    
-    const intervalTimer = scheduleNext();
-    
-    return () => {
-      clearTimeout(firstTimer);
-      clearTimeout(intervalTimer);
-    };
-  }, [addNewFeedLine]);
-
-  // 卡片展开逻辑 - 不滚动，只切换状态 + 打点
-  const handleToggleCard = useCallback((idx: number) => {
-    // 卡片展开/收起逻辑
-    setExpandedCard((prev) => prev === idx ? null : idx);
-    
-    // 卡片点击打点（仅首次点击）
-    if (!cardClickedRef.current.has(idx)) {
-      cardClickedRef.current.add(idx);
-      const frid = ensureFrid();
-      const isDev = window.location.hostname === "localhost";
-      const componentNames = ["Component_I", "Component_II", "Component_III"];
-      const eventKey = `s1bc${idx + 1}`;
-      
+    // 页面停留3秒打点
+    const dwell3sTimer = setTimeout(() => {
       if (typeof (window as any).fbq !== "undefined") {
-        if (markOnce(eventKey, isDev)) {
-          const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-          (window as any).fbq("trackCustom", "S1_Back_Card_Click", {
-            content_name: `ScreenOne_Back_${componentNames[idx]}`,
-            content_category: "Assessment_Component",
-            component_index: idx + 1,
-            component_name: componentNames[idx],
-            screen_position: "back",
-            screen_number: 1,
-            page_url: window.location.href,
-            referrer: document.referrer,
-            frid: frid,
-          }, { eventID: eventId });
-          console.log(`[FB打点] S1_Back_Card_Click 触发成功`, { component: componentNames[idx], frid, eventId });
+        if (markOnce("s1bd3s", isDev)) {
+          const eventId =
+            "ev_" +
+            Date.now().toString(36) +
+            Math.random().toString(36).slice(2, 8);
+          (window as any).fbq(
+            "trackCustom",
+            "S1_Back_Dwell_3s",
+            {
+              content_name: "ScreenOne_Back_Dwell",
+              dwell_time_seconds: 3,
+              screen_position: "back",
+              screen_number: 1,
+              page_url: window.location.href,
+              user_id: frid,
+            },
+            { eventID: eventId }
+          );
         }
       }
-    }
+    }, 3000);
+
+    // 页面停留10秒打点
+    const dwell10sTimer = setTimeout(() => {
+      if (typeof (window as any).fbq !== "undefined") {
+        if (markOnce("s1bd10s", isDev)) {
+          const eventId =
+            "ev_" +
+            Date.now().toString(36) +
+            Math.random().toString(36).slice(2, 8);
+          (window as any).fbq(
+            "trackCustom",
+            "S1_Back_Dwell_10s",
+            {
+              content_name: "ScreenOne_Back_Dwell",
+              dwell_time_seconds: 10,
+              screen_position: "back",
+              screen_number: 1,
+              page_url: window.location.href,
+              user_id: frid,
+            },
+            { eventID: eventId }
+          );
+        }
+      }
+    }, 10000);
+
+    // 页面停留20秒打点
+    const dwell20sTimer = setTimeout(() => {
+      if (typeof (window as any).fbq !== "undefined") {
+        if (markOnce("s1bd20s", isDev)) {
+          const eventId =
+            "ev_" +
+            Date.now().toString(36) +
+            Math.random().toString(36).slice(2, 8);
+          (window as any).fbq(
+            "trackCustom",
+            "S1_Back_Dwell_20s",
+            {
+              content_name: "ScreenOne_Back_Dwell",
+              dwell_time_seconds: 20,
+              screen_position: "back",
+              screen_number: 1,
+              page_url: window.location.href,
+              user_id: frid,
+            },
+            { eventID: eventId }
+          );
+        }
+      }
+    }, 20000);
+    
+    // 清理所有定时器
+    return () => {
+      clearTimeout(loadTimer);
+      clearTimeout(dwell3sTimer);
+      clearTimeout(dwell10sTimer);
+      clearTimeout(dwell20sTimer);
+    };
   }, []);
 
-  // 🔥 CTA按钮点击逻辑 - 跳转支付页面
-  const handleClickCTA = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
-    // 关键修复：阻止事件冒泡到任何可能存在的父级路由组件
+  /* ===================================================================
+     CTA点击处理 - 防重复点击，追踪事件，执行转场动画后跳转
+     =================================================================== */
+  const handleClickCTA = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    
+
     if (hasClickedRef.current || isLoading) return;
     hasClickedRef.current = true;
     setIsLoading(true);
@@ -344,984 +255,973 @@ export default function ScreenOneBack() {
     const frid = ensureFrid();
     const isDev = window.location.hostname === "localhost";
 
-    // FB打点
+    // 追踪CTA点击事件
     if (typeof (window as any).fbq !== "undefined") {
       if (markOnce("s1bc", isDev)) {
-        const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-        (window as any).fbq("trackCustom", "S1_Back_CTA_Click", { content_name: "ScreenOne_Back_CTA", content_category: "Assessment_Offer_CTA", cta_text: "Execute Your Destiny", screen_position: "back", screen_number: 1, page_url: window.location.href, referrer: document.referrer, frid: frid, }, { eventID: eventId });
-        console.log(`[FB打点] S1_Back_CTA_Click 触发成功`, { frid, eventId });
+        const eventId =
+          "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        (window as any).fbq(
+          "trackCustom",
+          "S1_Back_CTA_Click",
+          {
+            content_name: "ScreenOne_Back_CTA",
+            content_category: "Assessment_Offer_CTA",
+            cta_text: "Initiate My Calibration",
+            screen_position: "back",
+            screen_number: 1,
+            page_url: window.location.href,
+            referrer: document.referrer,
+            frid: frid,
+          },
+          { eventID: eventId }
+        );
       }
     }
 
-    const root = document.querySelector(".s1-back");
+    // 添加执行动画类
+    const root = document.querySelector(".s1-back-energy");
     if (root) root.classList.add("is-executing");
 
+    // 清理可能存在的旧定时器
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    
+    // 1.2秒后执行页面转场和跳转
     timeoutRef.current = setTimeout(() => {
-      // 🔥 跳转到支付页面
       const paymentUrl = "https://pay.faterewrite.com/";
       const fullUrl = new URL(paymentUrl);
       fullUrl.searchParams.set("frid", frid);
-      
+
       document.body.classList.add("page-leave");
       setTimeout(() => {
         window.location.href = fullUrl.toString();
       }, 300);
     }, 1200);
-  }, [isLoading]);
+  };
+
+  /* ===================================================================
+     支柱展开/折叠处理
+     同时追踪每个支柱的首次点击事件（使用去重逻辑）
+     =================================================================== */
+  const handlePillarClick = (pillarId: string) => {
+    // 追踪支柱点击事件（仅首次点击时追踪）
+    const frid = ensureFrid();
+    const isDev = window.location.hostname === "localhost";
+    
+    if (typeof (window as any).fbq !== "undefined") {
+      // 为每个支柱使用唯一的去重key
+      const dedupeKey = `s1bp_${pillarId}`;
+      
+      if (markOnce(dedupeKey, isDev)) {
+        const eventId =
+          "ev_" +
+          Date.now().toString(36) +
+          Math.random().toString(36).slice(2, 8);
+        
+        // 获取支柱的友好名称
+        const pillarNames: Record<string, string> = {
+          clarity: "Clarity",
+          magnetism: "Magnetism",
+          control: "Control",
+        };
+        
+        (window as any).fbq(
+          "trackCustom",
+          "S1_Back_Pillar_Click",
+          {
+            content_name: "ScreenOne_Back_Pillar",
+            pillar_id: pillarId,
+            pillar_name: pillarNames[pillarId] || pillarId,
+            screen_position: "back",
+            screen_number: 1,
+            page_url: window.location.href,
+            user_id: frid,
+          },
+          { eventID: eventId }
+        );
+      }
+    }
+    
+    // 切换展开/折叠状态
+    setActivePillar(activePillar === pillarId ? null : pillarId);
+  };
 
   return (
-    <section className="s1-back">
-      {/* Wordmark - 左上角 */}
-      <div className="wordmark">
-        <Wordmark />
-      </div>
-
-      {/* 主容器 */}
-      <div className="s1-back-inner">
-        {/* 顶部标签 */}
-        <div className="s1-back-top-label">DECODING COMPLETE.</div>
-
-        {/* 标题组 */}
-        <div className="s1-header-group">
-          <h1 className="s1-main-title">YOUR ACTIVATION KIT IS NOW COMPILED.</h1>
-          <p className="s1-value-declaration">
-            This is not a course. This is not therapy. This is the source code of your highest timeline, decoded and delivered.
+    <section className="s1-back-energy">
+      <div className="s1-energy-inner">
+        {/* ============================================================
+            顶部标题组 - 精炼但有力
+            当任何支柱卡片展开时，此区域会隐藏以腾出空间
+            ============================================================ */}
+        <div className={`s1-energy-header ${activePillar ? 'is-hidden' : ''}`}>
+          <div className="s1-energy-top-label">THE JUNCTURE</div>
+          <h1 className="s1-energy-main-title">YOUR BLUEPRINT IS DRAFTED.</h1>
+          <p className="s1-energy-value-prop">
+            What if status, influence, and wealth were never about pushing
+            harder— but about a set of rules hidden in plain sight? Today you
+            read them.
           </p>
         </div>
 
-        {/* Trinity 卡片组 */}
-        <div className="trinity-container">
-          {trinityComponents.map((component, idx) => (
-            <div
-              key={idx}
-              className={`trinity-card ${expandedCard === idx ? "expanded" : ""}`}
-              onClick={() => handleToggleCard(idx)}
-            >
-              <div className="card-header">
-                <div className="card-title">{component.name}</div>
-                <div className="card-toggle">{expandedCard === idx ? "−" : "+"}</div>
-              </div>
-              <div className="card-content">
-                <p className="fantasy-promise">{component.promise}</p>
-                <p className="concrete-deliverable">{component.deliverable}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* ============================================================
+            三大支柱 - 能量徽章系统
+            ============================================================ */}
+        <div className="s1-energy-pillars">
+          <div className="s1-energy-pillars-label">
+            THE THREE PILLARS OF TRANSFORMATION
+          </div>
 
-        {/* 🔥 Starlight Matrix 数据流 - 终极版 */}
-        <div className={`starlight-matrix ${matrixPulse ? "pulse" : ""}`}>
-          <div className="matrix-title">STARLIGHT MATRIX: LIVE ACTIVATION FEED</div>
-          <div className="matrix-feed" role="log" aria-live="polite" aria-atomic="false">
-            {feedLines.map((log) => (
-              <div 
-                key={log.id} 
-                className={`feed-line feed-line-${log.type.toLowerCase()}`}
-                data-log-type={log.type}
+          <div className="energy-trinity-container">
+            {trinityComponents.map((pillar, idx) => (
+              <div
+                key={pillar.id}
+                className={`energy-pillar-card ${
+                  activePillar === pillar.id ? "is-active" : ""
+                }`}
+                onClick={() => handlePillarClick(pillar.id)}
+                style={{ animationDelay: `${idx * 0.15}s` }}
               >
-                {log.text}
+                {/* 能量徽章头部 */}
+                <div className="energy-pillar-header">
+                  {/* 实心能量核心徽章 */}
+                  <div className="energy-badge-wrapper">
+                    <div
+                      className="energy-badge-core"
+                      style={{
+                        background: `radial-gradient(circle at 35% 35%, ${pillar.primaryColor}, ${pillar.secondaryColor})`,
+                        borderColor: pillar.secondaryColor,
+                        boxShadow: `0 4px 16px rgba(${pillar.glowColor}, 0.3), 0 0 0 1px rgba(${pillar.glowColor}, 0.1)`,
+                      }}
+                    >
+                      <span
+                        className="energy-badge-roman"
+                        style={{
+                          color: "#0D1B2A",
+                          textShadow: `0 1px 2px rgba(${pillar.glowColor}, 0.3)`,
+                        }}
+                      >
+                        {pillar.number}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 标题组 */}
+                  <div className="energy-pillar-title-group">
+                    <h3
+                      className="energy-pillar-name"
+                      style={{ color: pillar.primaryColor }}
+                    >
+                      {pillar.name}
+                    </h3>
+                    <p className="energy-pillar-subtitle">{pillar.subtitle}</p>
+                  </div>
+
+                  {/* 展开控制器 */}
+                  <div className="energy-expand-controller">
+                    <svg
+                      className={`energy-expand-icon ${
+                        activePillar === pillar.id ? "is-expanded" : ""
+                      }`}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      style={{ color: pillar.primaryColor }}
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        strokeWidth="2"
+                        opacity="0.25"
+                      />
+                      <line
+                        x1="12"
+                        y1="8"
+                        x2="12"
+                        y2="16"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <line
+                        x1="8"
+                        y1="12"
+                        x2="16"
+                        y2="12"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* 展开内容区 */}
+                <div
+                  className={`energy-pillar-content ${
+                    activePillar === pillar.id ? "is-visible" : ""
+                  }`}
+                >
+                  <p className="energy-pillar-description">
+                    {pillar.content}
+                  </p>
+                </div>
+
+                {/* 底部装饰线 - 仅在展开时显示 */}
+                <div
+                  className={`energy-accent-line ${
+                    activePillar === pillar.id ? "is-visible" : ""
+                  }`}
+                  style={{
+                    background: `linear-gradient(90deg, transparent, rgba(${pillar.glowColor}, 0.4), transparent)`,
+                  }}
+                />
               </div>
             ))}
           </div>
         </div>
 
-        {/* CTA 区域 - 带呼吸效果 */}
-        <div className="s1-cta">
+        {/* ============================================================
+            Architect区域 - 完整原文
+            在展开状态下保持可见以提供权威背书
+            ============================================================ */}
+        <div className="s1-energy-architect">
+          <div className="s1-energy-architect-label">THE ARCHITECT</div>
+          <div className="s1-energy-architect-card">
+            <h3 className="s1-energy-architect-title">
+              A NOTE FROM THE ARCHITECT
+            </h3>
+            <p className="s1-energy-architect-quote">
+              "I didn't architect The Starlight Directive from struggle, but
+              from access—inside the very rooms you wish to enter. For years,
+              my currency was an Ivy-League diploma and a seat on Wall Street.
+              Yet the truly powerful weren't playing the same game. Their
+              currency was fluency in unwritten rules. This blueprint isn't my
+              story of 'making it'; it is the distillation of a private
+              playbook, engineered for those with the discernment to wield it.
+              It is a tool of leverage. I am simply its steward."
+            </p>
+            <p className="s1-energy-architect-sig">— Julianne de Vere</p>
+          </div>
+        </div>
+
+        {/* ============================================================
+            CTA最终召唤区 - 10分奢华金属按钮
+            ============================================================ */}
+        <div className="s1-energy-cta-final">
+          <div className="s1-energy-final-label">THE FINAL SUMMONS</div>
+          <p className="s1-energy-final-text">
+            This is not a report. It is your initiation.
+          </p>
+
           <button
             type="button"
-            className={`s1-cta-btn-ultimate ${isLoading ? "loading" : ""}`}
+            className="s1-energy-cta-button"
             onClick={handleClickCTA}
             disabled={isLoading}
-            aria-label="Execute your destiny and download your activation kit"
           >
-            <span className="s1-cta-text">
-              {isLoading ? "EXECUTING..." : "EXECUTE YOUR DESTINY"}
+            <span className="s1-energy-cta-text">
+              INITIATE MY CALIBRATION
             </span>
           </button>
-          <div className="s1-price-tag">($49 — One-Time Activation Fee)</div>
+
+          {/* 价格信息作为支持性元素 - 位于按钮下方确认超值 */}
+          <div className="s1-energy-price-highlight">
+            A Measured Step Into an Unfair Advantage.
+          </div>
         </div>
       </div>
 
-      {/* 样式 */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        /* ═══════════════════════════════════════════════════════════════════
-           CSS 变量 & 全局重置
-           ═══════════════════════════════════════════════════════════════════ */
+      <style>{`
+        /* ═══════════════════════════════════════════════════════════════
+           能量重构 - 10分完美方案 CSS系统
+           核心设计理念：精致有力，可感知的视觉能量
+           ═══════════════════════════════════════════════════════════════ */
+
+        /* ---------------------------------------------------------------
+           CSS变量定义 - 全局配色和间距系统
+           --------------------------------------------------------------- */
         :root {
-          --wm-h: 32px;
-          --s1-offset: 70px;
-          --gap-xs: 8px;
-          --gap-sm: 12px;
-          --gap-md: 22px;
+          /* 安全区域适配 */
           --safe-top: env(safe-area-inset-top, 0px);
           --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+          /* 核心配色 - 深蓝色基调创造深度而非压抑 */
+          --bg-deep-blue: #0D1B2A;
+          --bg-navy: #1B263B;
+          --text-bright: rgba(255, 255, 255, 0.96);
+          --text-medium: rgba(255, 255, 255, 0.78);
+          --text-dim: rgba(255, 255, 255, 0.56);
+          --border-subtle: rgba(255, 255, 255, 0.12);
+          
+          /* 金色系统 - 真正的gold而非champagne */
+          --gold-primary: #D4AF37;
+          --gold-light: #E8C474;
+          --gold-glow: rgba(212, 175, 55, 0.35);
         }
 
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           主容器布局 - 禁止滚动，一页完整展示
-           ═══════════════════════════════════════════════════════════════════ */
-        .s1-back {
+        /* ---------------------------------------------------------------
+           主容器 - 深蓝色渐变背景
+           --------------------------------------------------------------- */
+        .s1-back-energy {
           position: relative;
-          height: 100dvh;
           width: 100%;
-          color: #F5F5F0;
-          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          min-height: 100dvh;
+          background: linear-gradient(180deg, var(--bg-deep-blue) 0%, var(--bg-navy) 100%);
+          color: var(--text-bright);
+          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+          overflow-x: hidden;
+        }
+
+        .s1-energy-inner {
+          width: 100%;
+          max-width: 100%;
+          margin: 0 auto;
+          padding: 16px 18px calc(var(--safe-bottom) + 16px);
+          display: flex;
+          flex-direction: column;
+          gap: 13px;
+          min-height: 100dvh;
+        }
+
+        /* ---------------------------------------------------------------
+           顶部标题组 - 增大字号创造视觉锚点
+           当支柱卡片展开时智能隐藏以节省空间
+           --------------------------------------------------------------- */
+        .s1-energy-header {
+          text-align: center;
+          animation: energyFadeIn 0.7s ease-out;
+          opacity: 1;
+          max-height: 300px;
           overflow: hidden;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
+          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        /* 隐藏状态 - 当任何支柱卡片展开时激活 */
+        .s1-energy-header.is-hidden {
+          opacity: 0;
+          max-height: 0;
+          margin-top: 0;
+          margin-bottom: 0;
+          pointer-events: none;
+        }
+
+        @keyframes energyFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .s1-energy-top-label {
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.24em;
+          text-transform: uppercase;
+          color: var(--gold-primary);
+          opacity: 0.85;
+          margin-bottom: 10px;
+          text-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .s1-energy-main-title {
+          font-size: 17px;
+          font-weight: 700;
+          letter-spacing: 0.10em;
+          line-height: 1.3;
+          margin: 0 0 8px 0;
+          text-transform: uppercase;
+        }
+
+        .s1-energy-value-prop {
+          font-size: 11px;
+          line-height: 1.65;
+          color: var(--text-medium);
+          margin: 0;
+          font-weight: 400;
+        }
+
+        /* ---------------------------------------------------------------
+           三支柱容器
+           --------------------------------------------------------------- */
+        .s1-energy-pillars {
+          flex-shrink: 0;
+        }
+
+        .s1-energy-pillars-label {
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.24em;
+          text-transform: uppercase;
+          color: var(--gold-primary);
+          opacity: 0.85;
+          text-align: center;
+          margin-bottom: 10px;
+          text-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .energy-trinity-container {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+
+        /* ---------------------------------------------------------------
+           能量徽章卡片 - 核心视觉元素
+           --------------------------------------------------------------- */
+        .energy-pillar-card {
+          position: relative;
+          background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.04) 0%,
+            rgba(255, 255, 255, 0.02) 100%
+          );
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+          opacity: 0;
+          animation: energySlideUp 0.6s ease-out forwards;
+          overflow: hidden;
+        }
+
+        @keyframes energySlideUp {
+          from {
+            opacity: 0;
+            transform: translateY(25px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .energy-pillar-card:active {
+          transform: scale(0.98);
+        }
+
+        .energy-pillar-card.is-active {
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        /* ---------------------------------------------------------------
+           能量徽章头部布局
+           --------------------------------------------------------------- */
+        .energy-pillar-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 7px 13px;
+          min-height: 38px;
+        }
+
+        /* ---------------------------------------------------------------
+           实心能量核心徽章 - 强烈的径向渐变创造能量感
+           --------------------------------------------------------------- */
+        .energy-badge-wrapper {
+          flex-shrink: 0;
+        }
+
+        .energy-badge-core {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: 2.5px solid;
           display: flex;
           align-items: center;
           justify-content: center;
+          position: relative;
+          /* background和borderColor通过内联样式设置 */
+          transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        /* Wordmark - 左上角固定 */
-        .wordmark {
-          position: fixed;
-          top: calc(var(--safe-top) + 18px);
-          left: 20px;
-          z-index: 100;
-          pointer-events: none;
-          animation: fade-in-left 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+        .energy-pillar-card:active .energy-badge-core {
+          transform: scale(0.95);
         }
 
-        /* 内容容器 - 完美适配一屏，垂直居中 */
-        .s1-back-inner {
+        /* 罗马数字 - 保持Georgia衬线字体，美国用户完全能识别 */
+        .energy-badge-roman {
+          font-size: 13px;
+          font-weight: 700;
+          font-family: Georgia, serif;
+          position: relative;
+          z-index: 1;
+          /* color和textShadow通过内联样式设置 */
+        }
+
+        /* ---------------------------------------------------------------
+           标题组 - 增大字号和间距
+           --------------------------------------------------------------- */
+        .energy-pillar-title-group {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .energy-pillar-name {
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          margin: 0 0 3px 0;
+          line-height: 1.2;
+          /* color通过内联样式设置 */
+        }
+
+        .energy-pillar-subtitle {
+          font-size: 9px;
+          font-weight: 400;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          color: var(--text-dim);
+          margin: 0;
+          line-height: 1.3;
+        }
+
+        /* ---------------------------------------------------------------
+           展开控制器 - 更粗的线条创造清晰的视觉反馈
+           --------------------------------------------------------------- */
+        .energy-expand-controller {
+          flex-shrink: 0;
+        }
+
+        .energy-expand-icon {
+          width: 24px;
+          height: 24px;
+          opacity: 0.65;
+          transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+          /* color通过内联样式设置 */
+        }
+
+        .energy-expand-icon.is-expanded {
+          transform: rotate(45deg);
+          opacity: 0.9;
+        }
+
+        .energy-pillar-card:hover .energy-expand-icon {
+          opacity: 0.85;
+        }
+
+        /* ---------------------------------------------------------------
+           展开内容区 - 智能高度管理
+           --------------------------------------------------------------- */
+        .energy-pillar-content {
+          max-height: 0;
+          opacity: 0;
+          overflow: hidden;
+          transition: all 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .energy-pillar-content.is-visible {
+          max-height: 280px;
+          opacity: 1;
+          padding: 0 14px 14px;
+        }
+
+        .energy-pillar-description {
+          font-size: 11px;
+          line-height: 1.8;
+          color: var(--text-medium);
+          margin: 0;
+          font-weight: 400;
+        }
+
+        /* ---------------------------------------------------------------
+           底部装饰线 - 展开时显示的能量线
+           --------------------------------------------------------------- */
+        .energy-accent-line {
+          height: 1px;
+          opacity: 0;
+          transition: opacity 0.35s ease;
+          /* background通过内联样式设置 */
+        }
+
+        .energy-accent-line.is-visible {
+          opacity: 1;
+        }
+
+        /* ---------------------------------------------------------------
+           Architect区域 - 完整文本
+           --------------------------------------------------------------- */
+        .s1-energy-architect {
+          flex-shrink: 0;
+          animation: energyFadeIn 0.7s ease-out 0.3s both;
+        }
+
+        .s1-energy-architect-label {
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.24em;
+          text-transform: uppercase;
+          color: var(--gold-primary);
+          opacity: 0.85;
+          text-align: center;
+          margin-bottom: 10px;
+          text-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .s1-energy-architect-card {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid var(--border-subtle);
+          border-radius: 8px;
+          padding: 12px 14px;
+        }
+
+        .s1-energy-architect-title {
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: var(--gold-primary);
+          margin: 0 0 8px 0;
+          text-align: center;
+          text-shadow: 0 0 8px var(--gold-glow);
+        }
+
+        .s1-energy-architect-quote {
+          font-size: 10px;
+          line-height: 1.7;
+          color: var(--text-medium);
+          font-style: italic;
+          margin: 0 0 8px 0;
+          font-family: Georgia, serif;
+          font-weight: 400;
+        }
+
+        .s1-energy-architect-sig {
+          font-size: 9.5px;
+          font-weight: 500;
+          color: var(--gold-primary);
+          text-align: right;
+          margin: 0;
+          text-shadow: 0 0 8px var(--gold-glow);
+        }
+
+        /* ---------------------------------------------------------------
+           CTA最终召唤区 - 10分奢华金属按钮系统
+           --------------------------------------------------------------- */
+        .s1-energy-cta-final {
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          animation: energyFadeIn 0.7s ease-out 0.4s both;
+        }
+
+        .s1-energy-final-label {
+          font-size: 9px;
+          font-weight: 500;
+          letter-spacing: 0.24em;
+          text-transform: uppercase;
+          color: var(--gold-primary);
+          opacity: 0.85;
+          text-shadow: 0 0 10px var(--gold-glow);
+        }
+
+        .s1-energy-final-text {
+          font-size: 10.5px;
+          color: var(--text-medium);
+          font-style: italic;
+          margin: 0 0 4px 0;
+          font-family: Georgia, serif;
+        }
+
+        /* 价格强调元素 - 作为按钮下方的支持性确认信息 */
+        .s1-energy-price-highlight {
+          font-size: 11px;
+          font-weight: 500;
+          color: var(--gold-primary);
+          text-shadow: 0 0 12px var(--gold-glow);
+          margin-top: 8px;
+          letter-spacing: 0.02em;
+        }
+
+        .price-amount {
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--gold-light);
+          text-shadow: 0 0 16px rgba(232, 196, 116, 0.6);
+          letter-spacing: 0.04em;
+        }
+
+        /* ---------------------------------------------------------------
+           10分奢华发光金属板按钮 - 核心设计
+           --------------------------------------------------------------- */
+        .s1-energy-cta-button {
           position: relative;
           width: 100%;
-          max-width: 640px;
-          margin: 0 auto;
-          padding: 0 20px;
+          max-width: 400px;
+          height: 60px;
+          padding: 0 28px;
           display: flex;
-          flex-direction: column;
-          gap: var(--gap-md);
-          z-index: 1;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           顶部标签
-           ═══════════════════════════════════════════════════════════════════ */
-        .s1-back-top-label {
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 0.12em;
-          color: rgba(212, 184, 150, 0.85);
-          text-transform: uppercase;
-          text-align: center;
-          padding: 6px 0 4px;
-          animation: fade-in 0.6s ease-out 0.2s both;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           标题组
-           ═══════════════════════════════════════════════════════════════════ */
-        .s1-header-group {
-          text-align: center;
-          animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
-        }
-
-        .s1-main-title {
-          font-size: 14.5px;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          color: #F5F5F0;
-          text-transform: uppercase;
-          margin-bottom: 14px;
-          line-height: 1.35;
-          text-shadow: 0 2px 12px rgba(212, 184, 150, 0.2);
-        }
-
-        .s1-value-declaration {
-          font-size: 13.5px;
-          font-weight: 400;
-          line-height: 1.6;
-          color: rgba(245, 245, 240, 0.88);
-          max-width: 520px;
-          margin: 0 auto;
-          letter-spacing: 0.01em;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           Trinity 卡片组 - 核心价值展示
-           ═══════════════════════════════════════════════════════════════════ */
-        .trinity-container {
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-          animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
-        }
-
-        .trinity-card {
-          background: linear-gradient(135deg, 
-            rgba(26, 40, 66, 0.75) 0%, 
-            rgba(15, 26, 46, 0.85) 100%
+          align-items: center;
+          justify-content: center;
+          
+          /* 多层次金色渐变 - 从深金到亮金创造立体感 */
+          background: linear-gradient(
+            160deg,
+            #C9A961 0%,
+            #D4AF37 25%,
+            #E8C474 50%,
+            #D4AF37 75%,
+            #B8956A 100%
           );
-          border: 1px solid rgba(212, 184, 150, 0.18);
-          border-radius: 12px;
+          
+          border: none;
+          border-radius: 4px;
           cursor: pointer;
-          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          position: relative;
+          outline: none;
           overflow: hidden;
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
+          
+          /* 三层阴影系统创造深度和发光效果 */
+          box-shadow: 
+            /* 内层：细微的深色边界 */
+            inset 0 0 0 1px rgba(0, 0, 0, 0.1),
+            /* 中层：金色发光效果 */
+            0 0 30px rgba(212, 175, 55, 0.5),
+            0 6px 20px rgba(212, 175, 55, 0.4),
+            /* 外层：深度投影 */
+            0 8px 32px rgba(0, 0, 0, 0.3);
+          
+          transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
-        /* 卡片光晕效果 */
-        .trinity-card::before {
+        /* 高光覆层 - 模拟光线在金属表面的反射 */
+        .s1-energy-cta-button::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.4) 0%,
+            rgba(255, 255, 255, 0.15) 30%,
+            transparent 60%
+          );
+          opacity: 0.8;
+          transition: opacity 0.35s ease;
+          pointer-events: none;
+        }
+
+        /* 顶部高光边缘 - 模拟金属边缘的反光 */
+        .s1-energy-cta-button::after {
           content: "";
           position: absolute;
           top: 0;
           left: 0;
           right: 0;
-          height: 1px;
-          background: linear-gradient(90deg, 
-            transparent 0%, 
-            rgba(212, 184, 150, 0.4) 50%, 
+          height: 2px;
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.6) 50%,
             transparent 100%
           );
-          opacity: 0;
-          transition: opacity 0.4s ease;
-        }
-
-        .trinity-card:hover::before {
-          opacity: 1;
-        }
-
-        .trinity-card:hover {
-          border-color: rgba(212, 184, 150, 0.35);
-          background: linear-gradient(135deg, 
-            rgba(26, 40, 66, 0.85) 0%, 
-            rgba(15, 26, 46, 0.95) 100%
-          );
-          transform: translateY(-2px);
-          box-shadow: 
-            0 12px 32px rgba(0, 0, 0, 0.4),
-            0 0 0 1px rgba(212, 184, 150, 0.15),
-            inset 0 1px 0 rgba(212, 184, 150, 0.1);
-        }
-
-        .trinity-card.expanded {
-          border-color: rgba(212, 184, 150, 0.4);
-          background: linear-gradient(135deg, 
-            rgba(26, 40, 66, 0.9) 0%, 
-            rgba(15, 26, 46, 1) 100%
-          );
-          box-shadow: 
-            0 16px 48px rgba(0, 0, 0, 0.5),
-            0 0 0 1px rgba(212, 184, 150, 0.25),
-            inset 0 1px 0 rgba(212, 184, 150, 0.15);
-        }
-
-        /* 卡片头部 */
-        .card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 13px 16px;
-          gap: 12px;
-        }
-
-        .card-title {
-          font-size: 12.5px;
-          font-weight: 600;
-          letter-spacing: 0.02em;
-          color: rgba(212, 184, 150, 0.95);
-          line-height: 1.4;
-          flex: 1;
-        }
-
-        .card-toggle {
-          font-size: 20px;
-          font-weight: 300;
-          color: rgba(212, 184, 150, 0.7);
-          width: 26px;
-          height: 26px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 1px solid rgba(212, 184, 150, 0.25);
-          border-radius: 6px;
-          transition: all 0.3s ease;
-          flex-shrink: 0;
-          background: rgba(15, 26, 46, 0.3);
-        }
-
-        .trinity-card:hover .card-toggle {
-          border-color: rgba(212, 184, 150, 0.4);
-          background: rgba(15, 26, 46, 0.5);
-          color: rgba(212, 184, 150, 0.9);
-        }
-
-        /* 卡片内容 */
-        .card-content {
-          max-height: 0;
-          overflow: hidden;
-          transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
-                      padding 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                      opacity 0.3s ease;
-          opacity: 0;
-          padding: 0 16px;
-        }
-
-        .trinity-card.expanded .card-content {
-          max-height: 500px;
-          padding: 0 16px 14px;
-          opacity: 1;
-        }
-
-        .fantasy-promise {
-          font-size: 12px;
-          font-weight: 400;
-          line-height: 1.6;
-          color: rgba(245, 245, 240, 0.85);
-          margin-bottom: 12px;
-          letter-spacing: 0.01em;
-        }
-
-        .concrete-deliverable {
-          font-size: 11.5px;
-          font-weight: 400;
-          line-height: 1.55;
-          color: rgba(184, 149, 106, 0.9);
-          padding-left: 16px;
-          position: relative;
-          letter-spacing: 0.005em;
-        }
-
-        .concrete-deliverable::before {
-          content: "→";
-          position: absolute;
-          left: 0;
-          color: rgba(212, 184, 150, 0.6);
-          font-size: 10px;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           🔥🔥🔥 Starlight Matrix 数据流 - 终极10分版本
-           ═══════════════════════════════════════════════════════════════════ */
-        .starlight-matrix {
-          background: linear-gradient(135deg, 
-            rgba(10, 18, 32, 0.85) 0%, 
-            rgba(15, 26, 46, 0.75) 100%
-          );
-          border: 1px solid rgba(59, 130, 246, 0.2);
-          border-radius: 10px;
-          padding: 10px 14px;
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
-          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-          animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
-          position: relative;
-          overflow: hidden;
-          box-shadow: 
-            0 4px 16px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(59, 130, 246, 0.1);
-        }
-
-        /* 🔥 背景呼吸脉动 - 服务器心跳 */
-        .starlight-matrix::after {
-          content: "";
-          position: absolute;
-          inset: -50%;
-          background: radial-gradient(circle at center, 
-            rgba(59, 130, 246, 0.15) 0%, 
-            transparent 70%
-          );
-          opacity: 0.5;
-          animation: matrix-breathe 4s ease-in-out infinite;
-          pointer-events: none;
-        }
-
-        @keyframes matrix-breathe {
-          0%, 100% { 
-            opacity: 0.3; 
-            transform: scale(1); 
-          }
-          50% { 
-            opacity: 0.6; 
-            transform: scale(1.1); 
-          }
-        }
-
-        /* 🔥 脉冲效果 - 新数据到来 */
-        .starlight-matrix.pulse {
-          border-color: rgba(59, 130, 246, 0.5);
-          box-shadow: 
-            0 0 32px rgba(59, 130, 246, 0.2),
-            0 4px 16px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(59, 130, 246, 0.2);
-        }
-
-        .starlight-matrix::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, 
-            transparent 0%, 
-            rgba(59, 130, 246, 0.15) 50%, 
-            transparent 100%
-          );
-          transition: left 0.6s ease;
-        }
-
-        .starlight-matrix.pulse::before {
-          left: 100%;
-        }
-
-        /* 🔥 系统字体 - 等宽字体表示"系统之声" */
-        .matrix-title {
-          font-family: "SF Mono", "Menlo", "Monaco", "Consolas", "Courier New", monospace;
-          font-size: 9px;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          color: rgba(139, 92, 246, 0.9);
-          text-transform: uppercase;
-          margin-bottom: 8px;
-          text-shadow: 
-            0 0 12px rgba(139, 92, 246, 0.4),
-            0 0 6px rgba(139, 92, 246, 0.2);
-          position: relative;
-          z-index: 1;
-        }
-
-        /* 🔥 数据流容器 - 中速滚动 */
-        .matrix-feed {
-          font-family: "SF Mono", "Menlo", "Monaco", "Consolas", "Courier New", monospace;
-          font-size: 9px;
-          line-height: 1.6;
-          letter-spacing: 0.02em;
-          height: 110px;
-          overflow: hidden;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          z-index: 1;
-        }
-
-        /* 🔥 每行日志的打字机效果 */
-        .feed-line {
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          padding: 1.5px 0;
-          animation: feed-line-in 0.5s ease-out both;
-          flex-shrink: 0;
-        }
-
-        /* 🔥🔥🔥 六色分级系统 */
-        .feed-line-info {
-          color: rgba(180, 190, 200, 0.85);
-          text-shadow: 0 0 6px rgba(180, 190, 200, 0.2);
-        }
-
-        .feed-line-system {
-          color: rgba(100, 200, 255, 0.9);
-          text-shadow: 0 0 8px rgba(100, 200, 255, 0.3);
-        }
-
-        .feed-line-success {
-          color: rgba(100, 255, 150, 0.9);
-          text-shadow: 0 0 8px rgba(100, 255, 150, 0.3);
-        }
-
-        .feed-line-network {
-          color: rgba(100, 220, 255, 0.9);
-          text-shadow: 0 0 8px rgba(100, 220, 255, 0.3);
-        }
-
-        .feed-line-warn {
-          color: rgba(255, 200, 100, 0.9);
-          text-shadow: 0 0 8px rgba(255, 200, 100, 0.3);
-        }
-
-        /* 🔥🔥🔥 CRITICAL - 红色闪烁 */
-        .feed-line-critical {
-          color: rgba(255, 100, 120, 1);
-          font-weight: 600;
-          text-shadow: 
-            0 0 12px rgba(255, 100, 120, 0.6),
-            0 0 6px rgba(255, 100, 120, 0.4);
-          animation: feed-line-in 0.5s ease-out both, critical-blink 0.8s ease-in-out infinite;
-        }
-
-        @keyframes critical-blink {
-          0%, 100% { 
-            opacity: 1; 
-            text-shadow: 
-              0 0 12px rgba(255, 100, 120, 0.6),
-              0 0 6px rgba(255, 100, 120, 0.4);
-          }
-          50% { 
-            opacity: 0.7;
-            text-shadow: 
-              0 0 20px rgba(255, 100, 120, 0.8),
-              0 0 10px rgba(255, 100, 120, 0.6);
-          }
-        }
-
-        @keyframes feed-line-in {
-          from {
-            opacity: 0;
-            transform: translateX(-15px);
-            filter: blur(2px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-            filter: blur(0);
-          }
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           🔥 CTA 区域 - 终极神圣按钮
-           ═══════════════════════════════════════════════════════════════════ */
-        .s1-cta {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-          padding-top: 0;
-          animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
-        }
-
-        .s1-cta-btn-ultimate {
-          width: 100%;
-          max-width: 480px;
-          height: 58px;
-          background: linear-gradient(135deg, 
-            #B8956A 0%, 
-            #D4B896 25%,
-            #FFD700 50%,
-            #D4B896 75%,
-            #B8956A 100%
-          );
-          background-size: 300% 100%;
-          background-position: 0% 50%;
-          border: 2px solid rgba(255, 215, 0, 0.3);
-          border-radius: 14px;
-          color: #0A1128;
-          font-size: 15px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-          position: relative;
-          overflow: hidden;
-          box-shadow: 
-            0 10px 30px rgba(184, 149, 106, 0.4),
-            0 4px 12px rgba(0, 0, 0, 0.3),
-            inset 0 2px 0 rgba(255, 255, 255, 0.4),
-            inset 0 -2px 0 rgba(0, 0, 0, 0.15);
-        }
-
-        /* 🔥 呼吸式光晕 - 神圣能量积蓄 */
-        .s1-cta-btn-ultimate::after {
-          content: "";
-          position: absolute;
-          inset: -3px;
-          border-radius: 14px;
-          padding: 3px;
-          background: linear-gradient(135deg, 
-            rgba(255, 215, 0, 0.8) 0%, 
-            rgba(255, 223, 0, 0.6) 25%,
-            rgba(255, 215, 0, 0.4) 50%,
-            rgba(255, 223, 0, 0.6) 75%,
-            rgba(255, 215, 0, 0.8) 100%
-          );
-          background-size: 300% 100%;
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          opacity: 0.6;
-          animation: button-breathe 3s ease-in-out infinite, button-glow-rotate 8s linear infinite;
-          pointer-events: none;
-        }
-
-        @keyframes button-breathe {
-          0%, 100% { 
-            opacity: 0.5; 
-            transform: scale(1); 
-          }
-          50% { 
-            opacity: 0.9; 
-            transform: scale(1.03); 
-          }
-        }
-
-        @keyframes button-glow-rotate {
-          0% { background-position: 0% 50%; }
-          100% { background-position: 300% 50%; }
-        }
-
-        /* 🔥 能量粒子流动效果 */
-        .s1-cta-btn-ultimate::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, 
-            transparent 0%, 
-            rgba(255, 255, 255, 0.4) 50%, 
-            transparent 100%
-          );
-          transition: left 0.8s ease;
-        }
-
-        /* 🔥 悬浮状态 - 能量爆发 */
-        .s1-cta-btn-ultimate:hover {
-          background-position: 100% 50%;
-          transform: translateY(-3px) scale(1.02);
-          box-shadow: 
-            0 16px 48px rgba(184, 149, 106, 0.6),
-            0 8px 24px rgba(255, 215, 0, 0.4),
-            0 4px 16px rgba(0, 0, 0, 0.3),
-            inset 0 2px 0 rgba(255, 255, 255, 0.5),
-            inset 0 -2px 0 rgba(0, 0, 0, 0.2);
-          border-color: rgba(255, 215, 0, 0.6);
-        }
-
-        .s1-cta-btn-ultimate:hover::after {
-          opacity: 1;
-          animation: button-breathe 2s ease-in-out infinite, button-glow-rotate 6s linear infinite;
-        }
-
-        .s1-cta-btn-ultimate:hover::before {
-          left: 100%;
-        }
-
-        .s1-cta-btn-ultimate:hover .s1-cta-text {
-          text-shadow: 
-            0 0 12px rgba(255, 215, 0, 0.6),
-            0 2px 4px rgba(0, 0, 0, 0.3),
-            0 0 20px rgba(255, 215, 0, 0.4);
-          letter-spacing: 0.1em;
-        }
-
-        /* 🔥 点击状态 - 能量释放 */
-        .s1-cta-btn-ultimate:active {
-          transform: translateY(-1px) scale(0.99);
-          box-shadow: 
-            0 8px 24px rgba(184, 149, 106, 0.5),
-            0 4px 12px rgba(255, 215, 0, 0.3),
-            0 2px 8px rgba(0, 0, 0, 0.3),
-            inset 0 3px 6px rgba(0, 0, 0, 0.2);
-        }
-
-        .s1-cta-btn-ultimate:disabled {
           opacity: 0.7;
+          pointer-events: none;
+        }
+
+        /* 悬停状态 - 按钮"激活"并浮起 */
+        .s1-energy-cta-button:hover {
+          transform: translateY(-3px) scale(1.03);
+          
+          /* 增强所有阴影创造更强的浮起效果 */
+          box-shadow: 
+            inset 0 0 0 1px rgba(0, 0, 0, 0.15),
+            0 0 40px rgba(212, 175, 55, 0.7),
+            0 8px 28px rgba(212, 175, 55, 0.55),
+            0 12px 48px rgba(0, 0, 0, 0.35);
+        }
+
+        .s1-energy-cta-button:hover::before {
+          opacity: 1;
+        }
+
+        /* 按下状态 - 按钮"下沉"提供物理反馈 */
+        .s1-energy-cta-button:active {
+          transform: translateY(-1px) scale(0.98);
+          
+          box-shadow: 
+            inset 0 0 0 1px rgba(0, 0, 0, 0.2),
+            0 0 20px rgba(212, 175, 55, 0.4),
+            0 4px 12px rgba(212, 175, 55, 0.3),
+            0 6px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .s1-energy-cta-button:active::before {
+          opacity: 0.6;
+        }
+
+        /* 禁用状态 */
+        .s1-energy-cta-button:disabled {
+          opacity: 0.5;
           cursor: not-allowed;
           transform: none;
         }
 
-        .s1-cta-text {
+        .s1-energy-cta-button:disabled:hover {
+          transform: none;
+          box-shadow: 
+            inset 0 0 0 1px rgba(0, 0, 0, 0.1),
+            0 0 30px rgba(212, 175, 55, 0.5),
+            0 6px 20px rgba(212, 175, 55, 0.4),
+            0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 按钮文字 - 浮雕效果"刻"在金属上 */
+        .s1-energy-cta-text {
+          font-size: 15px;
+          font-weight: 800;
+          letter-spacing: 0.12em;
+          color: #0D1B2A;
+          line-height: 1;
           position: relative;
           z-index: 1;
+          
+          /* 双向文字阴影创造浮雕效果 */
           text-shadow: 
-            0 2px 4px rgba(0, 0, 0, 0.2),
-            0 1px 2px rgba(0, 0, 0, 0.1);
-          transition: all 0.4s ease;
+            0 1px 0 rgba(255, 255, 255, 0.4),
+            0 -1px 0 rgba(0, 0, 0, 0.3),
+            0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .s1-price-tag {
-          font-size: 11.5px;
-          font-weight: 500;
-          color: rgba(184, 149, 106, 0.8);
-          letter-spacing: 0.03em;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           进场动画
-           ═══════════════════════════════════════════════════════════════════ */
-        @keyframes fade-in-left {
-          0% { opacity: 0; transform: translateX(-15px); }
-          100% { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes fade-in {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-        @keyframes slide-up {
-          0% { opacity: 0; transform: translateY(20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           离场动画
-           ═══════════════════════════════════════════════════════════════════ */
-        
-        /* 执行动画 */
-        .s1-back.is-executing .wordmark { 
-          animation: execute-left 1.2s cubic-bezier(0.6, 0, 0, 1) both; 
-        }
-        .s1-back.is-executing .s1-back-inner > * { 
-          animation: execute-down 1.2s cubic-bezier(0.6, 0, 0, 1) both; 
-        }
-        .s1-back.is-executing .starlight-matrix .matrix-feed { 
-          animation: fast-scroll 1s linear forwards; 
-        }
-        
-        @keyframes execute-left { 
-          to { 
-            opacity: 0; 
-            transform: translateX(-50px); 
-            filter: blur(5px); 
-          } 
-        }
-        @keyframes execute-down { 
-          to { 
-            opacity: 0; 
-            transform: translateY(50px) scale(0.9); 
-            filter: blur(5px); 
-          } 
-        }
-        @keyframes fast-scroll { 
-          0% { filter: none; } 
-          50% { filter: blur(2px); transform: translateY(-30px); opacity: 0.5; } 
-          100% { filter: blur(4px); transform: translateY(-60px); opacity: 0; } 
-        }
-
-        /* 页面跳转离场动画 */
-        .page-leave .s1-back > .wordmark {
-          animation: leave-left 0.4s cubic-bezier(0.4, 0, 1, 1) both;
-        }
-
-        .page-leave .s1-header-group,
-        .page-leave .trinity-card,
-        .page-leave .starlight-matrix,
-        .page-leave .s1-cta {
-          animation: leave-down 0.4s cubic-bezier(0.4, 0, 1, 1) both;
-        }
-
-        @keyframes leave-left {
-          to { opacity: 0; transform: translateX(-20px); }
-        }
-        @keyframes leave-down {
-          to { opacity: 0; transform: translateY(15px); }
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           响应式设计 - 移动端绝对优先
-           ═══════════════════════════════════════════════════════════════════ */
-        @media (max-width: 768px) {
-          :root {
-            --wm-h: 26px; 
-            --s1-offset: 56px; 
-            --gap-xs: 6px;
-            --gap-sm: 9px; 
-            --gap-md: 14px; 
+        /* ---------------------------------------------------------------
+           桌面端响应式优化 - 更大的尺寸和更丰富的交互
+           --------------------------------------------------------------- */
+        @media (min-width: 768px) {
+          .s1-energy-inner {
+            max-width: 680px;
+            padding: 24px 24px calc(var(--safe-bottom) + 24px);
+            gap: 20px;
           }
 
-          .wordmark {
-            top: calc(var(--safe-top) + 14px);
-            left: 16px;
-            transform: scale(0.9);
+          /* 标题组 */
+          .s1-energy-main-title {
+            font-size: 19px;
           }
-          
-          .s1-back-inner {
-            padding: 0 16px;
-            gap: var(--gap-md);
+
+          .s1-energy-value-prop {
+            font-size: 12px;
+            line-height: 1.75;
           }
-          
-          .s1-back-top-label { 
-            font-size: 9px; 
-            letter-spacing: 0.09em;
-            padding: 5px 0 3px;
+
+          /* 徽章卡片 */
+          .energy-pillar-header {
+            padding: 14px 18px;
+            min-height: 62px;
           }
-          
-          .s1-main-title { 
-            font-size: 12.5px; 
-            margin-bottom: 11px;
-            line-height: 1.3;
-          }
-          .s1-value-declaration { 
-            font-size: 12px; 
-            line-height: 1.5; 
-          }
-          
-          .trinity-container { 
-            gap: 10px;
-          }
-          .trinity-card { 
-            border-radius: 10px; 
-          }
-          .card-header { 
-            padding: 11px 14px; 
-          }
-          .card-title { 
-            font-size: 11.5px; 
-          }
-          .card-content { 
-            padding: 0 14px; 
-          }
-          .trinity-card.expanded .card-content {
-            padding: 0 14px 12px;
-            max-height: 400px;
-          }
-          .fantasy-promise { 
-            font-size: 11px; 
-            margin-bottom: 10px; 
-          }
-          .concrete-deliverable { 
-            font-size: 10.5px; 
-          }
-          .concrete-deliverable::before { 
-            font-size: 9px; 
-          }
-          
-          .starlight-matrix { 
-            padding: 9px 12px; 
-            border-radius: 9px;
-          }
-          .matrix-title { 
-            font-size: 8.5px; 
-          }
-          .matrix-feed { 
-            font-size: 8px; 
-            line-height: 1.55; 
-            height: 95px;
-          }
-          
-          .s1-cta { 
-            padding-top: 0;
-            gap: 7px;
-          }
-          .s1-cta-btn-ultimate { 
+
+          .energy-badge-core {
+            width: 52px;
             height: 52px;
-            max-width: 100%;
-            padding: 0 18px; 
-            border-radius: 12px; 
-            font-size: 13.5px; 
           }
-          .s1-price-tag { 
-            font-size: 10.5px; 
-          }
-        }
 
-        @media (max-width: 359px) {
-          :root {
-            --wm-h: 24px; 
-            --s1-offset: 52px;
-            --gap-xs: 5px;
-            --gap-sm: 8px; 
-            --gap-md: 11px;
+          .energy-badge-roman {
+            font-size: 17px;
           }
-          
-          .wordmark {
-            top: calc(var(--safe-top) + 12px);
-            left: 14px;
-            transform: scale(0.85);
+
+          .energy-pillar-name {
+            font-size: 14px;
           }
-          
-          .s1-back-inner { 
-            padding: 0 14px;
-            gap: var(--gap-md);
+
+          .energy-pillar-subtitle {
+            font-size: 9.5px;
           }
-          
-          .s1-back-top-label {
-            font-size: 8.5px;
-            padding: 4px 0 2px;
-          }
-          
-          .s1-main-title { 
+
+          .energy-pillar-description {
             font-size: 11.5px;
-            margin-bottom: 9px;
+            line-height: 1.85;
           }
-          .s1-value-declaration { 
-            font-size: 11.5px; 
+
+          .energy-pillar-content.is-visible {
+            padding: 0 18px 16px;
+            max-height: 320px;
           }
-          
-          .card-header {
-            padding: 10px 12px;
+
+          /* Architect */
+          .s1-energy-architect-card {
+            padding: 16px 20px;
           }
-          .card-title { 
-            font-size: 11px; 
+
+          .s1-energy-architect-title {
+            font-size: 9.5px;
+            margin-bottom: 12px;
           }
-          .trinity-card.expanded .card-content {
-            max-height: 350px;
+
+          .s1-energy-architect-quote {
+            font-size: 11px;
+            line-height: 1.8;
+            margin-bottom: 10px;
           }
-          .fantasy-promise { 
-            font-size: 10.5px; 
+
+          .s1-energy-architect-sig {
+            font-size: 10px;
           }
-          .concrete-deliverable { 
-            font-size: 10px; 
+
+          /* CTA按钮桌面端优化 */
+          .s1-energy-cta-button {
+            height: 64px;
+            max-width: 440px;
           }
-          
-          .matrix-feed { 
-            font-size: 7.5px;
-            height: 85px;
+
+          .s1-energy-cta-text {
+            font-size: 16px;
           }
-          
-          .s1-cta-btn-ultimate { 
-            height: 50px; 
-            font-size: 13px; 
-            letter-spacing: 0.06em;
-            padding: 0 16px;
+
+          .s1-energy-price-highlight {
+            font-size: 12px;
           }
-          .s1-price-tag { 
-            font-size: 10px; 
+
+          .price-amount {
+            font-size: 16px;
+          }
+
+          /* 桌面悬停效果增强 */
+          .energy-pillar-card:hover {
+            border-color: rgba(255, 255, 255, 0.22);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+          }
+
+          .energy-pillar-card:hover .energy-badge-core {
+            transform: scale(1.05);
           }
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           无障碍降级 & 性能优化
-           ═══════════════════════════════════════════════════════════════════ */
+        /* ---------------------------------------------------------------
+           无障碍支持 - 尊重用户的动画偏好
+           --------------------------------------------------------------- */
         @media (prefers-reduced-motion: reduce) {
-          *, *::before, *::after {
+          *,
+          *::before,
+          *::after {
             animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
           }
-          .s1-back-top-label, .s1-header-group,
-          .trinity-card, .starlight-matrix, .s1-cta {
-            opacity: 1 !important;
-            transform: none !important;
-          }
-          .s1-cta-btn-ultimate::before,
-          .s1-cta-btn-ultimate::after,
-          .starlight-matrix::after { 
-            display: none; 
-          }
-          .feed-line { 
-            animation: none; 
-          }
-          .feed-line-critical {
+
+          .energy-pillar-card {
+            opacity: 1;
             animation: none;
           }
-          .s1-back.is-executing * { 
-            animation: none !important; 
+
+          .s1-energy-header,
+          .s1-energy-architect,
+          .s1-energy-cta-final {
+            animation: none;
           }
         }
 
-        @media (prefers-contrast: high) { 
-          .s1-cta-btn-ultimate { 
-            border-width: 2px; 
-            border-color: #D4B896; 
-            background: rgba(212, 184, 150, 0.3); 
-          } 
-          .s1-cta-text { 
-            font-weight: 700; 
-          } 
-          .s1-price-tag { 
-            color: rgba(184, 149, 106, 0.9); 
-          } 
-          .trinity-card { 
-            border-width: 1.5px; 
-            border-color: rgba(184, 149, 106, 0.3); 
-          } 
+        /* 键盘导航焦点指示 */
+        .s1-energy-cta-button:focus-visible {
+          outline: 3px solid var(--gold-primary);
+          outline-offset: 4px;
         }
-      `}}/>
+
+        .energy-pillar-card:focus-visible {
+          outline: 2px solid var(--gold-primary);
+          outline-offset: 3px;
+        }
+      `}</style>
     </section>
   );
 }
