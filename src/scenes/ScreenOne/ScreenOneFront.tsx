@@ -282,7 +282,7 @@ export default function ScreenOneFront() {
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   // 倒计时状态
-  const [countdown, setCountdown] = useState<number>(12);
+  const [countdown, setCountdown] = useState<number>(18);
   const [countdownStarted, setCountdownStarted] = useState(false);
   
   // CTA 状态管理
@@ -340,12 +340,13 @@ export default function ScreenOneFront() {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
-  // 3秒停留事件 - 优化版
+  // 3秒 & 10秒停留事件 - 参与深度追踪
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     startTimeRef.current = Date.now();
 
-    const engageTimer = setTimeout(() => {
+    // 3秒停留 - 轻度参与
+    const engage3sTimer = setTimeout(() => {
       const isDev = window.location.hostname === 'localhost';
       const actualDuration = Math.round((Date.now() - startTimeRef.current) / 1000);
       
@@ -362,8 +363,27 @@ export default function ScreenOneFront() {
       );
     }, 3000);
 
+    // 10秒停留 - 深度参与 🆕
+    const engage10sTimer = setTimeout(() => {
+      const isDev = window.location.hostname === 'localhost';
+      const actualDuration = Math.round((Date.now() - startTimeRef.current) / 1000);
+      
+      trackEvent(
+        "s1e10",
+        "S1_Front_Engaged_10s",
+        {
+          content_name: "ScreenOne_Front",
+          content_category: "Assessment_Landing",
+          engagement_type: "view_10s",
+          actual_duration: actualDuration,
+        },
+        isDev
+      );
+    }, 10000);
+
     return () => {
-      clearTimeout(engageTimer);
+      clearTimeout(engage3sTimer);
+      clearTimeout(engage10sTimer);
       if (startTimeRef.current > 0) {
         const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
         console.log(`[前屏] 停留时长: ${duration}秒`);
@@ -382,34 +402,10 @@ export default function ScreenOneFront() {
   }, [countdown]);
 
   // ═══════════════════════════════════════════════════════════════
-  // CTA 点击处理（唯一的导航入口）- 优化版
+  // 共用的导航函数 - 统一处理跳转逻辑
   // ═══════════════════════════════════════════════════════════════
-  const handleCTAClick = useCallback(() => {
-    if (hasClicked) return;
-    
-    const isDev = window.location.hostname === 'localhost';
-    const clickTimestamp = Date.now();
-    const timeOnPage = startTimeRef.current > 0 
-      ? Math.round((clickTimestamp - startTimeRef.current) / 1000) 
-      : 0;
-
-    trackEvent(
-      "s1cc",
-      "S1_Front_CTA_Click",
-      {
-        content_name: 'Assessment_CTA',
-        content_category: 'Matching_Assessment',
-        value: 49,
-        currency: 'USD',
-        screen_position: 'center',
-        screen_number: 1,
-        countdown_value: countdown,
-        time_on_page: timeOnPage,
-      },
-      isDev
-    );
-
-    // 标记已点击
+  const navigateToNext = useCallback(() => {
+    // 标记已点击/已跳转
     setHasClicked(true);
     setShouldPulse(false);
     
@@ -436,17 +432,72 @@ export default function ScreenOneFront() {
         window.scrollTo(0, 0);
       });
     }, 220);
-  }, [hasClicked, countdown]);
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════
-  // 倒计时结束后自动跳转
+  // CTA 点击处理 - 真实用户点击
+  // ═══════════════════════════════════════════════════════════════
+  const handleCTAClick = useCallback(() => {
+    if (hasClicked) return;
+    
+    const isDev = window.location.hostname === 'localhost';
+    const clickTimestamp = Date.now();
+    const timeOnPage = startTimeRef.current > 0 
+      ? Math.round((clickTimestamp - startTimeRef.current) / 1000) 
+      : 0;
+
+    // 真实用户点击事件
+    trackEvent(
+      "s1cc",
+      "S1_Front_CTA_Click",
+      {
+        content_name: 'Assessment_CTA',
+        content_category: 'Matching_Assessment',
+        value: 49,
+        currency: 'USD',
+        screen_position: 'center',
+        screen_number: 1,
+        trigger_type: 'user_click',
+        countdown_value: countdown,
+        time_on_page: timeOnPage,
+      },
+      isDev
+    );
+
+    // 执行导航
+    navigateToNext();
+  }, [hasClicked, countdown, navigateToNext]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // 倒计时结束后自动跳转 - 独立事件追踪
   // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
-    // 当倒计时归零且用户尚未点击时，自动触发与点击按钮相同的行为
+    // 当倒计时归零且用户尚未点击时，触发自动跳转
     if (countdown === 0 && !hasClicked) {
-      handleCTAClick();
+      const isDev = window.location.hostname === 'localhost';
+      const timeOnPage = startTimeRef.current > 0 
+        ? Math.round((Date.now() - startTimeRef.current) / 1000) 
+        : 0;
+
+      // 自动跳转事件 - 与用户点击区分
+      trackEvent(
+        "s1at",
+        "S1_Front_Auto_Transition",
+        {
+          content_name: 'Assessment_Countdown_Complete',
+          content_category: 'Matching_Assessment',
+          trigger_type: 'auto_timeout',
+          reason: 'countdown_zero',
+          time_on_page: timeOnPage,
+          screen_number: 1,
+        },
+        isDev
+      );
+
+      // 执行导航
+      navigateToNext();
     }
-  }, [countdown, hasClicked, handleCTAClick]);
+  }, [countdown, hasClicked, navigateToNext]);
 
   return (
     <section className="screen-front-container">
@@ -457,31 +508,32 @@ export default function ScreenOneFront() {
       
       {/* 顶部系统信息 */}
       <div className="s1-top-label">
-        <span className="label-prefix">CANONICAL DATA</span>
-        <span className="label-divider">//</span>
-        <span className="label-suffix">THE STARLIGHT DIRECTIVE</span>
+        <span className="label-text">● LIVE • AKASHIC PROTOCOL</span>
       </div>
 
       <div className="screen-front-content">
         {/* 核心图腾 (文字替代) */}
         <div className="project-sigil">
-          [ THE ARCHETYPE RESONANCE ALGORITHM™ ]
+          [ ACTIVE SESSION: FREQUENCY RECALIBRATION ]
         </div>
         
         {/* 权威认证文本 */}
         <div className="auth-protocol">
-          ACCESS GRANTED: INTERFACING WITH THE ALGORITHM…
+          CALIBRATING YOUR SIGNATURE...
         </div>
+
 
         {/* 解码日志摘录 - 优化移动端尺寸 */}
         <div className="decoded-log-entry">
           <p className="log-text">
-            “Canon I, Verse VII.
-The Algorithm does not guess; it illuminates the Primal Archetype of Influence encoded within a soul’s signature at inception. It confirms the first truth: destinies are not random walks but expressions of a pre-ordained Resonance Contract™.
-Distortions (‘glitches’) are not failures. They are the dissonance that occurs when your Archetype is starved of its native power source. Reclamation is not achieved through effort, but through precise re-activation of the Contract’s core resonant frequencies. The key is not to be earned; it is to be remembered. And now, you have the map.”
+            "Log Entry 777. Recalibration Protocol is now active. Subject's original Vibrational Contract has been located in the Akashic Field and is being routed through harmonic correction matrices.
+Preliminary scan indicates significant frequency drift from birth signature—deviation patterns consistent with environmental suppression and misalignment conditioning over 8-15 year exposure cycle. Pattern classification matches previously documented cases of accelerated timeline collapse in subjects who remained unaware of frequency theft.
+Root cause identified: Subject has been operating on inherited frequency bands designed for someone else's timeline. The misalignment isn't personal failure; it's systematic frequency theft by low-resonance environmental structures. Left uncorrected, this drift compounds exponentially—each year of misalignment making realignment more difficult and timeline recovery less complete.
+Correction sequence is LIVE. Distortions are being isolated. The contract's original resonant frequencies are being restored to baseline. All 'glitches'—failed manifestations, inverted wins, blocked pathways—have been traced to this single source: you were tuned to the wrong station.
+The realigned Frequency Map is being compiled now. Access window: 12 hours before calibration data resets and this signature returns to dormant state. Previous subjects who claimed their maps during active calibration windows reported early convergence signals within 48-72 hours (profile-dependent)."
           </p>
           <p className="log-signature">
-            — From the Founding Canons of the Starlight Council
+            — From the Active Logs of Project Starlight, Recalibration Division
           </p>
         </div>
 
@@ -489,7 +541,28 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
         <div className={`interaction-core ${ctaVisible ? 'visible' : ''}`}>
           {/* 紧迫感声明 */}
           <p className="urgency-statement">
-            Your unique resonance signature has been detected. The portal to your Archetypal Code is now open. This alignment is temporary.
+            This is not a reading. This is a live intervention.
+          </p>
+          
+          <p className="urgency-statement">
+            Your unique soul signature has been isolated from the Akashic Field. Right now, in real-time, your original Vibrational Contract—the one you were born with before conditioning distorted it—is being reconstructed.
+          </p>
+          
+          <p className="urgency-statement" style={{ 
+            marginTop: '12px', 
+            fontSize: '11.5px', 
+            fontStyle: 'italic', 
+            opacity: 0.88,
+            color: 'rgba(212, 184, 150, 0.88)',
+            fontWeight: 300,
+            letterSpacing: '0.015em',
+            textShadow: '0 0 15px rgba(184, 149, 106, 0.12)'
+          }}>
+            — confidential, one-time evaluation; qualification applies; no subscription.
+          </p>
+          
+          <p className="urgency-statement">
+            The portal to your Recalibrated Frequency Map is open. This window closes in:
           </p>
 
           {/* 倒计时器 */}
@@ -503,11 +576,23 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
             onClick={handleCTAClick}
             disabled={hasClicked}
             className={`s1-cta-btn ${shouldPulse ? 'pulse' : ''} ${shouldPulse ? 'urgent' : ''}`}
-            aria-label="Access your decoded analysis"
+            aria-label="Claim your Recalibrated Frequency Map"
           >
-            <span className="s1-cta-text">CLAIM YOUR ARCHETYPAL CODE</span>
+            <span className="s1-cta-text">CLAIM YOUR RECALIBRATED FREQUENCY MAP</span>
             <span className="s1-cta-arrow">→</span>
           </button>
+          
+          <p className="urgency-statement" style={{ 
+            marginTop: '12px', 
+            fontSize: '13px',
+            color: 'rgba(245, 240, 230, 0.78)',
+            fontWeight: 300,
+            letterSpacing: '0.02em',
+            textShadow: '0 1px 8px rgba(184, 149, 106, 0.08)'
+          }}>
+            Your corrected signature. Your original timeline. Your true path.
+          </p>
+
         </div>
       </div>
 
@@ -591,7 +676,7 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
           left: 0;
           right: 0;
           z-index: 100;
-          padding: 20px;
+          padding: 16px;
           background: linear-gradient(to bottom,
             rgba(10, 15, 27, 0.95) 0%,
             rgba(10, 15, 27, 0.85) 60%,
@@ -607,12 +692,12 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
            ═══════════════════════════════════════════════════════════════════ */
         .s1-top-label {
           position: fixed;
-          top: 75px;
+          top: 53px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 90;
           font-size: 9px;
-          line-height: 1.4;
+          line-height: 1.3;
           font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
           font-weight: 500;
           letter-spacing: 0.1em;
@@ -621,7 +706,7 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
           opacity: 0;
           animation: topLabelReveal 600ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
           /* 增强视觉效果 */
-          padding: 8px 16px;
+          padding: 6px 12px;
           background: rgba(20, 25, 35, 0.6);
           border: 1px solid rgba(184, 149, 106, 0.2);
           border-radius: 20px;
@@ -632,20 +717,14 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
             inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
-        .label-prefix {
-          color: rgba(184, 149, 106, 0.6);
+        .label-text {
+          color: rgba(212, 184, 150, 0.95);  /* 金色，清晰可见 */
+          font-weight: 500;
+          letter-spacing: 0.08em;
         }
 
-        .label-divider {
-          color: rgba(184, 149, 106, 0.3);
-          margin: 0 6px;
-        }
 
-        .label-suffix {
-          color: rgba(212, 184, 150, 0.9);
-          font-weight: 600;
-          text-shadow: 0 0 12px rgba(212, 184, 150, 0.3);
-        }
+
 
         @keyframes topLabelReveal {
           0% { 
@@ -667,38 +746,26 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
           max-width: 600px;
           text-align: center;
           color: var(--cream);
-          padding: 125px 16px 20px;
+          padding: 82px 14px 16px;
           z-index: 2;
           display: flex;
           flex-direction: column;
           align-items: center;
           flex: 1;
           min-height: 0;
-          overflow-y: auto;
-          overflow-x: hidden;
-          -webkit-overflow-scrolling: touch;
+          overflow: hidden;
         }
 
-        /* 隐藏滚动条 */
-        .screen-front-content::-webkit-scrollbar {
-          width: 0;
-          display: none;
-        }
-
-        .screen-front-content {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
 
         /* ═══════════════════════════════════════════════════════════════════
            核心图腾 (文字版) - 视觉强化
            ═══════════════════════════════════════════════════════════════════ */
         .project-sigil {
-          margin: 0 0 12px 0;
-          padding: 10px 18px;
-          font-size: 13px;
+          margin: 0 0 2px 0;
+          padding: 6px 12px;
+          font-size: 10.5px;
           line-height: 1;
-          color: var(--gold-bright);
+          color: rgba(212, 184, 150, 1);
           font-family: 'Bodoni MT', 'Didot', Georgia, serif;
           letter-spacing: 0.12em;
           font-weight: 400;
@@ -772,10 +839,10 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
            权威认证文本
            ═══════════════════════════════════════════════════════════════════ */
         .auth-protocol {
-          margin: 0 0 18px 0;
+          margin: 0 0 1px 0;
           padding: 0;
-          font-size: 10px;
-          line-height: 1.4;
+          font-size: 8.5px;
+          line-height: 1.3;
           color: rgba(184, 149, 106, 0.6);
           font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
           letter-spacing: 0.06em;
@@ -796,13 +863,13 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
            解码日志摘录 - 奢华卡片强化
            ═══════════════════════════════════════════════════════════════════ */
         .decoded-log-entry {
-          margin: 0 0 18px 0;
-          padding: 16px 18px;
+          margin: 0 0 3px 0;
+          padding: 8px 11px;
           background: linear-gradient(135deg, 
-            rgba(20, 25, 35, 0.6) 0%, 
-            rgba(15, 20, 30, 0.5) 100%
+            rgba(20, 25, 35, 0.7) 0%, 
+            rgba(15, 20, 30, 0.6) 100%
           );
-          border: 1px solid rgba(184, 149, 106, 0.25);
+          border: 1px solid rgba(184, 149, 106, 0.3);
           border-radius: 8px;
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
@@ -810,11 +877,12 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
           animation: logEntryFade 700ms cubic-bezier(0.23,1,0.32,1) 600ms forwards;
           width: 100%;
           max-width: 480px;
-          /* 奢华阴影 */
+          /* 增强阴影和内发光 */
           box-shadow: 
-            0 4px 20px rgba(0, 0, 0, 0.3),
-            0 1px 4px rgba(0, 0, 0, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            0 4px 24px rgba(0, 0, 0, 0.35),
+            0 2px 8px rgba(0, 0, 0, 0.25),
+            inset 0 1px 0 rgba(212, 184, 150, 0.05),
+            inset 0 0 30px rgba(184, 149, 106, 0.02);
         }
 
         @keyframes logEntryFade {
@@ -829,16 +897,21 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
         }
 
         .log-text {
-          margin: 0 0 10px 0;
+          margin: 0 0 4px 0;
           padding: 0;
-          font-size: 12px;
-          line-height: 1.6;
-          color: rgba(245, 245, 240, 0.9);
-          font-family: Georgia, 'Times New Roman', serif;
-          font-style: italic;
-          letter-spacing: 0.01em;
+          font-size: 9px;
+          line-height: 1.35;
+          color: rgba(255, 250, 240, 0.96);  /* 淡金白 - 神谕色彩 - 保留 */
+          font-family: Georgia, 'Times New Roman', serif;  /* 恢复 Georgia */
+          font-style: italic;  /* 恢复斜体 */
+          letter-spacing: 0.01em;  /* 恢复原始字间距 */
           text-align: left;
-          white-space: pre-wrap; /* Preserve line breaks from the template literal */
+          white-space: pre-wrap;
+          /* 神谕发光效果 - 保留 */
+          text-shadow: 
+            0 0 20px rgba(212, 184, 150, 0.15),
+            0 0 40px rgba(212, 184, 150, 0.08),
+            0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .log-text.log-continuation {
@@ -848,15 +921,18 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
         .log-signature {
           margin: 0;
           padding: 0;
-          font-size: 11px;
-          line-height: 1.4;
-          color: var(--gold-bright);
+          font-size: 8.5px;
+          line-height: 1.3;
+          color: rgba(212, 184, 150, 0.95);  /* 金色签名 - 微调透明度 */
           font-family: Georgia, 'Times New Roman', serif;
           font-style: italic;
           text-align: right;
           letter-spacing: 0.02em;
-          opacity: 0.85;
-          text-shadow: 0 0 15px rgba(184, 149, 106, 0.2);
+          opacity: 1;
+          /* 增强发光效果 */
+          text-shadow: 
+            0 0 20px rgba(184, 149, 106, 0.3),
+            0 0 40px rgba(184, 149, 106, 0.15);
         }
 
         /* ═══════════════════════════════════════════════════════════════════
@@ -870,7 +946,7 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
           display: flex;
           flex-direction: column;
           align-items: center;
-          margin-bottom: 10px;
+          margin-bottom: 0;
         }
 
         .interaction-core.visible {
@@ -880,43 +956,51 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
 
         /* 紧迫感声明 - 视觉强化 */
         .urgency-statement {
-          margin: 0 0 14px 0;
+          margin: 0 0 5px 0;
           padding: 0 10px;
-          font-size: 13px;
-          line-height: 1.5;
-          color: var(--cream);
+          font-size: 10.5px;
+          line-height: 1.3;
+          color: rgba(255, 252, 245, 0.94);  /* 微调为淡奶油白 */
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           font-weight: 400;
           letter-spacing: 0.01em;
           text-align: center;
-          /* 添加微妙光晕 */
-          text-shadow: 0 1px 8px rgba(184, 149, 106, 0.1);
+          /* 优化光晕效果 */
+          text-shadow: 
+            0 1px 8px rgba(184, 149, 106, 0.12),
+            0 0 20px rgba(212, 184, 150, 0.06);
         }
 
         /* ═══════════════════════════════════════════════════════════════════
            倒计时器 - 奢华强化
            ═══════════════════════════════════════════════════════════════════ */
         .countdown-timer {
-          margin: 0 0 16px 0;
-          padding: 4px 12px;
+          margin: 0 0 10px 0;
+          padding: 10px 20px;
+          color: rgba(255, 255, 255, 0.98);  /* 纯白高对比 */
           display: flex;
           align-items: center;
           justify-content: center;
           opacity: 0;
           transform: scale(0.8);
           transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
-          /* 奢华背景 */
+          /* 优雅背景 - 微妙渐变 */
           background: linear-gradient(135deg,
-            rgba(184, 149, 106, 0.08) 0%,
-            rgba(184, 149, 106, 0.03) 100%
+            rgba(212, 184, 150, 0.12) 0%,
+            rgba(184, 149, 106, 0.08) 100%
           );
-          border: 2px solid rgba(184, 149, 106, 0.25);
-          border-radius: 16px;
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
+          /* 细边框 - 优雅不抢眼 */
+          border: 1.5px solid rgba(212, 184, 150, 0.35);
+          /* 更圆润的圆角 */
+          border-radius: 20px;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          /* 优雅阴影 - 发光+深度 */
           box-shadow: 
-            0 4px 20px rgba(0, 0, 0, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            0 0 40px rgba(212, 184, 150, 0.25),
+            0 6px 24px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            inset 0 0 30px rgba(212, 184, 150, 0.05);
         }
 
         .countdown-timer.active {
@@ -945,15 +1029,18 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
         }
 
         .countdown-number {
-          font-size: 56px;
+          font-size: 52px;
           line-height: 1;
-          font-weight: 300;
-          color: var(--gold-bright);
-          font-family: -apple-system, BlinkMacSystemFont, Georgia, serif;
-          letter-spacing: -0.02em;
+          font-weight: 400;
+          color: rgba(212, 184, 150, 1);
+          /* 强制等宽字体 - 100%保证数字等宽 */
+          font-family: 'SF Mono', 'Monaco', 'Consolas', 'Courier New', monospace;
+          letter-spacing: 0.05em;
+          /* 移除无效的属性 */
+          font-variant-numeric: tabular-nums;
           text-shadow: 
-            0 0 30px rgba(184, 149, 106, 0.6),
-            0 0 60px rgba(184, 149, 106, 0.4),
+            0 0 35px rgba(212, 184, 150, 0.7),
+            0 0 60px rgba(184, 149, 106, 0.5),
             0 2px 4px rgba(0, 0, 0, 0.3);
           position: relative;
         }
@@ -964,20 +1051,22 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
         .s1-cta-btn {
           width: 100%;
           max-width: 360px;
-          height: 52px;
+          height: 50px;
           margin: 0 auto;
           border-radius: 26px;
+          /* 奢华背景 - 更实,更金 */
           background: linear-gradient(135deg, 
-            rgba(184, 149, 106, 0.15) 0%, 
-            rgba(184, 149, 106, 0.08) 100%
+            rgba(212, 184, 150, 0.22) 0%, 
+            rgba(184, 149, 106, 0.18) 100%
           );
-          border: 2px solid var(--gold-border);
+          /* 奢华边框 - 更粗,更金 */
+          border: 3px solid rgba(212, 184, 150, 0.75);
           color: var(--cream-bright);
-          font-size: 13px;
+          font-size: 10.5px;
           font-weight: 600;
           letter-spacing: 0.08em;
           cursor: pointer;
-          transition: all 300ms cubic-bezier(0.23, 1, 0.32, 1);
+          transition: all 350ms cubic-bezier(0.23, 1, 0.32, 1);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -986,13 +1075,32 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
           text-transform: uppercase;
           position: relative;
           overflow: hidden;
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          /* 奢华阴影 */
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          /* 奢华阴影 - 强烈金色发光 + 深阴影 */
           box-shadow: 
-            0 4px 20px rgba(0, 0, 0, 0.25),
-            0 2px 8px rgba(0, 0, 0, 0.15),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            0 0 35px rgba(212, 184, 150, 0.4),
+            0 8px 32px rgba(0, 0, 0, 0.45),
+            inset 0 2px 0 rgba(255, 255, 255, 0.15),
+            inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+        }
+
+        /* 奢华hover效果 - Dramatic变化 */
+        .s1-cta-btn:hover {
+          /* Dramatic背景变化 */
+          background: linear-gradient(135deg, 
+            rgba(212, 184, 150, 0.32) 0%, 
+            rgba(184, 149, 106, 0.28) 100%
+          );
+          /* 纯金边框 */
+          border-color: rgba(212, 184, 150, 0.95);
+          /* 强烈发光 + 上浮 */
+          box-shadow: 
+            0 0 55px rgba(212, 184, 150, 0.65),
+            0 12px 40px rgba(0, 0, 0, 0.5),
+            inset 0 2px 0 rgba(255, 255, 255, 0.25),
+            inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+          transform: translateY(-3px) scale(1.02);
         }
 
         /* 按钮光晕边框 - 增强 */
@@ -1034,15 +1142,17 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
         }
 
         .s1-cta-text {
-          color: var(--cream-bright);
+          color: rgba(255, 252, 240, 1);  /* 微调为更温暖的奶油色 */
           position: relative;
           z-index: 1;
           transition: color 200ms ease;
-          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+          text-shadow: 
+            0 1px 3px rgba(0, 0, 0, 0.35),
+            0 0 12px rgba(212, 184, 150, 0.15);
         }
 
         .s1-cta-arrow {
-          color: var(--gold-bright);
+          color: rgba(212, 184, 150, 1);
           font-size: 18px;
           position: relative;
           z-index: 1;
@@ -1068,7 +1178,7 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
 
         .s1-cta-btn.pulse {
           animation: pulseDramatic 1.5s ease-in-out infinite;
-          border-color: var(--gold-bright);
+          border-color: rgba(212, 184, 150, 1);
         }
 
         /* 悬停效果 - 增强 */
@@ -1078,7 +1188,7 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
               rgba(184, 149, 106, 0.25) 0%, 
               rgba(184, 149, 106, 0.15) 100%
             );
-            border-color: var(--gold-bright);
+            border-color: rgba(212, 184, 150, 1);
             transform: translateY(-2px) scale(1.01);
             box-shadow: 
               0 8px 32px rgba(184, 149, 106, 0.4),
@@ -1120,14 +1230,14 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
           }
 
           .s1-top-label {
-            top: 82px;
-            font-size: 10px;
+            top: 71px;
+            font-size: 8.5px;
             padding: 10px 20px;
           }
 
           .screen-front-content {
             max-width: 680px;
-            padding: 140px 32px 32px;
+            padding: 120px 32px 24px;
           }
 
           .project-sigil {
@@ -1150,7 +1260,7 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
           }
 
           .auth-protocol {
-            font-size: 11px;
+            font-size: 8.5px;
             margin-bottom: 20px;
           }
 
@@ -1161,13 +1271,13 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
           }
 
           .log-text {
-            font-size: 13px;
+            font-size: 10.5px;
             line-height: 1.7;
             margin-bottom: 12px;
           }
 
           .log-signature {
-            font-size: 12px;
+            font-size: 9px;
           }
 
           .urgency-statement {
@@ -1176,7 +1286,7 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
           }
 
           .countdown-timer {
-            padding: 8px 16px;
+            padding: 14px 24px;
             margin-bottom: 20px;
           }
 
@@ -1187,7 +1297,7 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
           .s1-cta-btn {
             height: 56px;
             max-width: 400px;
-            font-size: 13px;
+            font-size: 10.5px;
           }
 
           .s1-cta-arrow {
@@ -1203,29 +1313,29 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
 
           .s1-top-label {
             font-size: 8px;
-            top: 68px;
+            top: 57px;
             padding: 6px 12px;
           }
 
           .screen-front-content {
-            padding: 110px 12px 16px;
+            padding: 82px 12px 14px;
           }
 
           .project-sigil {
-            font-size: 11px;
+            font-size: 8.5px;
             padding: 8px 14px;
           }
 
           .decoded-log-entry {
-            padding: 12px 14px;
+            padding: 10px 12px;
           }
 
           .log-text {
-            font-size: 11px;
+            font-size: 8.5px;
           }
 
           .urgency-statement {
-            font-size: 12px;
+            font-size: 9px;
           }
 
           .countdown-number {
@@ -1234,7 +1344,7 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
 
           .s1-cta-btn {
             height: 48px;
-            font-size: 11px;
+            font-size: 8.5px;
           }
         }
 
@@ -1263,13 +1373,13 @@ Distortions (‘glitches’) are not failures. They are the dissonance that occu
         @media (prefers-contrast: high) {
           .s1-cta-btn {
             border-width: 3px;
-            border-color: var(--gold-bright);
+            border-color: rgba(212, 184, 150, 1);
             background: rgba(184, 149, 106, 0.3);
           }
 
           .countdown-timer {
             border-width: 3px;
-            border-color: var(--gold-bright);
+            border-color: rgba(212, 184, 150, 1);
           }
 
           .decoded-log-entry,
