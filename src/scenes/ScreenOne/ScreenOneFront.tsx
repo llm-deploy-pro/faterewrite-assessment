@@ -503,49 +503,57 @@ export default function ScreenOneFront() {
     <section className="screen-front-container">
       {/* Logo 区域 - 独立固定头部 */}
       <div className="logo-header">
-        <Wordmark name="Resonance" href="/" />
+        <Wordmark name="Oracle Protocol" href="/" />
       </div>
       
       {/* 顶部系统信息 */}
       <div className="s1-top-label">
-        <span className="label-text">● LIVE • AKASHIC PROTOCOL</span>
+        <span className="label-text">- LIVE • PRIORITY MATCH DETECTED</span>
       </div>
 
       <div className="screen-front-content">
         {/* 核心图腾 (文字替代) */}
         <div className="project-sigil">
-          [ ACTIVE SESSION: FREQUENCY RECALIBRATION ]
+          [ MATCH SEQUENCE ACTIVE: AUTHORIZATION REQUIRED ]
         </div>
         
         {/* 权威认证文本 */}
         <div className="auth-protocol">
-          CALIBRATING YOUR SIGNATURE...
+          AWAITING YOUR ACTION...
         </div>
 
 
         {/* 解码日志摘录 - 优化移动端尺寸 */}
         <div className="decoded-log-entry">
           <p className="log-text">
-            "Log Entry 777. Recalibration Protocol is now active. Subject's original Vibrational Contract has been located in the Akashic Field and is being routed through harmonic correction matrices.
-Preliminary scan indicates significant frequency drift from birth signature—deviation patterns consistent with environmental suppression and misalignment conditioning over 8-15 year exposure cycle. Pattern classification matches previously documented cases of accelerated timeline collapse in subjects who remained unaware of frequency theft.
-Root cause identified: Subject has been operating on inherited frequency bands designed for someone else's timeline. The misalignment isn't personal failure; it's systematic frequency theft by low-resonance environmental structures. Left uncorrected, this drift compounds exponentially—each year of misalignment making realignment more difficult and timeline recovery less complete.
-Correction sequence is LIVE. Distortions are being isolated. The contract's original resonant frequencies are being restored to baseline. All 'glitches'—failed manifestations, inverted wins, blocked pathways—have been traced to this single source: you were tuned to the wrong station.
-The realigned Frequency Map is being compiled now. Access window: 12 hours before calibration data resets and this signature returns to dormant state. Previous subjects who claimed their maps during active calibration windows reported early convergence signals within 48-72 hours (profile-dependent)."
+            "SYSTEM LOG #2847: Priority match sequence is LIVE. Subject profile triggered high-value alerts in closed network. Cross-reference with three asset-verified members currently active:
+
+Member A: $12M liquid, 38, tech sector (stated preference: your archetype)
+Member B: $28M portfolio, 42, aviation owner (stated preference: your archetype)
+Member C: $50M+ holdings, 45, estate owner (stated preference: your archetype)
+
+Analysis: Subject's archetypal classification resulted in critical compatibility scores (94-97%) across all three profiles. This is a priority match event. Per protocol, verified members can view archetypal data but are firewalled from contact until subject authorizes mutual visibility.
+
+Current Status: Subject flagged as Priority Match. Position in introduction queue: UNLOCKED BUT NOT SECURED. Root cause: Hesitation detected. All three members have flagged interest and are awaiting authorization confirmation.
+
+Warning: Authorization window is 12 hours. After expiration, this match event closes and profile reverts to dormant status. Queue position will be forfeited.
+
+Note: This is not a simulation. This is a live event you are currently missing. Previous subjects who authorized during priority match windows reported first introductions within 48-72 hours."
           </p>
           <p className="log-signature">
-            — From the Active Logs of Project Starlight, Recalibration Division
+            — Oracle Matching System, Priority Match Log
           </p>
         </div>
 
         {/* 交互核心：倒计时与行动号召 */}
         <div className={`interaction-core ${ctaVisible ? 'visible' : ''}`}>
           {/* 紧迫感声明 */}
-          <p className="urgency-statement">
-            This is not a reading. This is a live intervention.
+          <p className="urgency-statement urgency-statement-hero">
+            This is not information. This is an invitation you are about to miss.
           </p>
           
           <p className="urgency-statement">
-            Your unique soul signature has been isolated from the Akashic Field. Right now, in real-time, your original Vibrational Contract—the one you were born with before conditioning distorted it—is being reconstructed.
+            Three men with $90M+ combined assets are looking for you. They can see your profile. They cannot contact you. Not because they don't want to. Because you haven't authorized it.
           </p>
           
           <p className="urgency-statement" style={{ 
@@ -558,11 +566,11 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
             letterSpacing: '0.015em',
             textShadow: '0 0 15px rgba(184, 149, 106, 0.12)'
           }}>
-            — confidential, one-time evaluation; qualification applies; no subscription.
+            — one-time access credential; mutual consent required; no subscription.
           </p>
           
           <p className="urgency-statement">
-            The portal to your Recalibrated Frequency Map is open. This window closes in:
+            This match event expires in:
           </p>
 
           {/* 倒计时器 */}
@@ -578,7 +586,7 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
             className={`s1-cta-btn ${shouldPulse ? 'pulse' : ''} ${shouldPulse ? 'urgent' : ''}`}
             aria-label="Claim your Recalibrated Frequency Map"
           >
-            <span className="s1-cta-text">CLAIM YOUR RECALIBRATED FREQUENCY MAP</span>
+            <span className="s1-cta-text">AUTHORIZE CONTACT NOW — $47</span>
             <span className="s1-cta-arrow">→</span>
           </button>
           
@@ -590,7 +598,7 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
             letterSpacing: '0.02em',
             textShadow: '0 1px 8px rgba(184, 149, 106, 0.08)'
           }}>
-            Your corrected signature. Your original timeline. Your true path.
+            They chose you. Now you choose.
           </p>
 
         </div>
@@ -751,6 +759,7 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
           display: flex;
           flex-direction: column;
           align-items: center;
+          justify-content: center;
           flex: 1;
           min-height: 0;
           overflow: hidden;
@@ -863,8 +872,8 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
            解码日志摘录 - 奢华卡片强化
            ═══════════════════════════════════════════════════════════════════ */
         .decoded-log-entry {
-          margin: 0 0 3px 0;
-          padding: 8px 11px;
+          margin: 0 0 24px 0;
+          padding: 7px 11px;
           background: linear-gradient(135deg, 
             rgba(20, 25, 35, 0.7) 0%, 
             rgba(15, 20, 30, 0.6) 100%
@@ -900,11 +909,11 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
           margin: 0 0 4px 0;
           padding: 0;
           font-size: 9px;
-          line-height: 1.35;
+          line-height: 1.5;
           color: rgba(255, 250, 240, 0.96);  /* 淡金白 - 神谕色彩 - 保留 */
           font-family: Georgia, 'Times New Roman', serif;  /* 恢复 Georgia */
           font-style: italic;  /* 恢复斜体 */
-          letter-spacing: 0.01em;  /* 恢复原始字间距 */
+          letter-spacing: 0.015em;  /* 恢复原始字间距 */
           text-align: left;
           white-space: pre-wrap;
           /* 神谕发光效果 - 保留 */
@@ -922,7 +931,7 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
           margin: 0;
           padding: 0;
           font-size: 8.5px;
-          line-height: 1.3;
+          line-height: 1.4;
           color: rgba(212, 184, 150, 0.95);  /* 金色签名 - 微调透明度 */
           font-family: Georgia, 'Times New Roman', serif;
           font-style: italic;
@@ -956,10 +965,10 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
 
         /* 紧迫感声明 - 视觉强化 */
         .urgency-statement {
-          margin: 0 0 5px 0;
+          margin: 0 0 6px 0;
           padding: 0 10px;
           font-size: 10.5px;
-          line-height: 1.3;
+          line-height: 1.4;
           color: rgba(255, 252, 245, 0.94);  /* 微调为淡奶油白 */
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           font-weight: 400;
@@ -970,12 +979,23 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
             0 1px 8px rgba(184, 149, 106, 0.12),
             0 0 20px rgba(212, 184, 150, 0.06);
         }
+        
+        /* 第一句话强化 - 转折点冲击力 */
+        .urgency-statement-hero {
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 0.02em;
+          color: rgba(255, 255, 255, 0.98);
+          text-shadow: 
+            0 2px 12px rgba(184, 149, 106, 0.2),
+            0 0 30px rgba(212, 184, 150, 0.12);
+        }
 
         /* ═══════════════════════════════════════════════════════════════════
            倒计时器 - 奢华强化
            ═══════════════════════════════════════════════════════════════════ */
         .countdown-timer {
-          margin: 0 0 10px 0;
+          margin: 0 0 12px 0;
           padding: 10px 20px;
           color: rgba(255, 255, 255, 0.98);  /* 纯白高对比 */
           display: flex;
@@ -990,7 +1010,7 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
             rgba(184, 149, 106, 0.08) 100%
           );
           /* 细边框 - 优雅不抢眼 */
-          border: 1.5px solid rgba(212, 184, 150, 0.35);
+          border: 2px solid rgba(212, 184, 150, 0.35);
           /* 更圆润的圆角 */
           border-radius: 20px;
           backdrop-filter: blur(12px);
@@ -1039,8 +1059,9 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
           /* 移除无效的属性 */
           font-variant-numeric: tabular-nums;
           text-shadow: 
-            0 0 35px rgba(212, 184, 150, 0.7),
-            0 0 60px rgba(184, 149, 106, 0.5),
+            0 0 40px rgba(212, 184, 150, 0.8),
+            0 0 70px rgba(184, 149, 106, 0.6),
+            0 0 100px rgba(212, 184, 150, 0.3),
             0 2px 4px rgba(0, 0, 0, 0.3);
           position: relative;
         }
@@ -1051,9 +1072,9 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
         .s1-cta-btn {
           width: 100%;
           max-width: 360px;
-          height: 50px;
+          height: 54px;
           margin: 0 auto;
-          border-radius: 26px;
+          border-radius: 27px;
           /* 奢华背景 - 更实,更金 */
           background: linear-gradient(135deg, 
             rgba(212, 184, 150, 0.22) 0%, 
@@ -1062,7 +1083,7 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
           /* 奢华边框 - 更粗,更金 */
           border: 3px solid rgba(212, 184, 150, 0.75);
           color: var(--cream-bright);
-          font-size: 10.5px;
+          font-size: 11px;
           font-weight: 600;
           letter-spacing: 0.08em;
           cursor: pointer;
@@ -1224,6 +1245,42 @@ The realigned Frequency Map is being compiled now. Access window: 12 hours befor
         /* ═══════════════════════════════════════════════════════════════════
            响应式适配 - 桌面端增强
            ═══════════════════════════════════════════════════════════════════ */
+        
+        /* 移动端优先优化 (默认 < 768px) */
+        @media (max-width: 767px) {
+          .decoded-log-entry {
+            padding: 6px 10px;
+            margin: 0 0 20px 0;
+          }
+          
+          .log-text {
+            font-size: 8.2px;
+            line-height: 1.45;
+          }
+          
+          .urgency-statement {
+            margin: 0 0 8px 0;
+            padding: 0 8px;
+          }
+          
+          .urgency-statement-hero {
+            font-size: 11.5px;
+          }
+          
+          .countdown-timer {
+            margin: 0 0 14px 0;
+          }
+          
+          .countdown-number {
+            font-size: 56px;
+          }
+          
+          .s1-cta-btn {
+            height: 52px;
+            font-size: 10.5px;
+          }
+        }
+        
         @media (min-width: 768px) {
           .logo-header {
             padding: 24px 32px;

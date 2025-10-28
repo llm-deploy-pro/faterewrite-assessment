@@ -62,9 +62,9 @@ const trinityComponents = [
   {
     id: "code-one",
     number: "I",
-    name: "CODE ONE",
-    subtitle: "Smartest. Least. That's the Glitch.",
-    content: "Your Wealth Frequency wasn't broken—just tuned to a channel no one taught you to access. Their playbook said \"prove and push.\" Your code is \"command and receive.\" Dry-land drowning ends here. Switch to your native channel.",
+    name: "ACCESS ONE",
+    subtitle: "They Contact You Within 48 Hours.",
+    content: "60 seconds after payment, your profile unlocks. The three members who flagged you ($12M / $28M / $50M+) receive notification: \"Mutual visibility confirmed.\"\n\nConcierge initiates introductions within 48-72 hours. Not a DM. A verified request asking when you're available. You review and reply: interested or pass. You don't chase. You respond.",
     primaryColor: "#8A9BA8",
     glowColor: "138, 155, 168",
     textAccent: "#9FB4C4",
@@ -72,9 +72,9 @@ const trinityComponents = [
   {
     id: "code-two",
     number: "II",
-    name: "CODE TWO",
-    subtitle: "Why The Ones You Wanted Didn't Stay.",
-    content: "This is your Magnetic Signature. It decides who orbits and who ejects. \"Perfect on paper\" felt empty; \"impossible\" felt inevitable—now you see why. No fixing. Just frequency match.",
+    name: "ACCESS TWO",
+    subtitle: "847 Verified Members. New Ones Every Week.",
+    content: "You're visible to 847 verified profiles ($5M-$50M+ documented). Every week, 12-18 new members join—all pre-screened. System auto-filters your preferences and pushes matches to your dashboard.\n\nYou see: asset verification, compatibility score, location. You decide: accept or pass. No swiping. No guessing. Curated options delivered weekly. One payment = permanent visibility.",
     primaryColor: "#9B8B9E",
     glowColor: "155, 139, 158",
     textAccent: "#B5A3B8",
@@ -82,9 +82,9 @@ const trinityComponents = [
   {
     id: "code-three",
     number: "III",
-    name: "CODE THREE",
-    subtitle: "The Moment You Started Living Someone Else's Life.",
-    content: "Locate the original distortion: a parent's fear, a teacher's limit, a lover's betrayal. Name the foreign signal. Cut its power. Return the channel to you.",
+    name: "ACCESS THREE",
+    subtitle: "Compensated Lifestyle Opportunities Unlocked.",
+    content: "Beyond introductions, you access vetted lifestyle roles through our concierge network:\n\n- Brand events: $30K-$70K per evening (attend, engage, represent)\n- International travel: $100K-$200K for 10-14 days (accompany, enjoy)\n- Partnership structures: $50K-$120K monthly (mutually defined terms)\n\nAll pre-screened, coordinated through concierge. You receive alerts, choose accept or decline. No negotiation required.",
     primaryColor: "#B8956A",
     glowColor: "184, 149, 106",
     textAccent: "#CDA870",
@@ -95,28 +95,28 @@ const testimonials = [
   {
     id: "oracle",
     archetype: "ORACLE",
-    quote: "I spent 10 years translating my brilliance to keep rooms comfy. My map said: stop translating.",
-    author: "L., 33",
-    result: "One family office on retainer at 3×. Monaco ⇄ Aspen.",
-    shift: "Explaining ➝ Being Sought",
+    quote: "Paid Tuesday. Thursday, concierge sent three requests. Accepted one. Met Monday. Six weeks later, moved into his Tribeca loft. Rent: $2,800/month → $0.",
+    author: "M., 29",
+    result: "TIMELINE: $47 → 48 hours → intro → 6 weeks → relationship",
+    shift: "Dating Apps → Being Selected",
     color: "#9FB4C4",
   },
   {
     id: "siren",
     archetype: "SIREN",
-    quote: "They called me 'intimidating.' The frequency showed I was finally visible.",
-    author: "V., 28",
-    result: "Ended \"secure.\" Now curated and supported. Venice / Côte d'Azur / Madrid.",
-    shift: "Apologizing ➝ Being Paid",
+    quote: "Accepted a brand event through Oracle's pipeline—$55K for one evening. The host invited me to Monaco yacht week: $180K. Four similar requests since. Eight months, $400K+ earned.",
+    author: "A., 31",
+    result: "TIMELINE: Unlock → first event → $55K → ongoing → $400K+ in 8 months",
+    shift: "Working → Being Compensated For Presence",
     color: "#B5A3B8",
   },
   {
     id: "empress",
     archetype: "EMPRESS",
-    quote: "I thought I needed permission. The Empress code: I am the permission.",
-    author: "D., 39",
-    result: "She approves exhibitions; he funded her foundation; private collection placement.",
-    shift: "Asking ➝ Granting",
+    quote: "Partnership inquiry came 72 hours after unlock. Pre-negotiated: $85K monthly, apartment covered, quarterly international travel. Previous salary: $60K annually. Now I clear that in three weeks.",
+    author: "L., 27",
+    result: "TIMELINE: $47 → 72 hours → partnership offer → $85K/month",
+    shift: "Salary → Partnership Structure",
     color: "#CDA870",
   },
 ];
@@ -195,9 +195,9 @@ export default function ScreenOneBack() {
     setIsLoading(true);
 
     const frid = ensureFrid();
-    const isDev = window.location.hostname === "localhost";
 
-    if (typeof (window as any).fbq !== "undefined" && markOnce("s1bc", isDev)) {
+    // 移除去重，每次点击都打点
+    if (typeof (window as any).fbq !== "undefined") {
       const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
       (window as any).fbq("trackCustom", "S1_Back_CTA_Click", {
         content_name: "ScreenOne_Back_CTA", click_location: "main_cta_button",
@@ -219,29 +219,32 @@ export default function ScreenOneBack() {
 
     setActivePillar((prev) => {
       const next = prev === pillarId ? null : pillarId;
+      
+      // 展开时打点（移除去重，追踪每次展开）
       if (next && typeof (window as any).fbq !== "undefined") {
         const frid = ensureFrid();
-        const isDev = window.location.hostname === "localhost";
         const pillar = trinityComponents.find((p) => p.id === next);
-        if (pillar && markOnce(`s1b_pillar_${next}`, isDev)) {
+        if (pillar) {
           const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
           (window as any).fbq("trackCustom", "S1_Back_Pillar_Expand", {
             pillar_id: next, pillar_name: pillar.name, pillar_number: pillar.number,
             screen_position: "back", screen_number: 1,
             page_url: window.location.href, user_id: frid,
           }, { eventID: eventId });
+          console.log(`[打点] 卡片展开: ${pillar.name} (${next})`);
         }
       }
+      
       return next;
     });
   };
 
   return (
     <section className="s1-container">
-      <div className="s1-inner">
+      <div className={`s1-inner ${activePillar ? 'has-expanded' : ''}`}>
         <header className={`s1-header ${activePillar ? 'hidden' : ''}`}>
-          <h1 className="s1-title">What You're About To See Has Been Waiting For You Since Birth.</h1>
-          <p className="s1-subtitle">Three codes. Three reasons you've been a stranger in your own timeline.</p>
+          <h1 className="s1-title">What $47 Actually Unlocks</h1>
+          <p className="s1-subtitle">Three access levels. Stop searching. Start being selected.</p>
         </header>
 
         <div className={`s1-divider ${activePillar ? 'hidden' : ''}`}></div>
@@ -295,7 +298,7 @@ export default function ScreenOneBack() {
         <div className="s1-divider"></div>
 
         <section className="s1-testimonials">
-          <h2 className="testimonials-title" data-text="POWER REDISTRIBUTION, NOT RÉSUMÉS">POWER REDISTRIBUTION, NOT RÉSUMÉS</h2>
+          <h2 className="testimonials-title" data-text="WHAT HAPPENS AFTER YOU UNLOCK">WHAT HAPPENS AFTER YOU UNLOCK</h2>
           <div className="testimonials-grid">
             {testimonials.map((t, idx) => (
               <article key={t.id} className="testimonial-card" style={{ animationDelay: `${1.2 + idx * 0.2}s` }}>
@@ -320,22 +323,22 @@ export default function ScreenOneBack() {
         <div className="s1-divider"></div>
 
         <section className="s1-guarantee">
-          <h2 className="guarantee-title">Soul-Recognition Pact</h2>
+          <h2 className="guarantee-title">Performance Guarantee</h2>
           <p className="guarantee-text">
-            If your Map doesn't make you whisper, <em>"So that's what that was..."</em> — 
-            if it doesn't name a truth you've carried in silence — we failed. Not you. 
-            <span className="guarantee-terms">Email within 7 days. $47 returns instantly.</span>
+            No verified introduction within 72 hours, or quality doesn't match stated minimums ($5M+ verified)? Email within 7 days. Full $47 refund, instant.
+            <br /><br />
+            We're selling access to a system that's already running.
           </p>
         </section>
 
         <div className="s1-cta">
           <button className="cta-btn" onClick={handleClickCTA} disabled={isLoading}>
             <span className="cta-text">
-              {isLoading ? "INITIATING..." : "YES — SHOW ME WHAT I'VE BEEN MISSING"}
+              {isLoading ? "INITIATING..." : "UNLOCK ACCESS — AUTHORIZE CONTACT NOW →"}
             </span>
           </button>
           <p className="cta-meta">
-            <span className="cta-price">$47 | INSTANT ACCESS | YOUR SLOT IS LIVE</span><br />
+            <span className="cta-price">$47 one-time | Live in 60 seconds | 847 verified members</span><br />
             <span className="cta-urgency">Your calibration window: open. Session #{Math.floor(Math.random() * 9000) + 1000}. Closes when you leave.</span>
           </p>
         </div>
@@ -455,22 +458,22 @@ export default function ScreenOneBack() {
 
         .s1-title {
           font-family: 'SF Mono', 'Roboto Mono', 'Courier New', monospace;
-          font-size: 12.5px;
+          font-size: 12px;
           font-weight: 600;
-          line-height: 1.4;
+          line-height: 1.15;
           color: var(--text-hero);
-          margin: 0 0 3px 0;
+          margin: 0 0 4px 0;
           letter-spacing: 0.02em;
           text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .s1-subtitle {
           font-family: 'SF Mono', 'Roboto Mono', 'Courier New', monospace;
-          font-size: 8.2px;
+          font-size: 8px;
           font-weight: 400;
-          line-height: 1.45;
+          line-height: 1.25;
           color: var(--text-secondary);
-          margin: 0;
+          margin: 0 0 10px 0;
           letter-spacing: 0.03em;
         }
 
@@ -478,8 +481,13 @@ export default function ScreenOneBack() {
         .s1-codes {
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 7px;
           flex-shrink: 0;
+        }
+
+        /* 展开时压缩CODE间距 */
+        .s1-inner.has-expanded .s1-codes {
+          gap: 5px;
         }
 
         .code-card {
@@ -575,7 +583,7 @@ export default function ScreenOneBack() {
           display: flex;
           align-items: center;
           gap: 9px;
-          padding: 8px 11px;
+          padding: 5px 11px;
         }
 
         .code-badge-wrap {
@@ -615,18 +623,18 @@ export default function ScreenOneBack() {
         .code-name {
           font-size: 10.5px;
           font-weight: 700;
-          margin: 0 0 1.5px 0;
+          margin: 0 0 1px 0;
           letter-spacing: 0.06em;
-          line-height: 1.2;
+          line-height: 1.15;
           text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
         }
 
         .code-sub {
-          font-size: 7.8px;
+          font-size: 7.5px;
           font-weight: 400;
           color: var(--text-secondary);
           margin: 0;
-          line-height: 1.3;
+          line-height: 1.15;
         }
 
         .code-icon {
@@ -646,7 +654,7 @@ export default function ScreenOneBack() {
           transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* CODE ONE - 蓝色 */
+        /* ACCESS ONE - 蓝色 */
         .code-card:nth-child(1) .code-icon {
           color: rgba(159, 180, 196, 0.65);
         }
@@ -663,7 +671,7 @@ export default function ScreenOneBack() {
           filter: drop-shadow(0 0 10px rgba(159, 180, 196, 0.7));
         }
 
-        /* CODE TWO - 紫色 */
+        /* ACCESS TWO - 紫色 */
         .code-card:nth-child(2) .code-icon {
           color: rgba(181, 163, 184, 0.65);
         }
@@ -680,7 +688,7 @@ export default function ScreenOneBack() {
           filter: drop-shadow(0 0 10px rgba(181, 163, 184, 0.7));
         }
 
-        /* CODE THREE - 金色 */
+        /* ACCESS THREE - 金色 */
         .code-card:nth-child(3) .code-icon {
           color: rgba(205, 168, 112, 0.65);
         }
@@ -725,9 +733,15 @@ export default function ScreenOneBack() {
 
         .code-content.visible {
           max-height: 200px;
-          padding: 0 11px 9px;
+          padding: 0 11px 7px;
           transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
                       padding 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.05s;
+        }
+
+        /* 展开时压缩展开内容高度 */
+        .s1-inner.has-expanded .code-content.visible {
+          max-height: 160px;
+          padding: 0 11px 5px;
         }
 
         .code-desc {
@@ -735,6 +749,12 @@ export default function ScreenOneBack() {
           line-height: 1.5;
           color: var(--text-secondary);
           margin: 0;
+        }
+
+        /* 展开时压缩展开内容文字 */
+        .s1-inner.has-expanded .code-desc {
+          font-size: 7.8px;
+          line-height: 1.45;
         }
 
         /* ============= 案例区 - 专业边框 ============= */
@@ -745,12 +765,12 @@ export default function ScreenOneBack() {
         }
 
         .testimonials-title {
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 700;
           text-align: center;
-          margin: 0 0 5px 0;
+          margin: 10px 0 8px 0;
           letter-spacing: 0.12em;
-          line-height: 1.3;
+          line-height: 1.15;
           position: relative;
           
           /* 金属渐变文字 */
@@ -774,6 +794,11 @@ export default function ScreenOneBack() {
             drop-shadow(0 1px 0 rgba(255, 255, 255, 0.3));      /* 顶部高光线 */
         }
 
+        /* 展开时压缩分隔标题 */
+        .s1-inner.has-expanded .testimonials-title {
+          margin: 7px 0 6px 0;
+        }
+
         .testimonials-title::before {
           content: attr(data-text);
           position: absolute;
@@ -794,14 +819,19 @@ export default function ScreenOneBack() {
         .testimonials-grid {
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 8px;
+        }
+
+        /* 展开时压缩案例间距 */
+        .s1-inner.has-expanded .testimonials-grid {
+          gap: 6px;
         }
 
         .testimonial-card {
           background: var(--bg-card-dark);
           border: 1px solid rgba(255, 255, 255, 0.22);
           border-radius: 6px;
-          padding: 8px 10px;
+          padding: 7px 9px;
           opacity: 0;
           animation: fadeIn 0.6s ease-out forwards;
           backdrop-filter: blur(12px);
@@ -885,11 +915,11 @@ export default function ScreenOneBack() {
         }
 
         .t-header {
-          margin-bottom: 4px;
+          margin-bottom: 2px;
         }
 
         .t-archetype {
-          font-size: 7.8px;
+          font-size: 7px;
           font-weight: 800;
           letter-spacing: 0.1em;
           text-transform: uppercase;
@@ -898,9 +928,9 @@ export default function ScreenOneBack() {
 
         .t-quote {
           font-size: 8.3px;
-          line-height: 1.45;
+          line-height: 1.5;
           color: var(--text-primary);
-          margin: 0 0 3px 0;
+          margin: 0 0 1px 0;
           font-style: italic;
           display: -webkit-box;
           -webkit-line-clamp: 2;
@@ -909,23 +939,23 @@ export default function ScreenOneBack() {
         }
 
         .t-author {
-          font-size: 6.8px;
+          font-size: 6.5px;
           color: var(--text-muted);
-          margin: 0 0 5px 0;
+          margin: 0 0 3px 0;
           font-weight: 500;
         }
 
         .t-meta {
           display: flex;
           flex-direction: column;
-          gap: 3px;
-          padding-top: 4px;
+          gap: 1px;
+          padding-top: 2px;
           border-top: 1px solid var(--border-subtle);
         }
 
         .t-item {
-          font-size: 7.3px;
-          line-height: 1.4;
+          font-size: 6.8px;
+          line-height: 1.25;
         }
 
         .t-label {
@@ -948,7 +978,8 @@ export default function ScreenOneBack() {
         /* ============= 保证区 - 轻边框 ============= */
         .s1-guarantee {
           flex-shrink: 0;
-          padding: 7px 11px;
+          padding: 7px 9px;
+          margin-top: 8px;
           background: var(--bg-card-light);
           border: 1px solid var(--border-subtle);
           border-radius: 6px;
@@ -957,12 +988,17 @@ export default function ScreenOneBack() {
           backdrop-filter: blur(10px);
         }
 
+        /* 展开时压缩保证条款上方间距 */
+        .s1-inner.has-expanded .s1-guarantee {
+          margin-top: 6px;
+        }
+
         .guarantee-title {
-          font-size: 9.5px;
+          font-size: 8.5px;
           font-weight: 700;
           text-align: center;
-          margin: 0 0 3px 0;
-          line-height: 1.2;
+          margin: 0 0 5px 0;
+          line-height: 1.15;
           letter-spacing: 0.05em;
           position: relative;
           
@@ -986,8 +1022,8 @@ export default function ScreenOneBack() {
         }
 
         .guarantee-text {
-          font-size: 7.3px;
-          line-height: 1.45;
+          font-size: 6.8px;
+          line-height: 1.35;
           color: var(--text-secondary);
           margin: 0;
           text-align: center;
@@ -1015,14 +1051,19 @@ export default function ScreenOneBack() {
           gap: 4px;
           opacity: 0;
           animation: fadeIn 0.8s ease-out 1.6s forwards;
-          padding-top: 2px;
+          padding-top: 12px;
           padding-bottom: 2px;
+        }
+
+        /* 展开时压缩CTA上方间距 */
+        .s1-inner.has-expanded .s1-cta {
+          padding-top: 9px;
         }
 
         .cta-btn {
           width: 100%;
           max-width: 355px;
-          height: 45px;
+          height: 54px;
           position: relative;
           font-family: inherit;
           
@@ -1116,7 +1157,7 @@ export default function ScreenOneBack() {
         }
 
         .cta-text {
-          font-size: 11px;
+          font-size: 12px;
           font-weight: 800;
           letter-spacing: 0.08em;
           color: #DCC896;
@@ -1140,12 +1181,12 @@ export default function ScreenOneBack() {
         }
 
         .cta-price {
-          font-size: 7.2px;
+          font-size: 6.8px;
           font-weight: 700;
           letter-spacing: 0.08em;
           display: block;
           margin-bottom: 2px;
-          line-height: 1.3;
+          line-height: 1.25;
           
           /* 金属渐变文字 */
           background: linear-gradient(
