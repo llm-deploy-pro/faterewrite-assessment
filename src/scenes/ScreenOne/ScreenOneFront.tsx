@@ -289,6 +289,34 @@ export default function ScreenOneFront() {
   const [ctaVisible, setCtaVisible] = useState(false);
   const [hasClicked, setHasClicked] = useState(false);
   const [shouldPulse, setShouldPulse] = useState(false);
+  
+  // 🆕 实时数字状态 - 克制的上升动画
+  const [liveNumber, setLiveNumber] = useState<number>(847);
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🆕 克制的实时数字动画 - 3-5秒+1，最高到850
+  // ═══════════════════════════════════════════════════════════════
+  useEffect(() => {
+    const maxNumber = 850; // 最高到850就停止
+    const startDelay = 2000; // 2秒后开始
+    
+    const startTimer = setTimeout(() => {
+      const incrementInterval = setInterval(() => {
+        setLiveNumber(prev => {
+          if (prev >= maxNumber) {
+            clearInterval(incrementInterval);
+            return maxNumber;
+          }
+          // 随机3-5秒增加1
+          return prev + 1;
+        });
+      }, 3500 + Math.random() * 1500); // 3.5-5秒之间随机
+
+      return () => clearInterval(incrementInterval);
+    }, startDelay);
+
+    return () => clearTimeout(startTimer);
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════
   // 倒计时逻辑 - MVP核心交互
@@ -501,104 +529,214 @@ export default function ScreenOneFront() {
 
   return (
     <section className="screen-front-container">
-      {/* Logo 区域 - 独立固定头部 */}
+      {/* Logo 区域 */}
       <div className="logo-header">
-        <Wordmark name="Oracle Protocol" href="/" />
+        <Wordmark name="AXIS" href="/" />
       </div>
       
       {/* 顶部系统信息 */}
       <div className="s1-top-label">
-        <span className="label-text">- LIVE • PRIORITY MATCH DETECTED</span>
+        <span className="label-text">— VERIFIED NETWORK • MEMBERS ONLY —</span>
       </div>
 
       <div className="screen-front-content">
-        {/* 核心图腾 (文字替代) */}
+        {/* Main Headline */}
         <div className="project-sigil">
-          [ MATCH SEQUENCE ACTIVE: AUTHORIZATION REQUIRED ]
+          STOP SWIPING. START MEETING.
         </div>
         
-        {/* 权威认证文本 */}
+        {/* Sub-headline */}
         <div className="auth-protocol">
-          AWAITING YOUR ACTION...
+          REAL WOMEN. IN PERSON. THIS WEEK.
         </div>
 
+        {/* Small print under Sub-headline */}
+        <p className="sub-headline-detail">
+          The only verified network for men who are done with fake profiles, endless chatting, and women who never show up.
+        </p>
 
-        {/* 解码日志摘录 - 优化移动端尺寸 */}
-        <div className="decoded-log-entry">
-          <p className="log-text">
-            "SYSTEM LOG #2847: Priority match sequence is LIVE. Subject profile triggered high-value alerts in closed network. Cross-reference with three asset-verified members currently active:
-
-Member A: $12M liquid, 38, tech sector (stated preference: your archetype)
-Member B: $28M portfolio, 42, aviation owner (stated preference: your archetype)
-Member C: $50M+ holdings, 45, estate owner (stated preference: your archetype)
-
-Analysis: Subject's archetypal classification resulted in critical compatibility scores (94-97%) across all three profiles. This is a priority match event. Per protocol, verified members can view archetypal data but are firewalled from contact until subject authorizes mutual visibility.
-
-Current Status: Subject flagged as Priority Match. Position in introduction queue: UNLOCKED BUT NOT SECURED. Root cause: Hesitation detected. All three members have flagged interest and are awaiting authorization confirmation.
-
-Warning: Authorization window is 12 hours. After expiration, this match event closes and profile reverts to dormant status. Queue position will be forfeited.
-
-Note: This is not a simulation. This is a live event you are currently missing. Previous subjects who authorized during priority match windows reported first introductions within 48-72 hours."
+        {/* Section: What We Do */}
+        <div className="what-we-do-section">
+          <p className="value-prop-text">
+            You want a woman who actually shows up. Who looks like her photos. Who doesn't ghost you 2 hours before the date.
           </p>
-          <p className="log-signature">
-            — Oracle Matching System, Priority Match Log
+          
+          <p className="value-prop-text value-prop-emphasis">
+            We arrange that.
+          </p>
+          
+          <p className="value-prop-text">
+            Dinner companions. Event dates. Weekend travel. Private time. You tell us your city, your timeline, your type. We send you this week's available women within the hour.
+          </p>
+          
+          <p className="value-prop-text">
+            No swiping. No texting for days. No "let's see if we vibe first." Just real women. Real meetings. Real results.
+          </p>
+
+          <p className="section-signature">
+            — AXIS Concierge System
           </p>
         </div>
 
-        {/* 交互核心：倒计时与行动号召 */}
+        {/* 💎 呼吸卡片：Network Performance */}
+        <div className="luxury-showcase">
+          <div className="showcase-header">
+            <div className="header-title">NETWORK PERFORMANCE</div>
+          </div>
+
+          {/* 第1层：震撼数字 */}
+          <div className="showcase-hero">
+            <div className="hero-number">{liveNumber}</div>
+            <div className="hero-statement">MEN GOT REAL DATES</div>
+            <div className="hero-tagline">Not apps. Not chat. Real.</div>
+          </div>
+
+          {/* 第2层：社会证明 */}
+          <div className="showcase-proof">
+            <div className="proof-column">
+              <div className="proof-metric">94%</div>
+              <div className="proof-label">CAME BACK</div>
+              <div className="proof-detail">Within 60 days</div>
+              <div className="proof-reason">Because it works</div>
+            </div>
+
+            <div className="proof-divider-vertical"></div>
+
+            <div className="proof-column">
+              <div className="proof-metric proof-price">$1.2K–$3.8K</div>
+              <div className="proof-label">INVESTMENT</div>
+              <div className="proof-detail">One dinner vs months</div>
+              <div className="proof-reason">of swiping & texting</div>
+            </div>
+          </div>
+
+          {/* 第3层：安全保障 */}
+          <div className="showcase-security">
+            <div className="security-badge">
+              <span className="security-icon">🔒</span>
+              <span className="security-title">VIDEO + ID • EVERY WOMAN</span>
+            </div>
+            <div className="security-policy">Zero tolerance for fake profiles</div>
+          </div>
+
+          {/* 底部汇总 */}
+          <div className="showcase-footer">
+            <span className="footer-badge">🌐</span>
+            <span className="footer-text">9+ daily • 50 states • Your city covered ✓</span>
+          </div>
+        </div>
+
+        {/* ⚠️ 排除矩阵：精简版 */}
+        <div className="exclusion-block">
+          <div className="exclusion-header">
+            <span className="exclusion-icon">⚠</span>
+            <span className="exclusion-title">NOT YOUR TYPICAL SETUP</span>
+          </div>
+
+          <div className="exclusion-compare">
+            <div className="compare-row">
+              <div className="compare-them">
+                <span className="them-label">THEM:</span>
+                <span className="them-text">Swipe 100 times, match with bots, waste weeks</span>
+              </div>
+              <div className="compare-us">
+                <span className="us-label">US:</span>
+                <span className="us-text">Tell us your city, get real women, meet this week</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="exclusion-statement">
+            <div className="statement-badge">✓</div>
+            <div className="statement-text">
+              We are the intermediary • You deal with us • We arrange her • You don't browse • You don't DM • You request • We deliver
+            </div>
+          </div>
+        </div>
+
+        {/* 🔐 准入协议：时间承诺版 */}
+        <div className="access-timeline">
+          <div className="timeline-header">
+            <span className="timeline-icon">🔐</span>
+            <span className="timeline-title">90 SECONDS FROM NOW</span>
+          </div>
+
+          <div className="timeline-promise">
+            <div className="promise-step">
+              <div className="step-time">NOW</div>
+              <div className="step-action">You submit city + type</div>
+            </div>
+
+            <div className="promise-arrow">↓</div>
+
+            <div className="promise-step">
+              <div className="step-time">+90s</div>
+              <div className="step-action">We start vetting</div>
+            </div>
+
+            <div className="promise-arrow">↓</div>
+
+            <div className="promise-step promise-step-final">
+              <div className="step-time">+2hrs</div>
+              <div className="step-action">Real photos in your inbox</div>
+            </div>
+          </div>
+
+          <div className="timeline-guarantee">
+            <div className="guarantee-badge">NO BROWSING • NO SWIPING • NO WAITING</div>
+            <div className="guarantee-note">
+              Members-only. No public photos. Women only meet pre-approved men.
+            </div>
+          </div>
+
+          <div className="timeline-terms">
+            <div className="term-item">
+              <span className="term-icon">⚙</span>
+              <span className="term-text">No verification = No access</span>
+            </div>
+            <div className="term-item">
+              <span className="term-icon">💰</span>
+              <span className="term-text">Book = Credited • Skip = 30-day access</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Final Section before CTA */}
         <div className={`interaction-core ${ctaVisible ? 'visible' : ''}`}>
-          {/* 紧迫感声明 */}
-          <p className="urgency-statement urgency-statement-hero">
-            This is not information. This is an invitation you are about to miss.
+          
+          {/* Nationwide Coverage */}
+          <p className="coverage-notice">
+            Nationwide coverage · All 50 US states
           </p>
           
+          {/* Scarcity Element */}
           <p className="urgency-statement">
-            Three men with $90M+ combined assets are looking for you. They can see your profile. They cannot contact you. Not because they don't want to. Because you haven't authorized it.
-          </p>
-          
-          <p className="urgency-statement" style={{ 
-            marginTop: '12px', 
-            fontSize: '11.5px', 
-            fontStyle: 'italic', 
-            opacity: 0.88,
-            color: 'rgba(212, 184, 150, 0.88)',
-            fontWeight: 300,
-            letterSpacing: '0.015em',
-            textShadow: '0 0 15px rgba(184, 149, 106, 0.12)'
-          }}>
-            — one-time access credential; mutual consent required; no subscription.
-          </p>
-          
-          <p className="urgency-statement">
-            This match event expires in:
+            Limited spots this week:
           </p>
 
-          {/* 倒计时器 */}
+          {/* Countdown Timer */}
           <div className={`countdown-timer ${countdownStarted ? 'active' : ''} ${shouldPulse ? 'expired' : ''}`}>
             <span className="countdown-number">{countdown}</span>
           </div>
 
-          {/* CTA 按钮 */}
+          {/* CTA Button */}
           <button
             type="button"
             onClick={handleCTAClick}
             disabled={hasClicked}
             className={`s1-cta-btn ${shouldPulse ? 'pulse' : ''} ${shouldPulse ? 'urgent' : ''}`}
-            aria-label="Claim your Recalibrated Frequency Map"
+            aria-label="Show me this week's women"
           >
-            <span className="s1-cta-text">AUTHORIZE CONTACT NOW — $47</span>
+            <span className="s1-cta-text">SHOW ME THIS WEEK</span>
             <span className="s1-cta-arrow">→</span>
           </button>
           
-          <p className="urgency-statement" style={{ 
-            marginTop: '12px', 
-            fontSize: '13px',
-            color: 'rgba(245, 240, 230, 0.78)',
-            fontWeight: 300,
-            letterSpacing: '0.02em',
-            textShadow: '0 1px 8px rgba(184, 149, 106, 0.08)'
-          }}>
-            They chose you. Now you choose.
+          <p className="cta-disclaimer">
+            Authorization required after submission. Refundable toward booking.
+          </p>
+
+          <p className="footer-anchor">
+            This is not a fantasy. This is a real service for men who want results, not conversations. Discreet. Professional. No refunds on wasted time — we handle that.
           </p>
 
         </div>
@@ -607,19 +745,29 @@ Note: This is not a simulation. This is a live event you are currently missing. 
       {/* @ts-ignore - styled-jsx specific attribute */}
       <style jsx>{`
         /* ═══════════════════════════════════════════════════════════════════
-           设计系统 - 奢华品牌配色
+           🎯 呼吸感优化方案 - 保持文案完整性
+           策略：统一间距系统 + 压缩底部空白 + 增强视觉层次
+           目标：优秀可读性 + 舒适呼吸感 + 高端品质感
            ═══════════════════════════════════════════════════════════════════ */
         :root {
-          --bg-primary: #0a0f1b;
-          --bg-secondary: #141922;
-          --gold: #b8956a;
-          --gold-bright: #d4b896;
-          --gold-hover: #c4a57c;
-          --gold-border: rgba(184, 149, 106, 0.3);
+          --bg-primary: #12161f;
+          --bg-secondary: #1a1f2a;
+          --bg-card: rgba(20, 25, 35, 0.3);
+          --gold: #e0bc87;
+          --gold-bright: #fff5e6;
+          --gold-hover: #e5c598;
+          --gold-glow: rgba(224, 188, 135, 0.5);
           --cream: #f5f5f0;
           --cream-bright: #fafaf5;
           --cream-dim: rgba(245, 245, 240, 0.7);
-          --cream-muted: rgba(245, 245, 240, 0.5);
+          --amber: rgba(255, 191, 0, 0.45);
+          
+          /* 🎯 极致压缩间距系统 */
+          --spacing-xs: 4px;
+          --spacing-sm: 6px;
+          --spacing-md: 8px;
+          --spacing-lg: 10px;
+          --spacing-xl: 12px;
         }
 
         /* 禁止滚动 - 严格执行 */
@@ -631,7 +779,7 @@ Note: This is not a simulation. This is a live event you are currently missing. 
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           容器基础 - 奢华背景强化
+           容器基础 - 优化背景层次
            ═══════════════════════════════════════════════════════════════════ */
         .screen-front-container {
           position: fixed;
@@ -651,32 +799,29 @@ Note: This is not a simulation. This is a live event you are currently missing. 
           padding: 0;
         }
 
-        /* 高级星尘背景效果 - 增强 */
         .screen-front-container::before {
           content: '';
           position: absolute;
           inset: 0;
           background: 
-            radial-gradient(circle at 20% 30%, rgba(184, 149, 106, 0.06) 0%, transparent 50%),
-            radial-gradient(circle at 80% 70%, rgba(212, 184, 150, 0.04) 0%, transparent 50%),
-            radial-gradient(circle at 50% 50%, rgba(184, 149, 106, 0.02) 0%, transparent 70%);
+            radial-gradient(circle at 20% 30%, rgba(224, 188, 135, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(255, 245, 230, 0.05) 0%, transparent 50%);
           pointer-events: none;
           z-index: 1;
         }
 
-        /* 微妙噪点纹理 */
         .screen-front-container::after {
           content: '';
           position: absolute;
           inset: 0;
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-          opacity: 0.03;
+          opacity: 0.025;
           pointer-events: none;
           z-index: 1;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           Logo 头部 - 独立区域避免重叠
+           Logo 头部 - 优化尺寸和阴影
            ═══════════════════════════════════════════════════════════════════ */
         .logo-header {
           position: fixed;
@@ -684,10 +829,11 @@ Note: This is not a simulation. This is a live event you are currently missing. 
           left: 0;
           right: 0;
           z-index: 100;
-          padding: 16px;
+          padding: 12px 16px;
+          height: auto;
           background: linear-gradient(to bottom,
-            rgba(10, 15, 27, 0.95) 0%,
-            rgba(10, 15, 27, 0.85) 60%,
+            rgba(18, 22, 31, 0.95) 0%,
+            rgba(18, 22, 31, 0.85) 60%,
             transparent 100%
           );
           backdrop-filter: blur(12px);
@@ -696,27 +842,26 @@ Note: This is not a simulation. This is a live event you are currently missing. 
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           顶部标签 - 调整位置避免与Logo重叠
+           顶部标签 - 优化位置和大小
            ═══════════════════════════════════════════════════════════════════ */
         .s1-top-label {
           position: fixed;
-          top: 53px;
+          top: 52px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 90;
-          font-size: 9px;
-          line-height: 1.3;
+          font-size: 7px;
+          line-height: 1;
           font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
           font-weight: 500;
-          letter-spacing: 0.1em;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
           white-space: nowrap;
           opacity: 0;
           animation: topLabelReveal 600ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
-          /* 增强视觉效果 */
           padding: 6px 12px;
           background: rgba(20, 25, 35, 0.6);
-          border: 1px solid rgba(184, 149, 106, 0.2);
+          border: 1px solid rgba(224, 188, 135, 0.2);
           border-radius: 20px;
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
@@ -726,13 +871,10 @@ Note: This is not a simulation. This is a live event you are currently missing. 
         }
 
         .label-text {
-          color: rgba(212, 184, 150, 0.95);  /* 金色，清晰可见 */
+          color: rgba(224, 188, 135, 0.95);
           font-weight: 500;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.06em;
         }
-
-
-
 
         @keyframes topLabelReveal {
           0% { 
@@ -746,7 +888,7 @@ Note: This is not a simulation. This is a live event you are currently missing. 
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           主内容容器 - 调整顶部间距
+           主内容容器 - 压缩顶部间距
            ═══════════════════════════════════════════════════════════════════ */
         .screen-front-content {
           position: relative;
@@ -754,50 +896,47 @@ Note: This is not a simulation. This is a live event you are currently missing. 
           max-width: 600px;
           text-align: center;
           color: var(--cream);
-          padding: 82px 14px 16px;
+          padding: 72px 8px 4px;
           z-index: 2;
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: center;
+          justify-content: flex-start;
           flex: 1;
           min-height: 0;
           overflow: hidden;
         }
 
-
         /* ═══════════════════════════════════════════════════════════════════
-           核心图腾 (文字版) - 视觉强化
+           Main Headline - 压缩字号
            ═══════════════════════════════════════════════════════════════════ */
         .project-sigil {
-          margin: 0 0 2px 0;
-          padding: 6px 12px;
-          font-size: 10.5px;
+          margin: 0 0 4px 0;
+          padding: 4px 12px;
+          font-size: 11px;
           line-height: 1;
-          color: rgba(212, 184, 150, 1);
+          color: rgba(224, 188, 135, 1);
           font-family: 'Bodoni MT', 'Didot', Georgia, serif;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.1em;
           font-weight: 400;
           text-transform: uppercase;
           text-align: center;
           position: relative;
           opacity: 0;
           animation: sigilReveal 800ms cubic-bezier(0.23,1,0.32,1) 200ms forwards;
-          /* 奢华边框 */
-          border: 1px solid rgba(184, 149, 106, 0.3);
+          border: 1px solid rgba(224, 188, 135, 0.3);
           border-radius: 4px;
           background: linear-gradient(135deg,
-            rgba(184, 149, 106, 0.06) 0%,
-            rgba(184, 149, 106, 0.02) 100%
+            rgba(224, 188, 135, 0.06) 0%,
+            rgba(224, 188, 135, 0.02) 100%
           );
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
           box-shadow: 
             0 2px 12px rgba(0, 0, 0, 0.2),
             inset 0 1px 0 rgba(255, 255, 255, 0.05);
-          /* 文字光晕 */
           text-shadow: 
-            0 0 20px rgba(184, 149, 106, 0.3),
+            0 0 20px rgba(224, 188, 135, 0.3),
             0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
@@ -812,56 +951,23 @@ Note: This is not a simulation. This is a live event you are currently missing. 
           }
         }
 
-        /* 装饰角标 - 增强 */
-        .project-sigil::before,
-        .project-sigil::after {
-          content: '';
-          position: absolute;
-          width: 24px;
-          height: 24px;
-          border: 1px solid rgba(184, 149, 106, 0.25);
-          transition: border-color 300ms ease;
-        }
-
-        .project-sigil::before {
-          top: -6px;
-          left: -6px;
-          border-right: none;
-          border-bottom: none;
-          border-top-left-radius: 2px;
-        }
-
-        .project-sigil::after {
-          bottom: -6px;
-          right: -6px;
-          border-left: none;
-          border-top: none;
-          border-bottom-right-radius: 2px;
-        }
-
-        .project-sigil:hover::before,
-        .project-sigil:hover::after {
-          border-color: rgba(184, 149, 106, 0.5);
-        }
-
         /* ═══════════════════════════════════════════════════════════════════
-           权威认证文本
+           Sub-headline - 压缩字号
            ═══════════════════════════════════════════════════════════════════ */
         .auth-protocol {
-          margin: 0 0 1px 0;
+          margin: 0 0 3px 0;
           padding: 0;
-          font-size: 8.5px;
-          line-height: 1.3;
-          color: rgba(184, 149, 106, 0.6);
+          font-size: 8px;
+          line-height: 1;
+          color: rgba(224, 188, 135, 0.85);
           font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
-          letter-spacing: 0.06em;
+          letter-spacing: 0.05em;
           text-transform: uppercase;
           font-weight: 500;
           text-align: center;
           opacity: 0;
           animation: authFade 600ms cubic-bezier(0.23,1,0.32,1) 400ms forwards;
-          /* 添加微妙光晕 */
-          text-shadow: 0 0 20px rgba(184, 149, 106, 0.15);
+          text-shadow: 0 0 20px rgba(224, 188, 135, 0.15);
         }
 
         @keyframes authFade {
@@ -869,83 +975,589 @@ Note: This is not a simulation. This is a live event you are currently missing. 
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           解码日志摘录 - 奢华卡片强化
+           Small print - 增大至7px
            ═══════════════════════════════════════════════════════════════════ */
-        .decoded-log-entry {
-          margin: 0 0 24px 0;
-          padding: 7px 11px;
-          background: linear-gradient(135deg, 
-            rgba(20, 25, 35, 0.7) 0%, 
-            rgba(15, 20, 30, 0.6) 100%
-          );
-          border: 1px solid rgba(184, 149, 106, 0.3);
-          border-radius: 8px;
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          opacity: 0;
-          animation: logEntryFade 700ms cubic-bezier(0.23,1,0.32,1) 600ms forwards;
-          width: 100%;
-          max-width: 480px;
-          /* 增强阴影和内发光 */
-          box-shadow: 
-            0 4px 24px rgba(0, 0, 0, 0.35),
-            0 2px 8px rgba(0, 0, 0, 0.25),
-            inset 0 1px 0 rgba(212, 184, 150, 0.05),
-            inset 0 0 30px rgba(184, 149, 106, 0.02);
-        }
-
-        @keyframes logEntryFade {
-          0% {
-            opacity: 0;
-            transform: translateY(12px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .log-text {
-          margin: 0 0 4px 0;
-          padding: 0;
-          font-size: 9px;
-          line-height: 1.5;
-          color: rgba(255, 250, 240, 0.96);  /* 淡金白 - 神谕色彩 - 保留 */
-          font-family: Georgia, 'Times New Roman', serif;  /* 恢复 Georgia */
-          font-style: italic;  /* 恢复斜体 */
-          letter-spacing: 0.015em;  /* 恢复原始字间距 */
-          text-align: left;
-          white-space: pre-wrap;
-          /* 神谕发光效果 - 保留 */
-          text-shadow: 
-            0 0 20px rgba(212, 184, 150, 0.15),
-            0 0 40px rgba(212, 184, 150, 0.08),
-            0 1px 2px rgba(0, 0, 0, 0.3);
-        }
-
-        .log-text.log-continuation {
-          margin-bottom: 14px;
-        }
-
-        .log-signature {
-          margin: 0;
-          padding: 0;
-          font-size: 8.5px;
-          line-height: 1.4;
-          color: rgba(212, 184, 150, 0.95);  /* 金色签名 - 微调透明度 */
-          font-family: Georgia, 'Times New Roman', serif;
+        .sub-headline-detail {
+          margin: 0 0 6px 0;
+          padding: 0 8px;
+          font-size: 7px;
+          line-height: 1.3;
+          color: rgba(245, 245, 240, 0.9);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 400;
+          text-align: center;
           font-style: italic;
-          text-align: right;
-          letter-spacing: 0.02em;
-          opacity: 1;
-          /* 增强发光效果 */
-          text-shadow: 
-            0 0 20px rgba(184, 149, 106, 0.3),
-            0 0 40px rgba(184, 149, 106, 0.15);
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           交互核心区域
+           "What We Do" 部分 - 压缩间距
+           ═══════════════════════════════════════════════════════════════════ */
+        .what-we-do-section {
+          width: 100%;
+          max-width: 480px;
+          margin: 0 0 6px 0;
+          padding: 6px 8px;
+          background: linear-gradient(135deg, 
+            rgba(20, 25, 35, 0.5) 0%, 
+            rgba(15, 20, 30, 0.4) 100%
+          );
+          border: 1px solid rgba(224, 188, 135, 0.2);
+          border-radius: 6px;
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          box-shadow: 
+            0 4px 24px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(224, 188, 135, 0.05);
+        }
+
+        .value-prop-text {
+          margin: 0 0 4px 0;
+          padding: 0;
+          font-size: 7px;
+          line-height: 1.35;
+          color: rgba(255, 250, 240, 0.95);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 400;
+          letter-spacing: 0.01em;
+          text-align: center;
+        }
+
+        .value-prop-text:last-of-type {
+          margin-bottom: 4px;
+        }
+
+        .value-prop-emphasis {
+          color: rgba(224, 188, 135, 1);
+          font-weight: 600;
+          font-size: 7.5px;
+          text-shadow: 0 0 20px rgba(224, 188, 135, 0.3);
+          margin: 2px 0;
+        }
+
+        .section-signature {
+          margin: 0;
+          padding: 0;
+          font-size: 5.5px;
+          line-height: 1.3;
+          color: rgba(224, 188, 135, 0.85);
+          font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+          font-weight: 400;
+          font-style: italic;
+          text-align: center;
+          letter-spacing: 0.05em;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           💎 呼吸卡片：Luxury Showcase - 再压缩20%版本
+           策略：保持字号，进一步压缩padding和gap
+           ═══════════════════════════════════════════════════════════════════ */
+        .luxury-showcase {
+          width: 100%;
+          max-width: 480px;
+          margin: 0 0 6px 0;
+          padding: 3px 5px 2px;
+          background: linear-gradient(135deg,
+            rgba(224, 188, 135, 0.04) 0%,
+            rgba(20, 25, 35, 0.6) 100%
+          );
+          border: 1px solid rgba(224, 188, 135, 0.25);
+          border-radius: 6px;
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          box-shadow:
+            0 4px 32px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 245, 230, 0.08);
+          animation: luxuryBreathe 6s ease-in-out infinite;
+        }
+
+        @keyframes luxuryBreathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(0.998); }
+        }
+
+        .showcase-header {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin-bottom: 1px;
+        }
+
+        .header-title {
+          font-size: 5.5px;
+          font-weight: 600;
+          color: rgba(224, 188, 135, 0.9);
+          font-family: 'SF Mono', 'Monaco', monospace;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+
+        /* 第1层：震撼数字 - 保持字号40px */
+        .showcase-hero {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0px;
+          margin-bottom: 2px;
+          padding: 0;
+        }
+
+        .hero-number {
+          font-size: 40px;
+          font-weight: 400;
+          color: var(--gold-bright);
+          font-family: 'SF Mono', 'Monaco', monospace;
+          letter-spacing: 0.05em;
+          line-height: 0.9;
+          text-shadow: 
+            0 0 35px rgba(255, 245, 230, 0.6),
+            0 0 70px rgba(224, 188, 135, 0.4);
+          animation: numberReveal 1.5s ease-out forwards;
+          transition: all 800ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes numberReveal {
+          from { opacity: 0; transform: scale(0.8); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+        .hero-statement {
+          font-size: 7px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 1);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          line-height: 1;
+        }
+
+        .hero-tagline {
+          font-size: 5.5px;
+          color: rgba(224, 188, 135, 0.9);
+          font-style: italic;
+          letter-spacing: 0.04em;
+          line-height: 1;
+        }
+
+        /* 第2层：社会证明 - 保持字号，压缩间距 */
+        .showcase-proof {
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          gap: 5px;
+          margin-bottom: 2px;
+          padding: 0;
+        }
+
+        .proof-column {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0px;
+        }
+
+        .proof-metric {
+          font-size: 24px;
+          font-weight: 600;
+          color: var(--gold);
+          font-family: 'SF Mono', 'Monaco', monospace;
+          letter-spacing: 0.04em;
+          line-height: 0.9;
+          text-shadow: 0 0 18px rgba(224, 188, 135, 0.4);
+        }
+
+        .proof-price {
+          font-size: 16px;
+        }
+
+        .proof-label {
+          font-size: 6px;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.95);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          line-height: 1;
+        }
+
+        .proof-detail {
+          font-size: 5px;
+          color: rgba(224, 188, 135, 0.75);
+          line-height: 1.1;
+        }
+
+        .proof-reason {
+          font-size: 4.5px;
+          color: rgba(224, 188, 135, 0.65);
+          font-style: italic;
+          line-height: 1.1;
+        }
+
+        .proof-divider-vertical {
+          width: 1px;
+          background: linear-gradient(to bottom,
+            transparent,
+            rgba(224, 188, 135, 0.25),
+            transparent
+          );
+        }
+
+        /* 第3层：安全保障 - 压缩padding */
+        .showcase-security {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0px;
+          margin-bottom: 1px;
+          padding: 2px 3px;
+          background: rgba(224, 188, 135, 0.06);
+          border-radius: 4px;
+          border: 1px solid rgba(224, 188, 135, 0.15);
+        }
+
+        .security-badge {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+        }
+
+        .security-icon {
+          font-size: 6px;
+          filter: drop-shadow(0 0 6px rgba(224, 188, 135, 0.4));
+        }
+
+        .security-title {
+          font-size: 5.5px;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 1);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          line-height: 1;
+        }
+
+        .security-policy {
+          font-size: 5px;
+          color: rgba(224, 188, 135, 0.8);
+          line-height: 1.1;
+        }
+
+        /* 底部汇总 - 压缩padding */
+        .showcase-footer {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          padding-top: 1px;
+          border-top: 1px solid rgba(224, 188, 135, 0.15);
+        }
+
+        .footer-badge {
+          font-size: 6px;
+        }
+
+        .footer-text {
+          font-size: 5px;
+          color: rgba(224, 188, 135, 0.85);
+          letter-spacing: 0.04em;
+          line-height: 1;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           ⚠️ 排除矩阵：精简对比版 - 压缩版
+           ═══════════════════════════════════════════════════════════════════ */
+        .exclusion-block {
+          width: 100%;
+          max-width: 480px;
+          margin: 0 0 6px 0;
+          padding: 5px 8px;
+          background: linear-gradient(135deg,
+            rgba(255, 191, 0, 0.03) 0%,
+            rgba(20, 25, 35, 0.6) 100%
+          );
+          border: 1px solid var(--amber);
+          border-radius: 6px;
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          box-shadow:
+            0 0 16px rgba(255, 191, 0, 0.15),
+            0 4px 32px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 191, 0, 0.06);
+        }
+
+        .exclusion-header {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          margin-bottom: 3px;
+          padding-bottom: 2px;
+          border-bottom: 1px solid rgba(255, 191, 0, 0.2);
+        }
+
+        .exclusion-icon {
+          font-size: 6px;
+          animation: warningPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes warningPulse {
+          0%, 100% { opacity: 0.85; }
+          50% { opacity: 1; }
+        }
+
+        .exclusion-title {
+          font-size: 5.5px;
+          font-weight: 600;
+          color: var(--amber);
+          font-family: 'SF Mono', 'Monaco', monospace;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+
+        .exclusion-compare {
+          margin-bottom: 3px;
+        }
+
+        .compare-row {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+
+        .compare-them {
+          display: flex;
+          align-items: baseline;
+          gap: 4px;
+          padding: 3px 6px;
+          background: rgba(139, 0, 0, 0.08);
+          border: 1px solid rgba(255, 191, 0, 0.2);
+          border-radius: 3px;
+        }
+
+        .them-label {
+          font-size: 5px;
+          font-weight: 700;
+          color: rgba(255, 180, 180, 0.9);
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          flex-shrink: 0;
+        }
+
+        .them-text {
+          font-size: 5.5px;
+          color: rgba(255, 210, 180, 0.8);
+          line-height: 1.3;
+        }
+
+        .compare-us {
+          display: flex;
+          align-items: baseline;
+          gap: 4px;
+          padding: 3px 6px;
+          background: rgba(224, 188, 135, 0.08);
+          border: 1px solid rgba(224, 188, 135, 0.25);
+          border-radius: 3px;
+        }
+
+        .us-label {
+          font-size: 5px;
+          font-weight: 700;
+          color: var(--gold);
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          flex-shrink: 0;
+        }
+
+        .us-text {
+          font-size: 5.5px;
+          color: rgba(245, 245, 240, 0.9);
+          line-height: 1.3;
+        }
+
+        .exclusion-statement {
+          display: flex;
+          align-items: flex-start;
+          gap: 4px;
+          padding: 3px 6px;
+          background: rgba(224, 188, 135, 0.08);
+          border: 1px solid rgba(224, 188, 135, 0.2);
+          border-radius: 4px;
+        }
+
+        .statement-badge {
+          font-size: 8px;
+          color: var(--gold);
+          flex-shrink: 0;
+          text-shadow: 0 0 10px rgba(224, 188, 135, 0.4);
+        }
+
+        .statement-text {
+          font-size: 5.5px;
+          line-height: 1.35;
+          color: rgba(224, 188, 135, 0.95);
+          text-align: left;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           🔐 准入协议：时间承诺版 - 横向时间线设计
+           ═══════════════════════════════════════════════════════════════════ */
+        .access-timeline {
+          width: 100%;
+          max-width: 480px;
+          margin: 0 0 6px 0;
+          padding: 5px 8px;
+          background: linear-gradient(135deg,
+            rgba(224, 188, 135, 0.04) 0%,
+            rgba(20, 25, 35, 0.6) 100%
+          );
+          border: 1px solid rgba(224, 188, 135, 0.2);
+          border-radius: 6px;
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          box-shadow:
+            0 4px 32px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(224, 188, 135, 0.06);
+        }
+
+        .timeline-header {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          margin-bottom: 4px;
+          padding-bottom: 2px;
+          border-bottom: 1px solid rgba(224, 188, 135, 0.15);
+        }
+
+        .timeline-icon {
+          font-size: 6px;
+          filter: drop-shadow(0 0 6px rgba(224, 188, 135, 0.3));
+        }
+
+        .timeline-title {
+          font-size: 6.5px;
+          font-weight: 700;
+          color: var(--gold-bright);
+          font-family: 'SF Mono', 'Monaco', monospace;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          text-shadow: 0 0 12px rgba(255, 245, 230, 0.3);
+        }
+
+        /* 🎯 横向时间线布局 */
+        .timeline-promise {
+          display: grid;
+          grid-template-columns: 1fr auto 1fr auto 1fr;
+          align-items: center;
+          gap: 4px;
+          margin-bottom: 4px;
+          padding: 2px 0;
+        }
+
+        .promise-step {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+          padding: 4px 6px;
+          background: rgba(20, 25, 35, 0.4);
+          border: 1px solid rgba(224, 188, 135, 0.15);
+          border-radius: 3px;
+          transition: all 300ms ease;
+          min-width: 0;
+        }
+
+        .promise-step:hover {
+          transform: scale(1.03);
+          border-color: rgba(224, 188, 135, 0.3);
+        }
+
+        .promise-step-final {
+          border-color: rgba(224, 188, 135, 0.4);
+          box-shadow: 0 0 12px rgba(224, 188, 135, 0.2);
+          background: rgba(224, 188, 135, 0.08);
+        }
+
+        .step-time {
+          font-size: 6.5px;
+          font-weight: 700;
+          color: var(--gold);
+          font-family: 'SF Mono', 'Monaco', monospace;
+          letter-spacing: 0.06em;
+          line-height: 1;
+          white-space: nowrap;
+        }
+
+        .step-action {
+          font-size: 5.5px;
+          color: rgba(245, 245, 240, 0.9);
+          text-align: center;
+          line-height: 1.3;
+        }
+
+        /* 横向箭头 */
+        .promise-arrow {
+          font-size: 8px;
+          color: rgba(224, 188, 135, 0.5);
+          line-height: 1;
+          flex-shrink: 0;
+        }
+
+        .timeline-guarantee {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1px;
+          margin-bottom: 3px;
+          padding: 3px 6px;
+          background: rgba(224, 188, 135, 0.06);
+          border-radius: 4px;
+          border: 1px solid rgba(224, 188, 135, 0.15);
+        }
+
+        .guarantee-badge {
+          font-size: 5.5px;
+          font-weight: 700;
+          color: var(--gold);
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          line-height: 1.1;
+        }
+
+        .guarantee-note {
+          font-size: 5px;
+          color: rgba(224, 188, 135, 0.75);
+          text-align: center;
+          line-height: 1.3;
+        }
+
+        /* 条款横向排列 */
+        .timeline-terms {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 3px;
+        }
+
+        .term-item {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+          padding: 2px 4px;
+          background: rgba(20, 25, 35, 0.3);
+          border-radius: 2px;
+        }
+
+        .term-icon {
+          font-size: 6px;
+          flex-shrink: 0;
+        }
+
+        .term-text {
+          font-size: 5px;
+          color: rgba(224, 188, 135, 0.75);
+          line-height: 1.3;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           交互核心区域 - 极致压缩底部
            ═══════════════════════════════════════════════════════════════════ */
         .interaction-core {
           opacity: 0;
@@ -956,6 +1568,7 @@ Note: This is not a simulation. This is a live event you are currently missing. 
           flex-direction: column;
           align-items: center;
           margin-bottom: 0;
+          padding-bottom: 4px;
         }
 
         .interaction-core.visible {
@@ -963,64 +1576,61 @@ Note: This is not a simulation. This is a live event you are currently missing. 
           transform: translateY(0);
         }
 
-        /* 紧迫感声明 - 视觉强化 */
+        .coverage-notice {
+          margin: 0 0 3px 0;
+          padding: 0 8px;
+          font-size: 6.5px;
+          line-height: 1.3;
+          color: rgba(224, 188, 135, 0.88);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 300;
+          font-style: italic;
+          letter-spacing: 0.015em;
+          text-align: center;
+          text-shadow: 0 0 15px rgba(224, 188, 135, 0.12);
+        }
+
         .urgency-statement {
-          margin: 0 0 6px 0;
-          padding: 0 10px;
-          font-size: 10.5px;
-          line-height: 1.4;
-          color: rgba(255, 252, 245, 0.94);  /* 微调为淡奶油白 */
+          margin: 0 0 4px 0;
+          padding: 0 8px;
+          font-size: 7px;
+          line-height: 1.3;
+          color: rgba(255, 252, 245, 0.94);
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           font-weight: 400;
           letter-spacing: 0.01em;
           text-align: center;
-          /* 优化光晕效果 */
           text-shadow: 
-            0 1px 8px rgba(184, 149, 106, 0.12),
-            0 0 20px rgba(212, 184, 150, 0.06);
-        }
-        
-        /* 第一句话强化 - 转折点冲击力 */
-        .urgency-statement-hero {
-          font-size: 12px;
-          font-weight: 500;
-          letter-spacing: 0.02em;
-          color: rgba(255, 255, 255, 0.98);
-          text-shadow: 
-            0 2px 12px rgba(184, 149, 106, 0.2),
-            0 0 30px rgba(212, 184, 150, 0.12);
+            0 1px 8px rgba(224, 188, 135, 0.12),
+            0 0 20px rgba(255, 245, 230, 0.06);
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           倒计时器 - 奢华强化
+           倒计时器 - 缩小10%
            ═══════════════════════════════════════════════════════════════════ */
         .countdown-timer {
-          margin: 0 0 12px 0;
-          padding: 10px 20px;
-          color: rgba(255, 255, 255, 0.98);  /* 纯白高对比 */
+          margin: 0 0 6px 0;
+          padding: 5px 12px;
+          color: rgba(255, 255, 255, 0.98);
           display: flex;
           align-items: center;
           justify-content: center;
           opacity: 0;
           transform: scale(0.8);
           transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
-          /* 优雅背景 - 微妙渐变 */
           background: linear-gradient(135deg,
-            rgba(212, 184, 150, 0.12) 0%,
-            rgba(184, 149, 106, 0.08) 100%
+            rgba(255, 245, 230, 0.12) 0%,
+            rgba(224, 188, 135, 0.08) 100%
           );
-          /* 细边框 - 优雅不抢眼 */
-          border: 2px solid rgba(212, 184, 150, 0.35);
-          /* 更圆润的圆角 */
+          border: 2px solid rgba(224, 188, 135, 0.35);
           border-radius: 20px;
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
-          /* 优雅阴影 - 发光+深度 */
           box-shadow: 
-            0 0 40px rgba(212, 184, 150, 0.25),
+            0 0 40px rgba(224, 188, 135, 0.3),
             0 6px 24px rgba(0, 0, 0, 0.2),
             inset 0 1px 0 rgba(255, 255, 255, 0.08),
-            inset 0 0 30px rgba(212, 184, 150, 0.05);
+            inset 0 0 30px rgba(224, 188, 135, 0.05);
         }
 
         .countdown-timer.active {
@@ -1030,7 +1640,7 @@ Note: This is not a simulation. This is a live event you are currently missing. 
 
         .countdown-timer.expired {
           animation: countdownPulse 1.5s ease-in-out infinite;
-          border-color: rgba(184, 149, 106, 0.4);
+          border-color: rgba(224, 188, 135, 0.5);
         }
 
         @keyframes countdownPulse {
@@ -1038,376 +1648,342 @@ Note: This is not a simulation. This is a live event you are currently missing. 
             transform: scale(1);
             box-shadow: 
               0 4px 20px rgba(0, 0, 0, 0.2),
-              0 0 0 0 rgba(184, 149, 106, 0.4);
+              0 0 0 0 rgba(224, 188, 135, 0.5);
           }
           50% {
             transform: scale(1.03);
             box-shadow: 
               0 4px 20px rgba(0, 0, 0, 0.2),
-              0 0 20px 8px rgba(184, 149, 106, 0.2);
+              0 0 20px 8px rgba(224, 188, 135, 0.3);
           }
         }
 
         .countdown-number {
-          font-size: 52px;
+          font-size: 47px;
           line-height: 1;
           font-weight: 400;
-          color: rgba(212, 184, 150, 1);
-          /* 强制等宽字体 - 100%保证数字等宽 */
+          color: var(--gold-bright);
           font-family: 'SF Mono', 'Monaco', 'Consolas', 'Courier New', monospace;
           letter-spacing: 0.05em;
-          /* 移除无效的属性 */
           font-variant-numeric: tabular-nums;
           text-shadow: 
-            0 0 40px rgba(212, 184, 150, 0.8),
-            0 0 70px rgba(184, 149, 106, 0.6),
-            0 0 100px rgba(212, 184, 150, 0.3),
+            0 0 35px rgba(255, 245, 230, 0.8),
+            0 0 70px rgba(224, 188, 135, 0.6),
+            0 0 100px rgba(255, 245, 230, 0.3),
             0 2px 4px rgba(0, 0, 0, 0.3);
           position: relative;
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           CTA 按钮 - 奢华品牌强化
+           CTA 按钮 - 高级香槟金质感设计
            ═══════════════════════════════════════════════════════════════════ */
         .s1-cta-btn {
           width: 100%;
           max-width: 360px;
-          height: 54px;
-          margin: 0 auto;
-          border-radius: 27px;
-          /* 奢华背景 - 更实,更金 */
+          height: 46px;
+          margin: 0 auto 4px;
+          border-radius: 6px;
           background: linear-gradient(135deg, 
-            rgba(212, 184, 150, 0.22) 0%, 
-            rgba(184, 149, 106, 0.18) 100%
+            rgba(224, 188, 135, 0.15) 0%,
+            rgba(212, 175, 55, 0.12) 50%,
+            rgba(224, 188, 135, 0.15) 100%
           );
-          /* 奢华边框 - 更粗,更金 */
-          border: 3px solid rgba(212, 184, 150, 0.75);
-          color: var(--cream-bright);
-          font-size: 11px;
+          border: 1.5px solid rgba(224, 188, 135, 0.6);
+          color: var(--gold-bright);
+          font-size: 9.5px;
           font-weight: 600;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.12em;
           cursor: pointer;
-          transition: all 350ms cubic-bezier(0.23, 1, 0.32, 1);
+          transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 10px;
+          gap: 12px;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
           text-transform: uppercase;
           position: relative;
           overflow: hidden;
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          /* 奢华阴影 - 强烈金色发光 + 深阴影 */
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
           box-shadow: 
-            0 0 35px rgba(212, 184, 150, 0.4),
-            0 8px 32px rgba(0, 0, 0, 0.45),
-            inset 0 2px 0 rgba(255, 255, 255, 0.15),
-            inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+            0 8px 32px rgba(0, 0, 0, 0.25),
+            0 0 60px rgba(224, 188, 135, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.3);
         }
 
-        /* 奢华hover效果 - Dramatic变化 */
-        .s1-cta-btn:hover {
-          /* Dramatic背景变化 */
-          background: linear-gradient(135deg, 
-            rgba(212, 184, 150, 0.32) 0%, 
-            rgba(184, 149, 106, 0.28) 100%
+        /* 细腻的光泽层 */
+        .s1-cta-btn::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 50%;
+          background: linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.08) 0%,
+            transparent 100%
           );
-          /* 纯金边框 */
-          border-color: rgba(212, 184, 150, 0.95);
-          /* 强烈发光 + 上浮 */
-          box-shadow: 
-            0 0 55px rgba(212, 184, 150, 0.65),
-            0 12px 40px rgba(0, 0, 0, 0.5),
-            inset 0 2px 0 rgba(255, 255, 255, 0.25),
-            inset 0 -2px 0 rgba(0, 0, 0, 0.35);
-          transform: translateY(-3px) scale(1.02);
+          pointer-events: none;
         }
 
-        /* 按钮光晕边框 - 增强 */
+        /* 悬停扫光效果 */
         .s1-cta-btn::before {
           content: '';
           position: absolute;
-          inset: -2px;
-          border-radius: 26px;
-          padding: 2px;
-          background: linear-gradient(90deg, 
-            transparent,
-            var(--gold-bright),
-            transparent
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(45deg,
+            transparent 40%,
+            rgba(255, 255, 255, 0.15) 50%,
+            transparent 60%
           );
-          -webkit-mask: 
-            linear-gradient(#fff 0 0) content-box,
-            linear-gradient(#fff 0 0);
-          mask: 
-            linear-gradient(#fff 0 0) content-box,
-            linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          opacity: 0;
-          animation: shimmer 3s linear infinite;
-          transition: opacity 300ms ease;
+          transform: translateX(-100%) translateY(-100%) rotate(45deg);
+          transition: transform 800ms ease;
         }
 
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%) rotate(0deg);
-          }
-          100% {
-            transform: translateX(100%) rotate(0deg);
-          }
-        }
-
-        .s1-cta-btn.urgent::before {
-          opacity: 0.5;
+        .s1-cta-btn:hover::before {
+          transform: translateX(100%) translateY(100%) rotate(45deg);
         }
 
         .s1-cta-text {
-          color: rgba(255, 252, 240, 1);  /* 微调为更温暖的奶油色 */
+          color: rgba(255, 250, 240, 1);
           position: relative;
           z-index: 1;
-          transition: color 200ms ease;
+          transition: all 300ms ease;
           text-shadow: 
-            0 1px 3px rgba(0, 0, 0, 0.35),
-            0 0 12px rgba(212, 184, 150, 0.15);
+            0 0 30px rgba(224, 188, 135, 0.6),
+            0 0 60px rgba(224, 188, 135, 0.3),
+            0 2px 4px rgba(0, 0, 0, 0.4);
+          font-weight: 600;
         }
 
         .s1-cta-arrow {
-          color: rgba(212, 184, 150, 1);
+          color: var(--gold-bright);
           font-size: 18px;
           position: relative;
           z-index: 1;
-          transition: transform 200ms ease;
-          text-shadow: 0 0 10px rgba(184, 149, 106, 0.6);
+          transition: all 300ms ease;
+          font-weight: 600;
+          text-shadow: 
+            0 0 25px rgba(224, 188, 135, 0.7),
+            0 0 50px rgba(224, 188, 135, 0.4),
+            0 2px 4px rgba(0, 0, 0, 0.4);
         }
 
-        /* 按钮强脉动 - 增强 */
+        /* 紧急状态脉冲 - 优雅的呼吸感 */
         @keyframes pulseDramatic {
           0%, 100% {
             transform: scale(1);
             box-shadow: 
-              0 4px 20px rgba(0, 0, 0, 0.25),
-              0 0 0 0 rgba(184, 149, 106, 0.5);
+              0 8px 32px rgba(0, 0, 0, 0.25),
+              0 0 60px rgba(224, 188, 135, 0.2),
+              0 0 0 0 rgba(224, 188, 135, 0.6);
           }
           50% {
-            transform: scale(1.025);
+            transform: scale(1.015);
             box-shadow: 
-              0 6px 28px rgba(184, 149, 106, 0.35),
-              0 0 30px 12px rgba(184, 149, 106, 0.25);
+              0 12px 48px rgba(0, 0, 0, 0.3),
+              0 0 80px rgba(224, 188, 135, 0.4),
+              0 0 0 4px rgba(224, 188, 135, 0.2);
           }
         }
 
         .s1-cta-btn.pulse {
-          animation: pulseDramatic 1.5s ease-in-out infinite;
-          border-color: rgba(212, 184, 150, 1);
+          animation: pulseDramatic 2s ease-in-out infinite;
         }
 
-        /* 悬停效果 - 增强 */
+        .s1-cta-btn.urgent {
+          background: linear-gradient(135deg, 
+            rgba(224, 188, 135, 0.2) 0%,
+            rgba(212, 175, 55, 0.18) 50%,
+            rgba(224, 188, 135, 0.2) 100%
+          );
+          border-color: rgba(224, 188, 135, 0.8);
+          box-shadow: 
+            0 12px 48px rgba(0, 0, 0, 0.3),
+            0 0 80px rgba(224, 188, 135, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .s1-cta-btn.urgent .s1-cta-text,
+        .s1-cta-btn.urgent .s1-cta-arrow {
+          text-shadow: 
+            0 0 40px rgba(255, 245, 230, 0.8),
+            0 0 80px rgba(224, 188, 135, 0.5),
+            0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
         @media (hover: hover) {
           .s1-cta-btn:hover:not(:disabled) {
             background: linear-gradient(135deg, 
-              rgba(184, 149, 106, 0.25) 0%, 
-              rgba(184, 149, 106, 0.15) 100%
+              rgba(224, 188, 135, 0.22) 0%,
+              rgba(212, 175, 55, 0.18) 50%,
+              rgba(224, 188, 135, 0.22) 100%
             );
-            border-color: rgba(212, 184, 150, 1);
-            transform: translateY(-2px) scale(1.01);
+            border-color: rgba(224, 188, 135, 0.85);
             box-shadow: 
-              0 8px 32px rgba(184, 149, 106, 0.4),
-              0 4px 12px rgba(0, 0, 0, 0.25),
-              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+              0 12px 48px rgba(0, 0, 0, 0.3),
+              0 0 80px rgba(224, 188, 135, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
           }
 
-          .s1-cta-btn:hover:not(:disabled)::before {
-            opacity: 0.7;
+          .s1-cta-btn:hover:not(:disabled) .s1-cta-text {
+            color: rgba(255, 252, 245, 1);
+            text-shadow: 
+              0 0 40px rgba(255, 245, 230, 0.8),
+              0 0 80px rgba(224, 188, 135, 0.5),
+              0 2px 4px rgba(0, 0, 0, 0.4);
           }
 
           .s1-cta-btn:hover:not(:disabled) .s1-cta-arrow {
-            transform: translateX(4px);
+            transform: translateX(5px);
+            color: var(--gold-bright);
+            text-shadow: 
+              0 0 35px rgba(255, 245, 230, 0.9),
+              0 0 70px rgba(224, 188, 135, 0.6),
+              0 2px 4px rgba(0, 0, 0, 0.4);
           }
         }
 
-        /* 点击状态 */
         .s1-cta-btn:active:not(:disabled) {
-          transform: scale(0.98);
+          transform: translateY(0) scale(0.99);
           box-shadow: 
-            0 2px 12px rgba(0, 0, 0, 0.2),
-            inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            0 4px 16px rgba(0, 0, 0, 0.3),
+            0 0 40px rgba(224, 188, 135, 0.25),
+            inset 0 2px 4px rgba(0, 0, 0, 0.25);
         }
 
-        /* 禁用状态 */
         .s1-cta-btn:disabled {
-          opacity: 0.4;
+          opacity: 0.35;
           cursor: not-allowed;
           animation: none;
           transform: none;
+          border-color: rgba(224, 188, 135, 0.3);
+          background: linear-gradient(135deg, 
+            rgba(224, 188, 135, 0.08) 0%,
+            rgba(212, 175, 55, 0.06) 50%,
+            rgba(224, 188, 135, 0.08) 100%
+          );
+        }
+
+        .cta-disclaimer {
+          margin: 0 0 3px 0;
+          padding: 0 8px;
+          font-size: 5.5px;
+          line-height: 1.3;
+          color: rgba(224, 188, 135, 0.7);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 400;
+          font-style: italic;
+          text-align: center;
+        }
+
+        .footer-anchor {
+          max-width: 400px;
+          margin: 0;
+          padding: 0 8px 4px;
+          font-size: 7px;
+          line-height: 1.4;
+          color: rgba(245, 240, 230, 0.92);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 400;
+          letter-spacing: 0.01em;
+          text-align: center;
+          text-shadow: 0 1px 8px rgba(224, 188, 135, 0.08);
         }
 
         /* ═══════════════════════════════════════════════════════════════════
-           响应式适配 - 桌面端增强
+           响应式适配 - 桌面端优化
            ═══════════════════════════════════════════════════════════════════ */
-        
-        /* 移动端优先优化 (默认 < 768px) */
-        @media (max-width: 767px) {
-          .decoded-log-entry {
-            padding: 6px 10px;
-            margin: 0 0 20px 0;
-          }
-          
-          .log-text {
-            font-size: 8.2px;
-            line-height: 1.45;
-          }
-          
-          .urgency-statement {
-            margin: 0 0 8px 0;
-            padding: 0 8px;
-          }
-          
-          .urgency-statement-hero {
-            font-size: 11.5px;
-          }
-          
-          .countdown-timer {
-            margin: 0 0 14px 0;
-          }
-          
-          .countdown-number {
-            font-size: 56px;
-          }
-          
-          .s1-cta-btn {
-            height: 52px;
-            font-size: 10.5px;
-          }
-        }
         
         @media (min-width: 768px) {
           .logo-header {
-            padding: 24px 32px;
+            padding: 20px 32px;
           }
 
           .s1-top-label {
-            top: 71px;
-            font-size: 8.5px;
-            padding: 10px 20px;
+            top: 65px;
+            font-size: 8px;
+            padding: 8px 18px;
           }
 
           .screen-front-content {
             max-width: 680px;
-            padding: 120px 32px 24px;
+            padding: 110px var(--spacing-xl) var(--spacing-lg);
           }
 
           .project-sigil {
-            font-size: 15px;
+            font-size: 18px;
             padding: 12px 24px;
-            margin-bottom: 14px;
-          }
-
-          .project-sigil::before,
-          .project-sigil::after {
-            width: 28px;
-            height: 28px;
-            top: -7px;
-            left: -7px;
-          }
-
-          .project-sigil::after {
-            bottom: -7px;
-            right: -7px;
+            margin-bottom: var(--spacing-lg);
           }
 
           .auth-protocol {
-            font-size: 8.5px;
-            margin-bottom: 20px;
+            font-size: 13px;
+            margin-bottom: var(--spacing-lg);
           }
 
-          .decoded-log-entry {
-            padding: 20px 24px;
-            margin-bottom: 22px;
+          .sub-headline-detail {
+            font-size: 10px;
+            margin-bottom: var(--spacing-xl);
+          }
+
+          .what-we-do-section,
+          .luxury-showcase,
+          .exclusion-block,
+          .access-timeline {
+            padding: var(--spacing-lg) var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
             max-width: 560px;
           }
 
-          .log-text {
-            font-size: 10.5px;
-            line-height: 1.7;
-            margin-bottom: 12px;
+          .value-prop-text {
+            font-size: 10px;
+            margin-bottom: 10px;
           }
 
-          .log-signature {
-            font-size: 9px;
+          .section-signature {
+            font-size: 8.5px;
           }
 
-          .urgency-statement {
-            font-size: 14px;
-            margin-bottom: 16px;
+          .hero-number {
+            font-size: 72px;
           }
 
           .countdown-timer {
-            padding: 14px 24px;
-            margin-bottom: 20px;
+            padding: 12px 24px;
+            margin-bottom: var(--spacing-lg);
           }
 
           .countdown-number {
-            font-size: 68px;
+            font-size: 64px;
           }
 
           .s1-cta-btn {
-            height: 56px;
-            max-width: 400px;
-            font-size: 10.5px;
+            height: 52px;
+            max-width: 420px;
+            font-size: 11px;
           }
 
           .s1-cta-arrow {
-            font-size: 20px;
-          }
-        }
-
-        /* 超小屏优化 */
-        @media (max-width: 359px) {
-          .logo-header {
-            padding: 16px;
+            font-size: 18px;
           }
 
-          .s1-top-label {
+          .cta-disclaimer {
             font-size: 8px;
-            top: 57px;
-            padding: 6px 12px;
           }
 
-          .screen-front-content {
-            padding: 82px 12px 14px;
-          }
-
-          .project-sigil {
-            font-size: 8.5px;
-            padding: 8px 14px;
-          }
-
-          .decoded-log-entry {
-            padding: 10px 12px;
-          }
-
-          .log-text {
-            font-size: 8.5px;
-          }
-
-          .urgency-statement {
-            font-size: 9px;
-          }
-
-          .countdown-number {
-            font-size: 48px;
-          }
-
-          .s1-cta-btn {
-            height: 48px;
-            font-size: 8.5px;
+          .footer-anchor {
+            font-size: 10px;
           }
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           无障碍支持
-           ═══════════════════════════════════════════════════════════════════ */
         @media (prefers-reduced-motion: reduce) {
           *, *::before, *::after {
             animation-duration: 0.01ms !important;
@@ -1417,7 +1993,6 @@ Note: This is not a simulation. This is a live event you are currently missing. 
 
           .project-sigil,
           .auth-protocol,
-          .decoded-log-entry,
           .interaction-core,
           .countdown-timer,
           .s1-top-label {
@@ -1426,23 +2001,25 @@ Note: This is not a simulation. This is a live event you are currently missing. 
           }
         }
 
-        /* 高对比度模式支持 */
         @media (prefers-contrast: high) {
           .s1-cta-btn {
             border-width: 3px;
-            border-color: rgba(212, 184, 150, 1);
-            background: rgba(184, 149, 106, 0.3);
+            border-color: var(--gold-bright);
+            background: rgba(224, 188, 135, 0.3);
           }
 
           .countdown-timer {
             border-width: 3px;
-            border-color: rgba(212, 184, 150, 1);
+            border-color: var(--gold);
           }
 
-          .decoded-log-entry,
+          .what-we-do-section,
+          .luxury-showcase,
+          .exclusion-block,
+          .access-timeline,
           .s1-top-label {
             border-width: 2px;
-            border-color: rgba(184, 149, 106, 0.5);
+            border-color: rgba(224, 188, 135, 0.5);
           }
         }
       `}</style>
