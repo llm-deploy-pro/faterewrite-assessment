@@ -1,4 +1,4 @@
-// src/scenes/FormScreen/FormScreenWithGuides.tsx
+// src/components/IntakeForm.tsx
 import { useEffect, useRef, useState } from "react";
 
 /* =====================================================================
@@ -103,18 +103,22 @@ const Q4_OPTIONS = [
   { id: "depends", text: "Depends on the woman", range: "show me first", level: "FLEX" }
 ];
 
-export default function FormScreenWithGuides() {
+export default function IntakeForm() {
   const hasTrackedRef = useRef(false);
+  const timeTrackingRef = useRef({ t3: false, t10: false, t20: false });
+  const pageLoadTimeRef = useRef(Date.now());
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [expandedQuestion, setExpandedQuestion] = useState<string | null>("q1");
+  const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
+  const [showValidationToast, setShowValidationToast] = useState(false);
+  const [validationMessage, setValidationMessage] = useState("");
   
   const [formData, setFormData] = useState<FormData>({
     q1_scenarios: [],
     q2_blocker: "",
     q3_type: "",
     q4_budget: "",
-    q5_contact_method: "", // 默认不选中任何联系方式
+    q5_contact_method: "",
     q5_contact_value: "",
     q6_priority: ""
   });
@@ -122,6 +126,50 @@ export default function FormScreenWithGuides() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
 
+  // ============= 打点函数 =============
+  const trackEvent = (eventName: string, extraData: Record<string, any> = {}) => {
+    const frid = ensureFrid();
+    const isDev = window.location.hostname === "localhost";
+    
+    if (markOnce(eventName, isDev)) {
+      if (typeof (window as any).fbq !== "undefined") {
+        const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        (window as any).fbq("trackCustom", eventName, {
+          user_id: frid,
+          timestamp: new Date().toISOString(),
+          ...extraData
+        }, { eventID: eventId });
+      }
+      console.log(`[Event Tracked] ${eventName}`, extraData);
+    }
+  };
+
+  // ============= 时间打点 =============
+  useEffect(() => {
+    const checkTimeTracking = () => {
+      const elapsed = (Date.now() - pageLoadTimeRef.current) / 1000;
+      
+      if (elapsed >= 3 && !timeTrackingRef.current.t3) {
+        timeTrackingRef.current.t3 = true;
+        trackEvent("form_time_3s", { elapsed_seconds: 3 });
+      }
+      
+      if (elapsed >= 10 && !timeTrackingRef.current.t10) {
+        timeTrackingRef.current.t10 = true;
+        trackEvent("form_time_10s", { elapsed_seconds: 10 });
+      }
+      
+      if (elapsed >= 20 && !timeTrackingRef.current.t20) {
+        timeTrackingRef.current.t20 = true;
+        trackEvent("form_time_20s", { elapsed_seconds: 20 });
+      }
+    };
+
+    const interval = setInterval(checkTimeTracking, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ============= 页面加载打点 =============
   useEffect(() => {
     if (hasTrackedRef.current) return;
     hasTrackedRef.current = true;
@@ -146,21 +194,116 @@ export default function FormScreenWithGuides() {
     };
   }, []);
 
+  // ============= 问题点击打点 =============
+  const handleQuestionClick = (questionId: string) => {
+    trackEvent(`question_${questionId}_clicked`, { question: questionId });
+    setExpandedQuestion(expandedQuestion === questionId ? null : questionId);
+  };
+
+  // ============= 联系方式选择打点 =============
+  const handleContactMethodSelect = (method: string) => {
+    trackEvent("contact_method_selected", { method });
+    setFormData(p => ({ ...p, q5_contact_method: method }));
+  };
+
+  // ============= 优雅的验证提示 =============
+  const showElegantToast = () => {
+    // 计算进度
+    const progress = {
+      total: 6,
+      completed: 0,
+      missing: [] as string[]
+    };
+
+    if (formData.q1_scenarios.length > 0) progress.completed++;
+    else progress.missing.push("Question 1");
+
+    if (formData.q2_blocker) progress.completed++;
+    else progress.missing.push("Question 2");
+
+    if (formData.q3_type) progress.completed++;
+    else progress.missing.push("Question 3");
+
+    if (formData.q4_budget) progress.completed++;
+    else progress.missing.push("Question 4");
+
+    if (formData.q6_priority.trim()) progress.completed++;
+    else progress.missing.push("Question 5");
+
+    if (formData.q5_contact_method && formData.q5_contact_value.trim()) progress.completed++;
+    else progress.missing.push("Contact Information");
+
+    setValidationMessage(JSON.stringify(progress));
+    setShowValidationToast(true);
+    setTimeout(() => {
+      setShowValidationToast(false);
+    }, 4000);
+  };
+
+  // ============= 表单验证 =============
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (formData.q1_scenarios.length === 0) newErrors.q1 = "Select at least one";
-    if (!formData.q2_blocker) newErrors.q2 = "Required";
-    if (!formData.q3_type) newErrors.q3 = "Required";
-    if (!formData.q4_budget) newErrors.q4 = "Required";
-    if (!formData.q5_contact_method) newErrors.q5 = "Please select a contact method";
-    if (!formData.q5_contact_value.trim()) newErrors.q5 = "We need a way to reach you";
-    if (!formData.q6_priority.trim()) newErrors.q6 = "Tell us what matters most";
+    
+    if (formData.q1_scenarios.length === 0) {
+      newErrors.q1 = "Please select at least one option";
+      showElegantToast();
+      return false;
+    }
+    
+    if (!formData.q2_blocker) {
+      newErrors.q2 = "Please select an option";
+      showElegantToast();
+      return false;
+    }
+    
+    if (!formData.q3_type) {
+      newErrors.q3 = "Please select an option";
+      showElegantToast();
+      return false;
+    }
+    
+    if (!formData.q4_budget) {
+      newErrors.q4 = "Please select an option";
+      showElegantToast();
+      return false;
+    }
+    
+    if (!formData.q6_priority.trim()) {
+      newErrors.q6 = "Please answer this question";
+      showElegantToast();
+      return false;
+    }
+    
+    if (!formData.q5_contact_method) {
+      newErrors.q5 = "Please select a contact method";
+      showElegantToast();
+      return false;
+    }
+    
+    if (!formData.q5_contact_value.trim()) {
+      newErrors.q5 = "Please provide your contact information";
+      showElegantToast();
+      return false;
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // CTA点击打点
+    trackEvent("cta_clicked", { 
+      form_complete: validateForm(),
+      q1_filled: formData.q1_scenarios.length > 0,
+      q2_filled: !!formData.q2_blocker,
+      q3_filled: !!formData.q3_type,
+      q4_filled: !!formData.q4_budget,
+      q5_filled: !!formData.q6_priority,
+      contact_filled: !!(formData.q5_contact_method && formData.q5_contact_value)
+    });
+    
     if (!validateForm()) return;
     
     setIsSubmitting(true);
@@ -177,32 +320,40 @@ export default function FormScreenWithGuides() {
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
       console.log("Form Submitted:", formData);
-      setShowSuccess(true);
-      setTimeout(() => {
-        window.location.href = "https://pay.faterewrite.com/";
-      }, 2500);
+      // 跳转到支付页面
+      window.location.href = 'https://pay.faterewrite.com/';
     } catch (error) {
       console.error("Submission error:", error);
       setIsSubmitting(false);
     }
   };
 
-  if (showSuccess) {
-    return (
-      <div className="compact-form-container">
-        <div className="compact-success">
-          <div className="success-icon">✓</div>
-          <h2 className="success-title">REQUEST CONFIRMED</h2>
-          <p className="success-text">Redirecting to payment portal...</p>
-        </div>
-        <style>{compactStyles}</style>
-      </div>
-    );
-  }
-
   return (
     <div className="compact-form-container">
       <div className="compact-form-inner">
+        
+        {/* 轻量级顶部提示条 */}
+        {showValidationToast && (() => {
+          const progress = JSON.parse(validationMessage);
+          const missingCount = progress.missing.length;
+          return (
+            <div className="validation-banner">
+              <div className="banner-content">
+                <div className="banner-icon">⚠</div>
+                <div className="banner-text">
+                  <p className="banner-title">Please complete all questions</p>
+                  <p className="banner-subtitle">{missingCount} question{missingCount > 1 ? 's' : ''} remaining • {progress.completed} of {progress.total} completed</p>
+                </div>
+                <button 
+                  className="banner-close"
+                  onClick={() => setShowValidationToast(false)}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          );
+        })()}
         
         {/* Header */}
         <header className={`compact-header ${expandedQuestion ? 'header-hidden' : ''}`}>
@@ -224,7 +375,7 @@ export default function FormScreenWithGuides() {
             <button
               type="button"
               className="block-header-btn"
-              onClick={() => setExpandedQuestion(expandedQuestion === "q1" ? null : "q1")}
+              onClick={() => handleQuestionClick("q1")}
             >
               <span className="block-num">01</span>
               <div className="block-header-text">
@@ -268,7 +419,7 @@ export default function FormScreenWithGuides() {
             <button
               type="button"
               className="block-header-btn"
-              onClick={() => setExpandedQuestion(expandedQuestion === "q2" ? null : "q2")}
+              onClick={() => handleQuestionClick("q2")}
             >
               <span className="block-num">02</span>
               <div className="block-header-text">
@@ -307,7 +458,7 @@ export default function FormScreenWithGuides() {
             <button
               type="button"
               className="block-header-btn"
-              onClick={() => setExpandedQuestion(expandedQuestion === "q3" ? null : "q3")}
+              onClick={() => handleQuestionClick("q3")}
             >
               <span className="block-num">03</span>
               <div className="block-header-text">
@@ -346,7 +497,7 @@ export default function FormScreenWithGuides() {
             <button
               type="button"
               className="block-header-btn"
-              onClick={() => setExpandedQuestion(expandedQuestion === "q4" ? null : "q4")}
+              onClick={() => handleQuestionClick("q4")}
             >
               <span className="block-num">04</span>
               <div className="block-header-text">
@@ -387,7 +538,7 @@ export default function FormScreenWithGuides() {
             <button
               type="button"
               className="block-header-btn"
-              onClick={() => setExpandedQuestion(expandedQuestion === "q5" ? null : "q5")}
+              onClick={() => handleQuestionClick("q5")}
             >
               <span className="block-num">05</span>
               <div className="block-header-text">
@@ -430,7 +581,7 @@ export default function FormScreenWithGuides() {
                 <button
                   type="button"
                   className={`contact-tab ${formData.q5_contact_method === 'whatsapp' ? 'active' : ''}`}
-                  onClick={() => setFormData(p => ({ ...p, q5_contact_method: 'whatsapp' }))}
+                  onClick={() => handleContactMethodSelect('whatsapp')}
                 >
                   <span className="contact-radio">
                     {formData.q5_contact_method === 'whatsapp' && <span className="radio-dot"></span>}
@@ -445,7 +596,7 @@ export default function FormScreenWithGuides() {
                 <button
                   type="button"
                   className={`contact-tab ${formData.q5_contact_method === 'telegram' ? 'active' : ''}`}
-                  onClick={() => setFormData(p => ({ ...p, q5_contact_method: 'telegram' }))}
+                  onClick={() => handleContactMethodSelect('telegram')}
                 >
                   <span className="contact-radio">
                     {formData.q5_contact_method === 'telegram' && <span className="radio-dot"></span>}
@@ -460,7 +611,7 @@ export default function FormScreenWithGuides() {
                 <button
                   type="button"
                   className={`contact-tab ${formData.q5_contact_method === 'email' ? 'active' : ''}`}
-                  onClick={() => setFormData(p => ({ ...p, q5_contact_method: 'email' }))}
+                  onClick={() => handleContactMethodSelect('email')}
                 >
                   <span className="contact-radio">
                     {formData.q5_contact_method === 'email' && <span className="radio-dot"></span>}
@@ -518,6 +669,109 @@ const compactStyles = `
     isolation: isolate;
     overflow-y: auto;
     overflow-x: hidden;
+  }
+
+  /* ============= LUXURY VALIDATION BANNER ============= */
+  .validation-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(212, 185, 119, 0.95) 0%, rgba(184, 157, 95, 0.95) 100%);
+    border-bottom: 2px solid #D4B977;
+    box-shadow: 
+      0 4px 24px rgba(212, 185, 119, 0.3),
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(12px);
+    animation: bannerSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes bannerSlideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .banner-content {
+    max-width: 420px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .banner-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26, 24, 20, 0.2);
+    border: 1px solid rgba(26, 24, 20, 0.3);
+    border-radius: 50%;
+    font-size: 16px;
+    color: #1A1814;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .banner-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .banner-title {
+    margin: 0 0 2px 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1A1814;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+  }
+
+  .banner-subtitle {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(26, 24, 20, 0.7);
+    letter-spacing: 0.01em;
+    line-height: 1.3;
+  }
+
+  .banner-close {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid rgba(26, 24, 20, 0.2);
+    border-radius: 50%;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 400;
+    color: #1A1814;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .banner-close:hover {
+    background: rgba(26, 24, 20, 0.1);
+    border-color: rgba(26, 24, 20, 0.3);
+    transform: scale(1.05);
+  }
+
+  .banner-close:active {
+    transform: scale(0.95);
   }
 
   .compact-form-container::before {

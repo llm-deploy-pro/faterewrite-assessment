@@ -502,8 +502,7 @@ export default function ScreenOneBack() {
           flex-direction: column;
           gap: 2px;
           box-sizing: border-box;
-          overflow-y: auto;
-          overflow-x: hidden;
+          overflow: hidden;
         }
 
         /* 分隔线 - 压缩高度 */
