@@ -275,63 +275,200 @@ if (typeof window !== "undefined") {
   });
 }
 
+/* ===================== 轮播数据结构 ===================== */
+
+interface HeroProfile {
+  city: string;
+  age: number;
+  availability: string;
+  img: string;
+}
+
+const HERO_PROFILES: HeroProfile[] = [
+  {
+    city: "Miami",
+    age: 26,
+    availability: "Available tonight",
+    img: "/assets/girls/girl-miami.png"
+  },
+  {
+    city: "Los Angeles",
+    age: 26,
+    availability: "This weekend",
+    img: "/assets/girls/girl-la.png"
+  },
+  {
+    city: "New York",
+    age: 26,
+    availability: "This week",
+    img: "/assets/girls/girl-nyc.png"
+  }
+];
+
 /* ========================================================== */
 
 export default function ScreenOneFront() {
   const startTimeRef = useRef<number>(0);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
-  // 倒计时状态
-  const [countdown, setCountdown] = useState<number>(18);
+  const [countdown, setCountdown] = useState<number>(15);
   const [countdownStarted, setCountdownStarted] = useState(false);
   
-  // CTA 状态管理
   const [ctaVisible, setCtaVisible] = useState(false);
   const [hasClicked, setHasClicked] = useState(false);
   const [shouldPulse, setShouldPulse] = useState(false);
-  
-  // 🆕 实时数字状态 - 克制的上升动画
-  const [liveNumber, setLiveNumber] = useState<number>(847);
 
-  // ═══════════════════════════════════════════════════════════════
-  // 🆕 克制的实时数字动画 - 3-5秒+1，最高到850
-  // ═══════════════════════════════════════════════════════════════
+  const [currentSlide, setCurrentSlide] = useState<number>(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([0]));
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
+  const carouselTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const touchStartRef = useRef<number>(0);
+  const prefersReducedMotion = useRef(false);
+
   useEffect(() => {
-    const maxNumber = 850; // 最高到850就停止
-    const startDelay = 2000; // 2秒后开始
-    
-    const startTimer = setTimeout(() => {
-      const incrementInterval = setInterval(() => {
-        setLiveNumber(prev => {
-          if (prev >= maxNumber) {
-            clearInterval(incrementInterval);
-            return maxNumber;
-          }
-          // 随机3-5秒增加1
-          return prev + 1;
-        });
-      }, 3500 + Math.random() * 1500); // 3.5-5秒之间随机
-
-      return () => clearInterval(incrementInterval);
-    }, startDelay);
-
-    return () => clearTimeout(startTimer);
+    if (typeof window !== "undefined") {
+      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      prefersReducedMotion.current = mediaQuery.matches;
+    }
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════
-  // 倒计时逻辑 - MVP核心交互
-  // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
-    // 1.5秒后启动倒计时
+    const nextIndex = (currentSlide + 1) % HERO_PROFILES.length;
+    
+    [currentSlide, nextIndex].forEach(index => {
+      if (!loadedImages.has(index) && !failedImages.has(index)) {
+        const img = new Image();
+        img.src = HERO_PROFILES[index].img;
+        img.onload = () => {
+          setLoadedImages(prev => new Set(prev).add(index));
+        };
+        img.onerror = () => {
+          setFailedImages(prev => new Set(prev).add(index));
+        };
+      }
+    });
+  }, [currentSlide, loadedImages, failedImages]);
+
+  useEffect(() => {
+    if (HERO_PROFILES.length <= 1 || prefersReducedMotion.current) {
+      return;
+    }
+
+    if (isPaused || isTransitioning) {
+      return;
+    }
+
+    carouselTimerRef.current = setInterval(() => {
+      setIsTransitioning(true);
+      const nextIndex = (currentSlide + 1) % HERO_PROFILES.length;
+      
+      const isDev = window.location.hostname === 'localhost';
+      trackEvent(
+        `s1car_auto_${nextIndex}`,
+        "S1_Carousel_AutoNext",
+        {
+          index: nextIndex,
+          city: HERO_PROFILES[nextIndex].city,
+          from_index: currentSlide,
+        },
+        isDev
+      );
+
+      setCurrentSlide(nextIndex);
+      
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 500);
+    }, 3000);
+
+    return () => {
+      if (carouselTimerRef.current) {
+        clearInterval(carouselTimerRef.current);
+      }
+    };
+  }, [currentSlide, isPaused, isTransitioning]);
+
+  useEffect(() => {
+    const isDev = window.location.hostname === 'localhost';
+    trackEvent(
+      "s1car_imp",
+      "S1_Carousel_Impression",
+      {
+        index: 0,
+        city: HERO_PROFILES[0].city,
+      },
+      isDev
+    );
+  }, []);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPaused(document.hidden);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  const handleManualSlide = useCallback((targetIndex: number) => {
+    if (isTransitioning || targetIndex === currentSlide) return;
+
+    setIsTransitioning(true);
+    
+    const isDev = window.location.hostname === 'localhost';
+    trackEvent(
+      `s1car_manual_${targetIndex}`,
+      "S1_Carousel_Manual",
+      {
+        from: currentSlide,
+        to: targetIndex,
+        city: HERO_PROFILES[targetIndex].city,
+      },
+      isDev
+    );
+
+    setCurrentSlide(targetIndex);
+    
+    if (carouselTimerRef.current) {
+      clearInterval(carouselTimerRef.current);
+    }
+
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 500);
+  }, [currentSlide, isTransitioning]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartRef.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStartRef.current - touchEnd;
+
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        const nextIndex = (currentSlide + 1) % HERO_PROFILES.length;
+        handleManualSlide(nextIndex);
+      } else {
+        const prevIndex = (currentSlide - 1 + HERO_PROFILES.length) % HERO_PROFILES.length;
+        handleManualSlide(prevIndex);
+      }
+    }
+  }, [currentSlide, handleManualSlide]);
+
+  useEffect(() => {
     const startTimer = setTimeout(() => {
       setCountdownStarted(true);
       setCtaVisible(true);
       
-      // 开始倒计时
       countdownIntervalRef.current = setInterval(() => {
         setCountdown(prev => {
           if (prev <= 1) {
-            // 倒计时结束
             if (countdownIntervalRef.current) {
               clearInterval(countdownIntervalRef.current);
               countdownIntervalRef.current = null;
@@ -351,9 +488,6 @@ export default function ScreenOneFront() {
     };
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════
-  // 前屏加载成功事件 - 优化版
-  // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     const isDev = window.location.hostname === 'localhost';
     trackEvent(
@@ -367,13 +501,9 @@ export default function ScreenOneFront() {
     );
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════
-  // 3秒 & 10秒停留事件 - 参与深度追踪
-  // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
     startTimeRef.current = Date.now();
 
-    // 3秒停留 - 轻度参与
     const engage3sTimer = setTimeout(() => {
       const isDev = window.location.hostname === 'localhost';
       const actualDuration = Math.round((Date.now() - startTimeRef.current) / 1000);
@@ -391,7 +521,6 @@ export default function ScreenOneFront() {
       );
     }, 3000);
 
-    // 10秒停留 - 深度参与 🆕
     const engage10sTimer = setTimeout(() => {
       const isDev = window.location.hostname === 'localhost';
       const actualDuration = Math.round((Date.now() - startTimeRef.current) / 1000);
@@ -419,28 +548,24 @@ export default function ScreenOneFront() {
     };
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════
-  // 修改：脉冲动画提前触发逻辑
-  // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
-    // 当倒计时小于或等于4秒时，开始脉冲动画
     if (countdown <= 4) {
       setShouldPulse(true);
     }
   }, [countdown]);
 
-  // ═══════════════════════════════════════════════════════════════
-  // 共用的导航函数 - 统一处理跳转逻辑
-  // ═══════════════════════════════════════════════════════════════
   const navigateToNext = useCallback(() => {
-    // 标记已点击/已跳转
     setHasClicked(true);
     setShouldPulse(false);
     
-    // 停止倒计时
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
+    }
+    
+    if (carouselTimerRef.current) {
+      clearInterval(carouselTimerRef.current);
+      carouselTimerRef.current = null;
     }
     
     try {
@@ -449,11 +574,9 @@ export default function ScreenOneFront() {
       console.warn('localStorage not available:', error);
     }
 
-    // 优雅离场动画
     document.documentElement.classList.add('page-leave');
     
     setTimeout(() => {
-      // 发出事件，由 ScreenOne.tsx 监听后切换到后屏
       window.dispatchEvent(new CustomEvent('s1:cta:continue'));
       requestAnimationFrame(() => {
         document.documentElement.classList.remove('page-leave');
@@ -462,9 +585,6 @@ export default function ScreenOneFront() {
     }, 220);
   }, []);
 
-  // ═══════════════════════════════════════════════════════════════
-  // CTA 点击处理 - 真实用户点击
-  // ═══════════════════════════════════════════════════════════════
   const handleCTAClick = useCallback(() => {
     if (hasClicked) return;
     
@@ -474,7 +594,6 @@ export default function ScreenOneFront() {
       ? Math.round((clickTimestamp - startTimeRef.current) / 1000) 
       : 0;
 
-    // 真实用户点击事件
     trackEvent(
       "s1cc",
       "S1_Front_CTA_Click",
@@ -488,26 +607,21 @@ export default function ScreenOneFront() {
         trigger_type: 'user_click',
         countdown_value: countdown,
         time_on_page: timeOnPage,
+        current_carousel_city: HERO_PROFILES[currentSlide].city,
       },
       isDev
     );
 
-    // 执行导航
     navigateToNext();
-  }, [hasClicked, countdown, navigateToNext]);
+  }, [hasClicked, countdown, currentSlide, navigateToNext]);
 
-  // ═══════════════════════════════════════════════════════════════
-  // 倒计时结束后自动跳转 - 独立事件追踪
-  // ═══════════════════════════════════════════════════════════════
   useEffect(() => {
-    // 当倒计时归零且用户尚未点击时，触发自动跳转
     if (countdown === 0 && !hasClicked) {
       const isDev = window.location.hostname === 'localhost';
       const timeOnPage = startTimeRef.current > 0 
         ? Math.round((Date.now() - startTimeRef.current) / 1000) 
         : 0;
 
-      // 自动跳转事件 - 与用户点击区分
       trackEvent(
         "s1at",
         "S1_Front_Auto_Transition",
@@ -522,255 +636,196 @@ export default function ScreenOneFront() {
         isDev
       );
 
-      // 执行导航
       navigateToNext();
     }
   }, [countdown, hasClicked, navigateToNext]);
 
   return (
     <section className="screen-front-container">
-      {/* Logo 区域 */}
       <div className="logo-header">
         <Wordmark name="AXIS" href="/" />
       </div>
       
-      {/* 顶部系统信息 */}
       <div className="s1-top-label">
         <span className="label-text">— VERIFIED NETWORK • MEMBERS ONLY —</span>
       </div>
 
       <div className="screen-front-content">
-        {/* Main Headline */}
+        <div 
+          className="hero-carousel"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="carousel-top-badge">
+            <span className="badge-icon">✓</span>
+            <span className="badge-text">VERIFIED ELITE • AVAILABLE NATIONWIDE</span>
+          </div>
+
+          <div className="carousel-slides">
+            {HERO_PROFILES.map((profile, index) => {
+              const isActive = index === currentSlide;
+              const isLoaded = loadedImages.has(index);
+              const hasFailed = failedImages.has(index);
+
+              return (
+                <div
+                  key={index}
+                  className={`carousel-slide ${isActive ? 'active' : ''} ${isLoaded ? 'loaded' : ''}`}
+                >
+                  {!isLoaded && !hasFailed && (
+                    <div className="slide-placeholder">
+                      <div className="shimmer"></div>
+                    </div>
+                  )}
+                  
+                  {hasFailed ? (
+                    <div className="slide-fallback">
+                      <div className="fallback-content">
+                        <div className="fallback-icon">🔒</div>
+                        <div className="fallback-text">Private profile • Photo hidden</div>
+                      </div>
+                      <div className="slide-info-floating">
+                        <span className="location-pin">📍</span>
+                        <span className="location-text">{profile.city}, {profile.age} · {profile.availability}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <img
+                        src={profile.img}
+                        alt={`${profile.city} companion`}
+                        className="slide-image"
+                      />
+                      <div className="slide-gradient-premium"></div>
+                      
+                      <div className="slide-info-floating">
+                        <span className="location-pin">📍</span>
+                        <span className="location-text">{profile.city}, {profile.age} · {profile.availability}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {HERO_PROFILES.length > 1 && (
+            <div className="carousel-indicators-premium">
+              {HERO_PROFILES.map((_, index) => (
+                <button
+                  key={index}
+                  className={`indicator-premium ${index === currentSlide ? 'active' : ''}`}
+                  onClick={() => handleManualSlide(index)}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="more-available">
+          + 21 more verified companions available nationwide this week
+        </div>
+
         <div className="project-sigil">
-          STOP SWIPING. START MEETING.
+          STOP CHASING. START CHOOSING.
         </div>
         
-        {/* Sub-headline */}
         <div className="auth-protocol">
-          REAL WOMEN. IN PERSON. THIS WEEK.
+          Pre-screened · Nationwide · This week
         </div>
 
-        {/* Small print under Sub-headline */}
-        <p className="sub-headline-detail">
-          The only verified network for men who are done with fake profiles, endless chatting, and women who never show up.
-        </p>
-
-        {/* Section: What We Do */}
-        <div className="what-we-do-section">
-          <p className="value-prop-text">
-            You want a woman who actually shows up. Who looks like her photos. Who doesn't ghost you 2 hours before the date.
-          </p>
-          
-          <p className="value-prop-text value-prop-emphasis">
-            We arrange that.
-          </p>
-          
-          <p className="value-prop-text">
-            Dinner companions. Event dates. Weekend travel. Private time. You tell us your city, your timeline, your type. We send you this week's available women within the hour.
-          </p>
-          
-          <p className="value-prop-text">
-            No swiping. No texting for days. No "let's see if we vibe first." Just real women. Real meetings. Real results.
-          </p>
-
-          <p className="section-signature">
-            — AXIS Concierge System
-          </p>
-        </div>
-
-        {/* 💎 呼吸卡片：Network Performance */}
-        <div className="luxury-showcase">
-          <div className="showcase-header">
-            <div className="header-title">NETWORK PERFORMANCE</div>
-          </div>
-
-          {/* 第1层：震撼数字 */}
-          <div className="showcase-hero">
-            <div className="hero-number">{liveNumber}</div>
-            <div className="hero-statement">MEN GOT REAL DATES</div>
-            <div className="hero-tagline">Not apps. Not chat. Real.</div>
-          </div>
-
-          {/* 第2层：社会证明 */}
-          <div className="showcase-proof">
-            <div className="proof-column">
-              <div className="proof-metric">94%</div>
-              <div className="proof-label">CAME BACK</div>
-              <div className="proof-detail">Within 60 days</div>
-              <div className="proof-reason">Because it works</div>
-            </div>
-
-            <div className="proof-divider-vertical"></div>
-
-            <div className="proof-column">
-              <div className="proof-metric proof-price">$1.2K–$3.8K</div>
-              <div className="proof-label">INVESTMENT</div>
-              <div className="proof-detail">One dinner vs months</div>
-              <div className="proof-reason">of swiping & texting</div>
-            </div>
-          </div>
-
-          {/* 第3层：安全保障 */}
-          <div className="showcase-security">
-            <div className="security-badge">
-              <span className="security-icon">🔒</span>
-              <span className="security-title">VIDEO + ID • EVERY WOMAN</span>
-            </div>
-            <div className="security-policy">Zero tolerance for fake profiles</div>
-          </div>
-
-          {/* 底部汇总 */}
-          <div className="showcase-footer">
-            <span className="footer-badge">🌐</span>
-            <span className="footer-text">9+ daily • 50 states • Your city covered ✓</span>
-          </div>
-        </div>
-
-        {/* ⚠️ 排除矩阵：精简版 */}
         <div className="exclusion-block">
           <div className="exclusion-header">
             <span className="exclusion-icon">⚠</span>
-            <span className="exclusion-title">NOT YOUR TYPICAL SETUP</span>
+            <span className="exclusion-title">Why apps waste your time</span>
           </div>
 
           <div className="exclusion-compare">
             <div className="compare-row">
               <div className="compare-them">
-                <span className="them-label">THEM:</span>
-                <span className="them-text">Swipe 100 times, match with bots, waste weeks</span>
+                <span className="them-label">Apps:</span>
+                <span className="them-text">swipe → bots → flakes → ghosted</span>
               </div>
               <div className="compare-us">
-                <span className="us-label">US:</span>
-                <span className="us-text">Tell us your city, get real women, meet this week</span>
+                <span className="us-label">Us:</span>
+                <span className="us-text">city → verified → book → she shows</span>
               </div>
             </div>
           </div>
 
-          <div className="exclusion-statement">
-            <div className="statement-badge">✓</div>
-            <div className="statement-text">
-              We are the intermediary • You deal with us • We arrange her • You don't browse • You don't DM • You request • We deliver
-            </div>
+          <div className="network-status-bar">
+            <span className="status-indicator"></span>
+            <span className="status-text">Live: Miami · NYC · LA · Vegas · Dallas · Chicago · ATL · Houston</span>
           </div>
         </div>
 
-        {/* 🔐 准入协议：时间承诺版 */}
-        <div className="access-timeline">
-          <div className="timeline-header">
-            <span className="timeline-icon">🔐</span>
-            <span className="timeline-title">90 SECONDS FROM NOW</span>
-          </div>
-
-          <div className="timeline-promise">
-            <div className="promise-step">
-              <div className="step-time">NOW</div>
-              <div className="step-action">You submit city + type</div>
-            </div>
-
-            <div className="promise-arrow">↓</div>
-
-            <div className="promise-step">
-              <div className="step-time">+90s</div>
-              <div className="step-action">We start vetting</div>
-            </div>
-
-            <div className="promise-arrow">↓</div>
-
-            <div className="promise-step promise-step-final">
-              <div className="step-time">+2hrs</div>
-              <div className="step-action">Real photos in your inbox</div>
-            </div>
-          </div>
-
-          <div className="timeline-guarantee">
-            <div className="guarantee-badge">NO BROWSING • NO SWIPING • NO WAITING</div>
-            <div className="guarantee-note">
-              Members-only. No public photos. Women only meet pre-approved men.
-            </div>
-          </div>
-
-          <div className="timeline-terms">
-            <div className="term-item">
-              <span className="term-icon">⚙</span>
-              <span className="term-text">No verification = No access</span>
-            </div>
-            <div className="term-item">
-              <span className="term-icon">💰</span>
-              <span className="term-text">Book = Credited • Skip = 30-day access</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Final Section before CTA */}
         <div className={`interaction-core ${ctaVisible ? 'visible' : ''}`}>
           
-          {/* Nationwide Coverage */}
-          <p className="coverage-notice">
-            Nationwide coverage · All 50 US states
-          </p>
-          
-          {/* Scarcity Element */}
-          <p className="urgency-statement">
-            Limited spots this week:
+          <p className="scarcity-notice">
+            <span className="scarcity-number">21 spots left</span> this week · <span className="scarcity-warning">Last week sold out</span>
           </p>
 
-          {/* Countdown Timer */}
           <div className={`countdown-timer ${countdownStarted ? 'active' : ''} ${shouldPulse ? 'expired' : ''}`}>
+            <span className="countdown-label">Auto-continue in</span>
             <span className="countdown-number">{countdown}</span>
+            <span className="countdown-unit">sec</span>
           </div>
 
-          {/* CTA Button */}
           <button
             type="button"
             onClick={handleCTAClick}
             disabled={hasClicked}
             className={`s1-cta-btn ${shouldPulse ? 'pulse' : ''} ${shouldPulse ? 'urgent' : ''}`}
-            aria-label="Show me this week's women"
+            aria-label="See this week's women"
           >
-            <span className="s1-cta-text">SHOW ME THIS WEEK</span>
+            <span className="s1-cta-text">SEE THIS WEEK'S WOMEN</span>
             <span className="s1-cta-arrow">→</span>
           </button>
           
-          <p className="cta-disclaimer">
-            Authorization required after submission. Refundable toward booking.
+          <p className="cta-subtext">
+            Showing {HERO_PROFILES[currentSlide].city} availability
           </p>
 
-          <p className="footer-anchor">
-            This is not a fantasy. This is a real service for men who want results, not conversations. Discreet. Professional. No refunds on wasted time — we handle that.
+          <p className="social-proof-mini">
+            <span className="proof-icon">👥</span>
+            2,400+ verified arrangements completed
           </p>
+
+          <p className="cta-disclaimer">
+            $49 verification • fully credited toward arrangement • full photos after approval
+          </p>
+
+          <p className="security-notice-enhanced">
+            <span className="security-icon">🔒</span>
+            <span className="security-text">Bank-grade encryption · Zero data retention</span>
+          </p>
+
+          <div className="trust-footer">
+            <span className="trust-item">🛡️ ID verified</span>
+            <span className="trust-divider">·</span>
+            <span className="trust-item">💳 Secure payment</span>
+            <span className="trust-divider">·</span>
+            <span className="trust-item">⚡ Instant access</span>
+          </div>
 
         </div>
       </div>
 
-      {/* @ts-ignore - styled-jsx specific attribute */}
+      {/* @ts-ignore */}
       <style jsx>{`
-        /* ═══════════════════════════════════════════════════════════════════
-           🎯 呼吸感优化方案 - 保持文案完整性
-           策略：统一间距系统 + 压缩底部空白 + 增强视觉层次
-           目标：优秀可读性 + 舒适呼吸感 + 高端品质感
-           ═══════════════════════════════════════════════════════════════════ */
         :root {
           --bg-primary: #12161f;
           --bg-secondary: #1a1f2a;
-          --bg-card: rgba(20, 25, 35, 0.3);
           --gold: #e0bc87;
           --gold-bright: #fff5e6;
-          --gold-hover: #e5c598;
-          --gold-glow: rgba(224, 188, 135, 0.5);
           --cream: #f5f5f0;
-          --cream-bright: #fafaf5;
-          --cream-dim: rgba(245, 245, 240, 0.7);
           --amber: rgba(255, 191, 0, 0.45);
-          
-          /* 🎯 极致压缩间距系统 */
-          --spacing-xs: 4px;
-          --spacing-sm: 6px;
-          --spacing-md: 8px;
-          --spacing-lg: 10px;
-          --spacing-xl: 12px;
+          --gold-indicator: #F4D58A;
         }
 
-        /* 禁止滚动 - 严格执行 */
         :global(html), :global(body) {
           overflow: hidden !important;
           height: 100% !important;
@@ -778,9 +833,6 @@ export default function ScreenOneFront() {
           width: 100% !important;
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           容器基础 - 优化背景层次
-           ═══════════════════════════════════════════════════════════════════ */
         .screen-front-container {
           position: fixed;
           inset: 0;
@@ -790,7 +842,7 @@ export default function ScreenOneFront() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: flex-start;
+          justify-content: center;
           background: linear-gradient(135deg, 
             var(--bg-primary) 0%, 
             var(--bg-secondary) 100%
@@ -820,60 +872,45 @@ export default function ScreenOneFront() {
           z-index: 1;
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           Logo 头部 - 优化尺寸和阴影
-           ═══════════════════════════════════════════════════════════════════ */
         .logo-header {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
           z-index: 100;
-          padding: 12px 16px;
-          height: auto;
+          padding: 10px 16px;
           background: linear-gradient(to bottom,
             rgba(18, 22, 31, 0.95) 0%,
             rgba(18, 22, 31, 0.85) 60%,
             transparent 100%
           );
           backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
           box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           顶部标签 - 优化位置和大小
-           ═══════════════════════════════════════════════════════════════════ */
         .s1-top-label {
           position: fixed;
-          top: 52px;
+          top: 48px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 90;
           font-size: 7px;
           line-height: 1;
-          font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+          font-family: 'SF Mono', 'Monaco', monospace;
           font-weight: 500;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          white-space: nowrap;
           opacity: 0;
           animation: topLabelReveal 600ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
-          padding: 6px 12px;
+          padding: 5px 12px;
           background: rgba(20, 25, 35, 0.6);
           border: 1px solid rgba(224, 188, 135, 0.2);
           border-radius: 20px;
           backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          box-shadow: 
-            0 2px 12px rgba(0, 0, 0, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
         .label-text {
           color: rgba(224, 188, 135, 0.95);
-          font-weight: 500;
-          letter-spacing: 0.06em;
         }
 
         @keyframes topLabelReveal {
@@ -887,43 +924,366 @@ export default function ScreenOneFront() {
           }
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           主内容容器 - 压缩顶部间距
-           ═══════════════════════════════════════════════════════════════════ */
         .screen-front-content {
           position: relative;
           width: 100%;
           max-width: 600px;
           text-align: center;
           color: var(--cream);
-          padding: 72px 8px 4px;
+          padding: 20px 10px 0;
           z-index: 2;
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: flex-start;
-          flex: 1;
-          min-height: 0;
+        }
+
+        .hero-carousel {
+          width: 100%;
+          max-width: 360px;
+          height: 200px;
+          position: relative;
+          margin: 0 0 5px 0;
+          border-radius: 18px;
+          overflow: hidden;
+          opacity: 0;
+          animation: carouselRevealPremium 800ms cubic-bezier(0.23,1,0.32,1) 600ms forwards;
+          box-shadow: 
+            0 0 0 1px rgba(224, 188, 135, 0.15),
+            0 4px 12px rgba(0, 0, 0, 0.25),
+            0 8px 24px rgba(0, 0, 0, 0.2),
+            0 16px 48px rgba(0, 0, 0, 0.15),
+            0 0 60px rgba(224, 188, 135, 0.12),
+            inset 0 0 30px rgba(224, 188, 135, 0.03);
+          transition: all 600ms cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .hero-carousel::before {
+          content: '';
+          position: absolute;
+          inset: -2px;
+          border-radius: 20px;
+          background: linear-gradient(
+            135deg,
+            rgba(224, 188, 135, 0) 0%,
+            rgba(224, 188, 135, 0.4) 25%,
+            rgba(255, 245, 230, 0.6) 50%,
+            rgba(224, 188, 135, 0.4) 75%,
+            rgba(224, 188, 135, 0) 100%
+          );
+          background-size: 200% 200%;
+          animation: borderGlow 4s ease-in-out infinite;
+          opacity: 0.8;
+          pointer-events: none;
+          z-index: 1;
+          filter: blur(1px);
+        }
+
+        @keyframes borderGlow {
+          0%, 100% { 
+            background-position: 0% 50%;
+            opacity: 0.6;
+          }
+          50% { 
+            background-position: 100% 50%;
+            opacity: 1;
+          }
+        }
+
+        .hero-carousel::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 18px;
+          background: 
+            radial-gradient(circle at 0% 0%, rgba(255, 245, 230, 0.25) 0%, transparent 15%),
+            radial-gradient(circle at 100% 0%, rgba(255, 245, 230, 0.15) 0%, transparent 15%),
+            radial-gradient(circle at 0% 100%, rgba(255, 245, 230, 0.15) 0%, transparent 15%),
+            radial-gradient(circle at 100% 100%, rgba(255, 245, 230, 0.25) 0%, transparent 15%);
+          pointer-events: none;
+          z-index: 3;
+          opacity: 0.7;
+        }
+
+        @keyframes carouselRevealPremium {
+          0% {
+            opacity: 0;
+            transform: scale(0.96) translateY(12px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        @media (hover: hover) {
+          .hero-carousel:hover {
+            transform: scale(1.02);
+            box-shadow: 
+              0 0 0 2px rgba(224, 188, 135, 0.25),
+              0 6px 16px rgba(0, 0, 0, 0.3),
+              0 12px 32px rgba(0, 0, 0, 0.25),
+              0 24px 64px rgba(0, 0, 0, 0.2),
+              0 0 80px rgba(224, 188, 135, 0.2),
+              inset 0 0 40px rgba(224, 188, 135, 0.05);
+          }
+
+          .hero-carousel:hover::before {
+            opacity: 1;
+            animation-duration: 3s;
+          }
+        }
+
+        .carousel-top-badge {
+          position: absolute;
+          top: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 10;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 12px;
+          background: linear-gradient(135deg,
+            rgba(224, 188, 135, 0.95) 0%,
+            rgba(212, 175, 55, 0.9) 100%
+          );
+          border-radius: 9999px;
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          box-shadow: 
+            0 4px 16px rgba(0, 0, 0, 0.4),
+            0 0 30px rgba(224, 188, 135, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+          animation: badgeFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes badgeFloat {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-2px); }
+        }
+
+        .badge-icon {
+          font-size: 9px;
+          font-weight: 700;
+          color: #1a1f2a;
+          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+        }
+
+        .badge-text {
+          font-size: 6.5px;
+          font-weight: 700;
+          color: #1a1f2a;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          font-family: 'SF Mono', 'Monaco', monospace;
+          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+        }
+
+        .carousel-slides {
+          position: relative;
+          width: 100%;
+          height: 100%;
+        }
+
+        .carousel-slide {
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          transition: opacity 500ms cubic-bezier(0.4, 0, 0.2, 1);
+          pointer-events: none;
+        }
+
+        .carousel-slide.active {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        .slide-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .slide-gradient-premium {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 70%;
+          background: linear-gradient(to bottom,
+            transparent 0%,
+            rgba(0, 0, 0, 0.3) 40%,
+            rgba(0, 0, 0, 0.75) 100%
+          );
+          pointer-events: none;
+        }
+
+        .slide-info-floating {
+          position: absolute;
+          bottom: 10px;
+          left: 10px;
+          right: 10px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 5px 10px;
+          background: rgba(15, 21, 31, 0.6);
+          border-radius: 6px;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 0.5px solid rgba(224, 188, 135, 0.15);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          z-index: 2;
+        }
+
+        .location-pin {
+          font-size: 10px;
+          line-height: 1;
+          filter: drop-shadow(0 0 8px rgba(224, 188, 135, 0.6));
+        }
+
+        .location-text {
+          font-size: 11px;
+          font-weight: 600;
+          color: #ffffff;
+          letter-spacing: 0.02em;
+          line-height: 1;
+          text-shadow: 
+            0 0 20px rgba(255, 255, 255, 0.4),
+            0 2px 4px rgba(0, 0, 0, 0.6);
+        }
+
+        .slide-placeholder {
+          width: 100%;
+          height: 100%;
+          background: #121826;
+          position: relative;
           overflow: hidden;
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           Main Headline - 压缩字号
-           ═══════════════════════════════════════════════════════════════════ */
+        .shimmer {
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(224, 188, 135, 0.1) 50%,
+            transparent 100%
+          );
+          animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+
+        .slide-fallback {
+          width: 100%;
+          height: 100%;
+          background: #121826;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+
+        .fallback-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .fallback-icon {
+          font-size: 32px;
+          opacity: 0.6;
+        }
+
+        .fallback-text {
+          font-size: 13px;
+          color: rgba(245, 245, 240, 0.7);
+        }
+
+        .carousel-indicators-premium {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          display: flex;
+          gap: 6px;
+          z-index: 10;
+        }
+
+        .indicator-premium {
+          width: 24px;
+          height: 3px;
+          background: rgba(224, 188, 135, 0.2);
+          border: none;
+          border-radius: 3px;
+          cursor: pointer;
+          transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
+          padding: 0;
+          box-shadow: 
+            0 2px 8px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .indicator-premium.active {
+          background: linear-gradient(135deg,
+            #F4D58A 0%,
+            #e0bc87 100%
+          );
+          box-shadow: 
+            0 0 16px rgba(244, 213, 138, 0.6),
+            0 2px 12px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .indicator-premium:hover:not(.active) {
+          background: rgba(244, 213, 138, 0.5);
+          box-shadow: 
+            0 0 12px rgba(244, 213, 138, 0.4),
+            0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .more-available {
+          margin: 0 0 5px 0;
+          font-size: 10px;
+          font-weight: 500;
+          color: #F4D58A;
+          letter-spacing: 0.02em;
+          line-height: 1;
+          opacity: 0;
+          animation: moreAvailableReveal 600ms cubic-bezier(0.23,1,0.32,1) 1000ms forwards;
+        }
+
+        @keyframes moreAvailableReveal {
+          0% {
+            opacity: 0;
+            transform: translateY(5px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         .project-sigil {
-          margin: 0 0 4px 0;
-          padding: 4px 12px;
+          margin: 0 0 8px 0;
+          padding: 8px 12px;
           font-size: 11px;
           line-height: 1;
           color: rgba(224, 188, 135, 1);
           font-family: 'Bodoni MT', 'Didot', Georgia, serif;
           letter-spacing: 0.1em;
-          font-weight: 400;
           text-transform: uppercase;
-          text-align: center;
-          position: relative;
           opacity: 0;
-          animation: sigilReveal 800ms cubic-bezier(0.23,1,0.32,1) 200ms forwards;
+          animation: sigilReveal 800ms cubic-bezier(0.23,1,0.32,1) 1200ms forwards;
           border: 1px solid rgba(224, 188, 135, 0.3);
           border-radius: 4px;
           background: linear-gradient(135deg,
@@ -931,7 +1291,6 @@ export default function ScreenOneFront() {
             rgba(224, 188, 135, 0.02) 100%
           );
           backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
           box-shadow: 
             0 2px 12px rgba(0, 0, 0, 0.2),
             inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -951,22 +1310,15 @@ export default function ScreenOneFront() {
           }
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           Sub-headline - 压缩字号
-           ═══════════════════════════════════════════════════════════════════ */
         .auth-protocol {
-          margin: 0 0 3px 0;
-          padding: 0;
+          margin: 0 0 8px 0;
           font-size: 8px;
-          line-height: 1;
           color: rgba(224, 188, 135, 0.85);
-          font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-          font-weight: 500;
-          text-align: center;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          letter-spacing: 0.02em;
+          font-weight: 400;
           opacity: 0;
-          animation: authFade 600ms cubic-bezier(0.23,1,0.32,1) 400ms forwards;
+          animation: authFade 600ms cubic-bezier(0.23,1,0.32,1) 1400ms forwards;
           text-shadow: 0 0 20px rgba(224, 188, 135, 0.15);
         }
 
@@ -974,298 +1326,11 @@ export default function ScreenOneFront() {
           to { opacity: 1; }
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           Small print - 增大至7px
-           ═══════════════════════════════════════════════════════════════════ */
-        .sub-headline-detail {
-          margin: 0 0 6px 0;
-          padding: 0 8px;
-          font-size: 7px;
-          line-height: 1.3;
-          color: rgba(245, 245, 240, 0.9);
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-weight: 400;
-          text-align: center;
-          font-style: italic;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           "What We Do" 部分 - 压缩间距
-           ═══════════════════════════════════════════════════════════════════ */
-        .what-we-do-section {
-          width: 100%;
-          max-width: 480px;
-          margin: 0 0 6px 0;
-          padding: 6px 8px;
-          background: linear-gradient(135deg, 
-            rgba(20, 25, 35, 0.5) 0%, 
-            rgba(15, 20, 30, 0.4) 100%
-          );
-          border: 1px solid rgba(224, 188, 135, 0.2);
-          border-radius: 6px;
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          box-shadow: 
-            0 4px 24px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(224, 188, 135, 0.05);
-        }
-
-        .value-prop-text {
-          margin: 0 0 4px 0;
-          padding: 0;
-          font-size: 7px;
-          line-height: 1.35;
-          color: rgba(255, 250, 240, 0.95);
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-weight: 400;
-          letter-spacing: 0.01em;
-          text-align: center;
-        }
-
-        .value-prop-text:last-of-type {
-          margin-bottom: 4px;
-        }
-
-        .value-prop-emphasis {
-          color: rgba(224, 188, 135, 1);
-          font-weight: 600;
-          font-size: 7.5px;
-          text-shadow: 0 0 20px rgba(224, 188, 135, 0.3);
-          margin: 2px 0;
-        }
-
-        .section-signature {
-          margin: 0;
-          padding: 0;
-          font-size: 5.5px;
-          line-height: 1.3;
-          color: rgba(224, 188, 135, 0.85);
-          font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
-          font-weight: 400;
-          font-style: italic;
-          text-align: center;
-          letter-spacing: 0.05em;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           💎 呼吸卡片：Luxury Showcase - 再压缩20%版本
-           策略：保持字号，进一步压缩padding和gap
-           ═══════════════════════════════════════════════════════════════════ */
-        .luxury-showcase {
-          width: 100%;
-          max-width: 480px;
-          margin: 0 0 6px 0;
-          padding: 3px 5px 2px;
-          background: linear-gradient(135deg,
-            rgba(224, 188, 135, 0.04) 0%,
-            rgba(20, 25, 35, 0.6) 100%
-          );
-          border: 1px solid rgba(224, 188, 135, 0.25);
-          border-radius: 6px;
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          box-shadow:
-            0 4px 32px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 245, 230, 0.08);
-          animation: luxuryBreathe 6s ease-in-out infinite;
-        }
-
-        @keyframes luxuryBreathe {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(0.998); }
-        }
-
-        .showcase-header {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          margin-bottom: 1px;
-        }
-
-        .header-title {
-          font-size: 5.5px;
-          font-weight: 600;
-          color: rgba(224, 188, 135, 0.9);
-          font-family: 'SF Mono', 'Monaco', monospace;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-        }
-
-        /* 第1层：震撼数字 - 保持字号40px */
-        .showcase-hero {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0px;
-          margin-bottom: 2px;
-          padding: 0;
-        }
-
-        .hero-number {
-          font-size: 40px;
-          font-weight: 400;
-          color: var(--gold-bright);
-          font-family: 'SF Mono', 'Monaco', monospace;
-          letter-spacing: 0.05em;
-          line-height: 0.9;
-          text-shadow: 
-            0 0 35px rgba(255, 245, 230, 0.6),
-            0 0 70px rgba(224, 188, 135, 0.4);
-          animation: numberReveal 1.5s ease-out forwards;
-          transition: all 800ms cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes numberReveal {
-          from { opacity: 0; transform: scale(0.8); }
-          to { opacity: 1; transform: scale(1); }
-        }
-
-        .hero-statement {
-          font-size: 7px;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 1);
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          line-height: 1;
-        }
-
-        .hero-tagline {
-          font-size: 5.5px;
-          color: rgba(224, 188, 135, 0.9);
-          font-style: italic;
-          letter-spacing: 0.04em;
-          line-height: 1;
-        }
-
-        /* 第2层：社会证明 - 保持字号，压缩间距 */
-        .showcase-proof {
-          display: grid;
-          grid-template-columns: 1fr auto 1fr;
-          gap: 5px;
-          margin-bottom: 2px;
-          padding: 0;
-        }
-
-        .proof-column {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0px;
-        }
-
-        .proof-metric {
-          font-size: 24px;
-          font-weight: 600;
-          color: var(--gold);
-          font-family: 'SF Mono', 'Monaco', monospace;
-          letter-spacing: 0.04em;
-          line-height: 0.9;
-          text-shadow: 0 0 18px rgba(224, 188, 135, 0.4);
-        }
-
-        .proof-price {
-          font-size: 16px;
-        }
-
-        .proof-label {
-          font-size: 6px;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.95);
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          line-height: 1;
-        }
-
-        .proof-detail {
-          font-size: 5px;
-          color: rgba(224, 188, 135, 0.75);
-          line-height: 1.1;
-        }
-
-        .proof-reason {
-          font-size: 4.5px;
-          color: rgba(224, 188, 135, 0.65);
-          font-style: italic;
-          line-height: 1.1;
-        }
-
-        .proof-divider-vertical {
-          width: 1px;
-          background: linear-gradient(to bottom,
-            transparent,
-            rgba(224, 188, 135, 0.25),
-            transparent
-          );
-        }
-
-        /* 第3层：安全保障 - 压缩padding */
-        .showcase-security {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0px;
-          margin-bottom: 1px;
-          padding: 2px 3px;
-          background: rgba(224, 188, 135, 0.06);
-          border-radius: 4px;
-          border: 1px solid rgba(224, 188, 135, 0.15);
-        }
-
-        .security-badge {
-          display: flex;
-          align-items: center;
-          gap: 2px;
-        }
-
-        .security-icon {
-          font-size: 6px;
-          filter: drop-shadow(0 0 6px rgba(224, 188, 135, 0.4));
-        }
-
-        .security-title {
-          font-size: 5.5px;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 1);
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          line-height: 1;
-        }
-
-        .security-policy {
-          font-size: 5px;
-          color: rgba(224, 188, 135, 0.8);
-          line-height: 1.1;
-        }
-
-        /* 底部汇总 - 压缩padding */
-        .showcase-footer {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 2px;
-          padding-top: 1px;
-          border-top: 1px solid rgba(224, 188, 135, 0.15);
-        }
-
-        .footer-badge {
-          font-size: 6px;
-        }
-
-        .footer-text {
-          font-size: 5px;
-          color: rgba(224, 188, 135, 0.85);
-          letter-spacing: 0.04em;
-          line-height: 1;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           ⚠️ 排除矩阵：精简对比版 - 压缩版
-           ═══════════════════════════════════════════════════════════════════ */
         .exclusion-block {
           width: 100%;
           max-width: 480px;
-          margin: 0 0 6px 0;
-          padding: 5px 8px;
+          margin: 0 0 8px 0;
+          padding: 5px 10px;
           background: linear-gradient(135deg,
             rgba(255, 191, 0, 0.03) 0%,
             rgba(20, 25, 35, 0.6) 100%
@@ -1273,7 +1338,6 @@ export default function ScreenOneFront() {
           border: 1px solid var(--amber);
           border-radius: 6px;
           backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
           box-shadow:
             0 0 16px rgba(255, 191, 0, 0.15),
             0 4px 32px rgba(0, 0, 0, 0.4),
@@ -1285,13 +1349,13 @@ export default function ScreenOneFront() {
           align-items: center;
           justify-content: center;
           gap: 4px;
-          margin-bottom: 3px;
-          padding-bottom: 2px;
+          margin-bottom: 4px;
+          padding-bottom: 3px;
           border-bottom: 1px solid rgba(255, 191, 0, 0.2);
         }
 
         .exclusion-icon {
-          font-size: 6px;
+          font-size: 7px;
           animation: warningPulse 3s ease-in-out infinite;
         }
 
@@ -1301,16 +1365,16 @@ export default function ScreenOneFront() {
         }
 
         .exclusion-title {
-          font-size: 5.5px;
+          font-size: 7.5px;
           font-weight: 600;
           color: var(--amber);
           font-family: 'SF Mono', 'Monaco', monospace;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
         }
 
         .exclusion-compare {
-          margin-bottom: 3px;
+          margin-bottom: 5px;
         }
 
         .compare-row {
@@ -1322,15 +1386,15 @@ export default function ScreenOneFront() {
         .compare-them {
           display: flex;
           align-items: baseline;
-          gap: 4px;
-          padding: 3px 6px;
+          gap: 5px;
+          padding: 3px 8px;
           background: rgba(139, 0, 0, 0.08);
           border: 1px solid rgba(255, 191, 0, 0.2);
-          border-radius: 3px;
+          border-radius: 4px;
         }
 
         .them-label {
-          font-size: 5px;
+          font-size: 7px;
           font-weight: 700;
           color: rgba(255, 180, 180, 0.9);
           text-transform: uppercase;
@@ -1339,23 +1403,24 @@ export default function ScreenOneFront() {
         }
 
         .them-text {
-          font-size: 5.5px;
-          color: rgba(255, 210, 180, 0.8);
-          line-height: 1.3;
+          font-size: 8px;
+          font-weight: 500;
+          color: rgba(255, 210, 180, 0.9);
+          line-height: 1.2;
         }
 
         .compare-us {
           display: flex;
           align-items: baseline;
-          gap: 4px;
-          padding: 3px 6px;
+          gap: 5px;
+          padding: 3px 8px;
           background: rgba(224, 188, 135, 0.08);
           border: 1px solid rgba(224, 188, 135, 0.25);
-          border-radius: 3px;
+          border-radius: 4px;
         }
 
         .us-label {
-          font-size: 5px;
+          font-size: 7px;
           font-weight: 700;
           color: var(--gold);
           text-transform: uppercase;
@@ -1364,201 +1429,55 @@ export default function ScreenOneFront() {
         }
 
         .us-text {
-          font-size: 5.5px;
-          color: rgba(245, 245, 240, 0.9);
-          line-height: 1.3;
-        }
-
-        .exclusion-statement {
-          display: flex;
-          align-items: flex-start;
-          gap: 4px;
-          padding: 3px 6px;
-          background: rgba(224, 188, 135, 0.08);
-          border: 1px solid rgba(224, 188, 135, 0.2);
-          border-radius: 4px;
-        }
-
-        .statement-badge {
           font-size: 8px;
-          color: var(--gold);
-          flex-shrink: 0;
-          text-shadow: 0 0 10px rgba(224, 188, 135, 0.4);
+          font-weight: 500;
+          color: rgba(245, 245, 240, 0.95);
+          line-height: 1.2;
         }
 
-        .statement-text {
-          font-size: 5.5px;
-          line-height: 1.35;
-          color: rgba(224, 188, 135, 0.95);
-          text-align: left;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           🔐 准入协议：时间承诺版 - 横向时间线设计
-           ═══════════════════════════════════════════════════════════════════ */
-        .access-timeline {
-          width: 100%;
-          max-width: 480px;
-          margin: 0 0 6px 0;
-          padding: 5px 8px;
-          background: linear-gradient(135deg,
-            rgba(224, 188, 135, 0.04) 0%,
-            rgba(20, 25, 35, 0.6) 100%
-          );
-          border: 1px solid rgba(224, 188, 135, 0.2);
+        .network-status-bar {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 5px 10px;
+          height: 28px;
+          background: rgba(15, 21, 31, 0.7);
+          border: 0.5px solid rgba(180, 255, 180, 0.2);
           border-radius: 6px;
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          box-shadow:
-            0 4px 32px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(224, 188, 135, 0.06);
+          backdrop-filter: blur(16px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
-        .timeline-header {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          margin-bottom: 4px;
-          padding-bottom: 2px;
-          border-bottom: 1px solid rgba(224, 188, 135, 0.15);
+        .status-indicator {
+          width: 6px;
+          height: 6px;
+          background: #4ade80;
+          border-radius: 50%;
+          animation: statusPulse 2s ease-in-out infinite;
+          box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+          flex-shrink: 0;
         }
 
-        .timeline-icon {
-          font-size: 6px;
-          filter: drop-shadow(0 0 6px rgba(224, 188, 135, 0.3));
+        @keyframes statusPulse {
+          0%, 100% { 
+            opacity: 1; 
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 0.6; 
+            transform: scale(0.9);
+          }
         }
 
-        .timeline-title {
-          font-size: 6.5px;
-          font-weight: 700;
-          color: var(--gold-bright);
-          font-family: 'SF Mono', 'Monaco', monospace;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          text-shadow: 0 0 12px rgba(255, 245, 230, 0.3);
-        }
-
-        /* 🎯 横向时间线布局 */
-        .timeline-promise {
-          display: grid;
-          grid-template-columns: 1fr auto 1fr auto 1fr;
-          align-items: center;
-          gap: 4px;
-          margin-bottom: 4px;
-          padding: 2px 0;
-        }
-
-        .promise-step {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 2px;
-          padding: 4px 6px;
-          background: rgba(20, 25, 35, 0.4);
-          border: 1px solid rgba(224, 188, 135, 0.15);
-          border-radius: 3px;
-          transition: all 300ms ease;
-          min-width: 0;
-        }
-
-        .promise-step:hover {
-          transform: scale(1.03);
-          border-color: rgba(224, 188, 135, 0.3);
-        }
-
-        .promise-step-final {
-          border-color: rgba(224, 188, 135, 0.4);
-          box-shadow: 0 0 12px rgba(224, 188, 135, 0.2);
-          background: rgba(224, 188, 135, 0.08);
-        }
-
-        .step-time {
-          font-size: 6.5px;
-          font-weight: 700;
-          color: var(--gold);
-          font-family: 'SF Mono', 'Monaco', monospace;
-          letter-spacing: 0.06em;
-          line-height: 1;
-          white-space: nowrap;
-        }
-
-        .step-action {
-          font-size: 5.5px;
-          color: rgba(245, 245, 240, 0.9);
-          text-align: center;
-          line-height: 1.3;
-        }
-
-        /* 横向箭头 */
-        .promise-arrow {
+        .status-text {
           font-size: 8px;
-          color: rgba(224, 188, 135, 0.5);
+          font-weight: 500;
+          color: rgba(180, 255, 180, 0.9);
+          font-family: 'SF Mono', 'Monaco', monospace;
+          letter-spacing: 0.02em;
           line-height: 1;
-          flex-shrink: 0;
         }
 
-        .timeline-guarantee {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1px;
-          margin-bottom: 3px;
-          padding: 3px 6px;
-          background: rgba(224, 188, 135, 0.06);
-          border-radius: 4px;
-          border: 1px solid rgba(224, 188, 135, 0.15);
-        }
-
-        .guarantee-badge {
-          font-size: 5.5px;
-          font-weight: 700;
-          color: var(--gold);
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          line-height: 1.1;
-        }
-
-        .guarantee-note {
-          font-size: 5px;
-          color: rgba(224, 188, 135, 0.75);
-          text-align: center;
-          line-height: 1.3;
-        }
-
-        /* 条款横向排列 */
-        .timeline-terms {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 3px;
-        }
-
-        .term-item {
-          display: flex;
-          align-items: center;
-          gap: 3px;
-          padding: 2px 4px;
-          background: rgba(20, 25, 35, 0.3);
-          border-radius: 2px;
-        }
-
-        .term-icon {
-          font-size: 6px;
-          flex-shrink: 0;
-        }
-
-        .term-text {
-          font-size: 5px;
-          color: rgba(224, 188, 135, 0.75);
-          line-height: 1.3;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        /* ═══════════════════════════════════════════════════════════════════
-           交互核心区域 - 极致压缩底部
-           ═══════════════════════════════════════════════════════════════════ */
         .interaction-core {
           opacity: 0;
           transform: translateY(8px);
@@ -1567,8 +1486,6 @@ export default function ScreenOneFront() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          margin-bottom: 0;
-          padding-bottom: 4px;
         }
 
         .interaction-core.visible {
@@ -1576,45 +1493,36 @@ export default function ScreenOneFront() {
           transform: translateY(0);
         }
 
-        .coverage-notice {
-          margin: 0 0 3px 0;
-          padding: 0 8px;
-          font-size: 6.5px;
+        .scarcity-notice {
+          margin: 0 0 5px 0;
+          padding: 0 10px;
+          font-size: 9px;
           line-height: 1.3;
           color: rgba(224, 188, 135, 0.88);
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-weight: 300;
-          font-style: italic;
-          letter-spacing: 0.015em;
-          text-align: center;
-          text-shadow: 0 0 15px rgba(224, 188, 135, 0.12);
-        }
-
-        .urgency-statement {
-          margin: 0 0 4px 0;
-          padding: 0 8px;
-          font-size: 7px;
-          line-height: 1.3;
-          color: rgba(255, 252, 245, 0.94);
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           font-weight: 400;
-          letter-spacing: 0.01em;
           text-align: center;
-          text-shadow: 
-            0 1px 8px rgba(224, 188, 135, 0.12),
-            0 0 20px rgba(255, 245, 230, 0.06);
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           倒计时器 - 缩小10%
-           ═══════════════════════════════════════════════════════════════════ */
+        .scarcity-number {
+          font-weight: 700;
+          font-size: 10px;
+          color: #F4D58A;
+        }
+
+        .scarcity-warning {
+          font-weight: 600;
+          color: rgba(255, 180, 180, 0.9);
+        }
+
         .countdown-timer {
-          margin: 0 0 6px 0;
-          padding: 5px 12px;
+          margin: 0 0 5px 0;
+          padding: 4px 12px;
           color: rgba(255, 255, 255, 0.98);
           display: flex;
-          align-items: center;
+          align-items: baseline;
           justify-content: center;
+          gap: 6px;
           opacity: 0;
           transform: scale(0.8);
           transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
@@ -1625,12 +1533,10 @@ export default function ScreenOneFront() {
           border: 2px solid rgba(224, 188, 135, 0.35);
           border-radius: 20px;
           backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
           box-shadow: 
             0 0 40px rgba(224, 188, 135, 0.3),
             0 6px 24px rgba(0, 0, 0, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.08),
-            inset 0 0 30px rgba(224, 188, 135, 0.05);
+            inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
         .countdown-timer.active {
@@ -1658,30 +1564,38 @@ export default function ScreenOneFront() {
           }
         }
 
+        .countdown-label {
+          font-size: 8px;
+          color: rgba(224, 188, 135, 0.7);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-family: 'SF Mono', 'Monaco', monospace;
+        }
+
         .countdown-number {
-          font-size: 47px;
+          font-size: 28px;
           line-height: 1;
-          font-weight: 400;
           color: var(--gold-bright);
-          font-family: 'SF Mono', 'Monaco', 'Consolas', 'Courier New', monospace;
+          font-family: 'SF Mono', 'Monaco', monospace;
           letter-spacing: 0.05em;
           font-variant-numeric: tabular-nums;
           text-shadow: 
             0 0 35px rgba(255, 245, 230, 0.8),
             0 0 70px rgba(224, 188, 135, 0.6),
-            0 0 100px rgba(255, 245, 230, 0.3),
             0 2px 4px rgba(0, 0, 0, 0.3);
-          position: relative;
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           CTA 按钮 - 高级香槟金质感设计
-           ═══════════════════════════════════════════════════════════════════ */
+        .countdown-unit {
+          font-size: 10px;
+          color: rgba(224, 188, 135, 0.8);
+          font-family: 'SF Mono', 'Monaco', monospace;
+        }
+
         .s1-cta-btn {
           width: 100%;
           max-width: 360px;
-          height: 46px;
-          margin: 0 auto 4px;
+          height: 44px;
+          margin: 0 auto 2px;
           border-radius: 6px;
           background: linear-gradient(135deg, 
             rgba(224, 188, 135, 0.15) 0%,
@@ -1690,7 +1604,7 @@ export default function ScreenOneFront() {
           );
           border: 1.5px solid rgba(224, 188, 135, 0.6);
           color: var(--gold-bright);
-          font-size: 9.5px;
+          font-size: 10px;
           font-weight: 600;
           letter-spacing: 0.12em;
           cursor: pointer;
@@ -1704,15 +1618,12 @@ export default function ScreenOneFront() {
           position: relative;
           overflow: hidden;
           backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
           box-shadow: 
             0 8px 32px rgba(0, 0, 0, 0.25),
             0 0 60px rgba(224, 188, 135, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
-        /* 细腻的光泽层 */
         .s1-cta-btn::after {
           content: '';
           position: absolute;
@@ -1727,7 +1638,6 @@ export default function ScreenOneFront() {
           pointer-events: none;
         }
 
-        /* 悬停扫光效果 */
         .s1-cta-btn::before {
           content: '';
           position: absolute;
@@ -1755,9 +1665,7 @@ export default function ScreenOneFront() {
           transition: all 300ms ease;
           text-shadow: 
             0 0 30px rgba(224, 188, 135, 0.6),
-            0 0 60px rgba(224, 188, 135, 0.3),
             0 2px 4px rgba(0, 0, 0, 0.4);
-          font-weight: 600;
         }
 
         .s1-cta-arrow {
@@ -1766,28 +1674,23 @@ export default function ScreenOneFront() {
           position: relative;
           z-index: 1;
           transition: all 300ms ease;
-          font-weight: 600;
           text-shadow: 
             0 0 25px rgba(224, 188, 135, 0.7),
-            0 0 50px rgba(224, 188, 135, 0.4),
             0 2px 4px rgba(0, 0, 0, 0.4);
         }
 
-        /* 紧急状态脉冲 - 优雅的呼吸感 */
         @keyframes pulseDramatic {
           0%, 100% {
             transform: scale(1);
             box-shadow: 
               0 8px 32px rgba(0, 0, 0, 0.25),
-              0 0 60px rgba(224, 188, 135, 0.2),
-              0 0 0 0 rgba(224, 188, 135, 0.6);
+              0 0 60px rgba(224, 188, 135, 0.2);
           }
           50% {
             transform: scale(1.015);
             box-shadow: 
               0 12px 48px rgba(0, 0, 0, 0.3),
-              0 0 80px rgba(224, 188, 135, 0.4),
-              0 0 0 4px rgba(224, 188, 135, 0.2);
+              0 0 80px rgba(224, 188, 135, 0.4);
           }
         }
 
@@ -1802,185 +1705,146 @@ export default function ScreenOneFront() {
             rgba(224, 188, 135, 0.2) 100%
           );
           border-color: rgba(224, 188, 135, 0.8);
-          box-shadow: 
-            0 12px 48px rgba(0, 0, 0, 0.3),
-            0 0 80px rgba(224, 188, 135, 0.35),
-            inset 0 1px 0 rgba(255, 255, 255, 0.15),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.3);
-        }
-
-        .s1-cta-btn.urgent .s1-cta-text,
-        .s1-cta-btn.urgent .s1-cta-arrow {
-          text-shadow: 
-            0 0 40px rgba(255, 245, 230, 0.8),
-            0 0 80px rgba(224, 188, 135, 0.5),
-            0 2px 4px rgba(0, 0, 0, 0.4);
         }
 
         @media (hover: hover) {
           .s1-cta-btn:hover:not(:disabled) {
-            background: linear-gradient(135deg, 
-              rgba(224, 188, 135, 0.22) 0%,
-              rgba(212, 175, 55, 0.18) 50%,
-              rgba(224, 188, 135, 0.22) 100%
-            );
-            border-color: rgba(224, 188, 135, 0.85);
+            transform: translateY(-2px);
             box-shadow: 
               0 12px 48px rgba(0, 0, 0, 0.3),
-              0 0 80px rgba(224, 188, 135, 0.35),
-              inset 0 1px 0 rgba(255, 255, 255, 0.15),
-              inset 0 -1px 0 rgba(0, 0, 0, 0.3);
-            transform: translateY(-2px);
-          }
-
-          .s1-cta-btn:hover:not(:disabled) .s1-cta-text {
-            color: rgba(255, 252, 245, 1);
-            text-shadow: 
-              0 0 40px rgba(255, 245, 230, 0.8),
-              0 0 80px rgba(224, 188, 135, 0.5),
-              0 2px 4px rgba(0, 0, 0, 0.4);
+              0 0 80px rgba(224, 188, 135, 0.35);
           }
 
           .s1-cta-btn:hover:not(:disabled) .s1-cta-arrow {
             transform: translateX(5px);
-            color: var(--gold-bright);
-            text-shadow: 
-              0 0 35px rgba(255, 245, 230, 0.9),
-              0 0 70px rgba(224, 188, 135, 0.6),
-              0 2px 4px rgba(0, 0, 0, 0.4);
           }
         }
 
         .s1-cta-btn:active:not(:disabled) {
           transform: translateY(0) scale(0.99);
-          box-shadow: 
-            0 4px 16px rgba(0, 0, 0, 0.3),
-            0 0 40px rgba(224, 188, 135, 0.25),
-            inset 0 2px 4px rgba(0, 0, 0, 0.25);
         }
 
         .s1-cta-btn:disabled {
           opacity: 0.35;
           cursor: not-allowed;
           animation: none;
-          transform: none;
-          border-color: rgba(224, 188, 135, 0.3);
-          background: linear-gradient(135deg, 
-            rgba(224, 188, 135, 0.08) 0%,
-            rgba(212, 175, 55, 0.06) 50%,
-            rgba(224, 188, 135, 0.08) 100%
-          );
         }
 
-        .cta-disclaimer {
-          margin: 0 0 3px 0;
-          padding: 0 8px;
-          font-size: 5.5px;
-          line-height: 1.3;
-          color: rgba(224, 188, 135, 0.7);
+        .cta-subtext {
+          margin: 0 0 2px 0;
+          padding: 0 10px;
+          font-size: 9px;
+          color: rgba(244, 213, 138, 0.85);
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-weight: 400;
           font-style: italic;
           text-align: center;
         }
 
-        .footer-anchor {
-          max-width: 400px;
-          margin: 0;
-          padding: 0 8px 4px;
-          font-size: 7px;
-          line-height: 1.4;
-          color: rgba(245, 240, 230, 0.92);
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-weight: 400;
-          letter-spacing: 0.01em;
+        .social-proof-mini {
+          margin: 0 0 2px 0;
+          padding: 0 10px;
+          font-size: 8px;
+          color: rgba(180, 255, 180, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
           text-align: center;
-          text-shadow: 0 1px 8px rgba(224, 188, 135, 0.08);
         }
 
-        /* ═══════════════════════════════════════════════════════════════════
-           响应式适配 - 桌面端优化
-           ═══════════════════════════════════════════════════════════════════ */
-        
+        .proof-icon {
+          font-size: 9px;
+        }
+
+        .cta-disclaimer {
+          margin: 0 0 2px 0;
+          padding: 0 10px;
+          font-size: 7px;
+          color: rgba(224, 188, 135, 0.7);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-style: italic;
+          text-align: center;
+          line-height: 1.4;
+        }
+
+        .security-notice-enhanced {
+          margin: 0 0 3px 0;
+          padding: 0 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+          font-size: 8px;
+          text-align: center;
+        }
+
+        .security-icon {
+          font-size: 9px;
+          filter: drop-shadow(0 0 8px rgba(180, 255, 180, 0.4));
+        }
+
+        .security-text {
+          color: rgba(180, 255, 180, 0.85);
+          font-family: 'SF Mono', 'Monaco', monospace;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+        }
+
+        .trust-footer {
+          margin: 0;
+          padding: 0 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          font-size: 7px;
+          color: rgba(224, 188, 135, 0.7);
+          text-align: center;
+        }
+
+        .trust-item {
+          white-space: nowrap;
+        }
+
+        .trust-divider {
+          opacity: 0.4;
+        }
+
         @media (min-width: 768px) {
-          .logo-header {
-            padding: 20px 32px;
+          .hero-carousel {
+            max-width: 480px;
+            height: 280px;
           }
 
-          .s1-top-label {
-            top: 65px;
+          .carousel-top-badge {
+            top: 12px;
+            padding: 6px 18px;
+          }
+
+          .badge-text {
             font-size: 8px;
-            padding: 8px 18px;
           }
 
-          .screen-front-content {
-            max-width: 680px;
-            padding: 110px var(--spacing-xl) var(--spacing-lg);
+          .slide-info-floating {
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            padding: 8px 14px;
           }
 
-          .project-sigil {
-            font-size: 18px;
-            padding: 12px 24px;
-            margin-bottom: var(--spacing-lg);
-          }
-
-          .auth-protocol {
+          .location-text {
             font-size: 13px;
-            margin-bottom: var(--spacing-lg);
           }
 
-          .sub-headline-detail {
-            font-size: 10px;
-            margin-bottom: var(--spacing-xl);
+          .carousel-indicators-premium {
+            top: 16px;
+            right: 16px;
+            gap: 8px;
           }
 
-          .what-we-do-section,
-          .luxury-showcase,
-          .exclusion-block,
-          .access-timeline {
-            padding: var(--spacing-lg) var(--spacing-xl);
-            margin-bottom: var(--spacing-lg);
-            max-width: 560px;
-          }
-
-          .value-prop-text {
-            font-size: 10px;
-            margin-bottom: 10px;
-          }
-
-          .section-signature {
-            font-size: 8.5px;
-          }
-
-          .hero-number {
-            font-size: 72px;
-          }
-
-          .countdown-timer {
-            padding: 12px 24px;
-            margin-bottom: var(--spacing-lg);
-          }
-
-          .countdown-number {
-            font-size: 64px;
-          }
-
-          .s1-cta-btn {
-            height: 52px;
-            max-width: 420px;
-            font-size: 11px;
-          }
-
-          .s1-cta-arrow {
-            font-size: 18px;
-          }
-
-          .cta-disclaimer {
-            font-size: 8px;
-          }
-
-          .footer-anchor {
-            font-size: 10px;
+          .indicator-premium {
+            width: 32px;
+            height: 4px;
           }
         }
 
@@ -1991,35 +1855,9 @@ export default function ScreenOneFront() {
             transition-duration: 0.01ms !important;
           }
 
-          .project-sigil,
-          .auth-protocol,
-          .interaction-core,
-          .countdown-timer,
-          .s1-top-label {
+          .hero-carousel {
             opacity: 1 !important;
             transform: none !important;
-          }
-        }
-
-        @media (prefers-contrast: high) {
-          .s1-cta-btn {
-            border-width: 3px;
-            border-color: var(--gold-bright);
-            background: rgba(224, 188, 135, 0.3);
-          }
-
-          .countdown-timer {
-            border-width: 3px;
-            border-color: var(--gold);
-          }
-
-          .what-we-do-section,
-          .luxury-showcase,
-          .exclusion-block,
-          .access-timeline,
-          .s1-top-label {
-            border-width: 2px;
-            border-color: rgba(224, 188, 135, 0.5);
           }
         }
       `}</style>
