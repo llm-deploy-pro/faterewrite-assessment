@@ -321,22 +321,46 @@ export default function ScreenOneBack() {
            自动使用WebP格式以减少70%文件大小，提升加载速度
            =============================================================== */
         
-        /* 为所有背景图片提供WebP支持 */
+        /* 如果浏览器支持WebP，优先使用WebP格式的图片 */
         @supports (background-image: url("test.webp")) {
-          /* 如果浏览器支持WebP，优先使用WebP格式 */
+          /* 女生头像卡片 - LA */
+          .girl-la,
+          [class*="girl-la"] {
+            background-image: url('/assets/girls/girl-la.webp') !important;
+          }
+          
+          /* 女生头像卡片 - Miami */
+          .girl-miami,
+          [class*="girl-miami"] {
+            background-image: url('/assets/girls/girl-miami.webp') !important;
+          }
+          
+          /* 女生头像卡片 - NYC */
+          .girl-nyc,
+          [class*="girl-nyc"] {
+            background-image: url('/assets/girls/girl-nyc.webp') !important;
+          }
+          
+          /* 其他可能的背景图 */
           .s1-container {
-            /* 背景图片如需添加，使用WebP格式 */
             background-image: url('/assets/bg-pattern.webp');
           }
         }
         
-        /* WebP图片加载优化 - 响应式图片支持 */
-        img[src$=".png"],
-        img[src$=".jpg"],
-        img[src$=".jpeg"] {
-          /* 提示浏览器这些图片可能有WebP版本 */
-          image-rendering: -webkit-optimize-contrast;
-          image-rendering: crisp-edges;
+        /* 默认使用PNG/JPG格式（降级方案） */
+        .girl-la,
+        [class*="girl-la"] {
+          background-image: url('/assets/girls/girl-la.png');
+        }
+        
+        .girl-miami,
+        [class*="girl-miami"] {
+          background-image: url('/assets/girls/girl-miami.png');
+        }
+        
+        .girl-nyc,
+        [class*="girl-nyc"] {
+          background-image: url('/assets/girls/girl-nyc.png');
         }
 
         .s1-container {
