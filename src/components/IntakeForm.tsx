@@ -1570,28 +1570,28 @@ export default function IntakeForm() {
     transform: none;
   }
 
-  /* =============== SUCCESS MODAL (优化版) =============== */
+  /* =============== SUCCESS MODAL (ULTRA-LUXURY TYPOGRAPHY) =============== */
   .success-modal-overlay {
     position: fixed;
     inset: 0;
     z-index: 10000;
-    background: rgba(0, 0, 0, 0.92);
-    backdrop-filter: blur(24px);
+    background: rgba(0, 0, 0, 0.96);
+    backdrop-filter: blur(36px) saturate(120%);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    animation: overlayFadeIn 600ms cubic-bezier(0.23, 1, 0.32, 1);
+    animation: overlayFadeIn 700ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   @keyframes overlayFadeIn {
     from {
       opacity: 0;
-      backdrop-filter: blur(0px);
+      backdrop-filter: blur(0px) saturate(100%);
     }
     to {
       opacity: 1;
-      backdrop-filter: blur(24px);
+      backdrop-filter: blur(36px) saturate(120%);
     }
   }
 
@@ -1599,28 +1599,31 @@ export default function IntakeForm() {
     position: relative;
     width: 100%;
     max-width: 440px;
-    padding: 48px 36px;
-    background: linear-gradient(135deg, 
-      rgba(20, 22, 28, 0.98) 0%, 
-      rgba(15, 17, 22, 0.99) 100%
-    );
-    border: 2px solid rgba(184, 150, 95, 0.5);
-    border-radius: 20px;
-    backdrop-filter: blur(40px) saturate(180%);
+    padding: 56px 40px;
+    background: 
+      linear-gradient(135deg, 
+        rgba(26, 24, 20, 0.88) 0%, 
+        rgba(18, 16, 14, 0.94) 50%,
+        rgba(14, 12, 10, 0.96) 100%
+      );
+    border: 1.5px solid rgba(184, 150, 95, 0.45);
+    border-radius: 24px;
+    backdrop-filter: blur(60px) saturate(200%);
     box-shadow: 
-      0 0 0 1px rgba(255, 255, 255, 0.12),
-      0 24px 80px rgba(0, 0, 0, 0.8),
-      0 0 100px rgba(184, 150, 95, 0.35),
-      inset 0 2px 0 rgba(255, 255, 255, 0.15),
-      inset 0 0 80px rgba(184, 150, 95, 0.08);
-    animation: cardEnter 800ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      0 0 0 1px rgba(212, 175, 55, 0.15),
+      0 32px 120px rgba(0, 0, 0, 0.92),
+      0 0 150px rgba(184, 150, 95, 0.28),
+      inset 0 2px 1px rgba(255, 255, 255, 0.08),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+      inset 0 0 120px rgba(184, 150, 95, 0.04);
+    animation: cardEnter 900ms cubic-bezier(0.16, 1, 0.3, 1);
     text-align: center;
   }
 
   @keyframes cardEnter {
     0% {
       opacity: 0;
-      transform: scale(0.88) translateY(30px);
+      transform: scale(0.92) translateY(24px);
     }
     100% {
       opacity: 1;
@@ -1631,32 +1634,33 @@ export default function IntakeForm() {
   .success-modal-card::before {
     content: '';
     position: absolute;
-    inset: -2px;
-    border-radius: 20px;
+    inset: -1.5px;
+    border-radius: 24px;
     background: linear-gradient(135deg,
-      rgba(184, 150, 95, 0.4) 0%,
-      transparent 45%,
-      rgba(212, 175, 55, 0.35) 100%
+      rgba(212, 175, 55, 0.38) 0%,
+      transparent 38%,
+      transparent 62%,
+      rgba(184, 150, 95, 0.28) 100%
     );
-    opacity: 0.9;
+    opacity: 0.7;
     pointer-events: none;
-    animation: borderPulse 3s ease-in-out infinite;
+    animation: borderBreath 4s ease-in-out infinite;
   }
 
-  @keyframes borderPulse {
+  @keyframes borderBreath {
     0%, 100% {
-      opacity: 0.7;
-      filter: blur(0px);
+      opacity: 0.6;
+      filter: blur(0.5px);
     }
     50% {
-      opacity: 1;
+      opacity: 0.95;
       filter: blur(1px);
     }
   }
 
   .success-icon-wrapper {
-    margin-bottom: 24px;
-    animation: iconFloat 3s ease-in-out infinite;
+    margin-bottom: 32px;
+    animation: iconFloat 4s ease-in-out infinite;
   }
 
   @keyframes iconFloat {
@@ -1664,72 +1668,90 @@ export default function IntakeForm() {
       transform: translateY(0) scale(1);
     }
     50% {
-      transform: translateY(-12px) scale(1.05);
+      transform: translateY(-8px) scale(1.03);
     }
   }
 
   .success-icon {
-    font-size: 72px;
+    font-size: 80px;
     display: inline-block;
-    filter: drop-shadow(0 0 28px rgba(212, 175, 55, 0.8));
-    animation: iconGlow 2s ease-in-out infinite;
+    filter: 
+      drop-shadow(0 0 36px rgba(212, 175, 55, 0.88))
+      drop-shadow(0 0 64px rgba(212, 175, 55, 0.42));
+    animation: iconGlow 3s ease-in-out infinite;
   }
 
   @keyframes iconGlow {
     0%, 100% {
-      filter: drop-shadow(0 0 28px rgba(212, 175, 55, 0.7));
+      filter: 
+        drop-shadow(0 0 32px rgba(212, 175, 55, 0.78))
+        drop-shadow(0 0 56px rgba(212, 175, 55, 0.36));
       transform: rotate(0deg);
     }
     50% {
-      filter: drop-shadow(0 0 40px rgba(212, 175, 55, 1));
+      filter: 
+        drop-shadow(0 0 44px rgba(212, 175, 55, 1))
+        drop-shadow(0 0 76px rgba(212, 175, 55, 0.52));
       transform: rotate(180deg);
     }
   }
 
   .success-title {
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--cream);
-    margin: 0 0 16px 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin: 0 0 20px 0;
     line-height: 1.25;
-    letter-spacing: -0.03em;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-    animation: textFadeIn 800ms cubic-bezier(0.23, 1, 0.32, 1) 300ms both;
+    letter-spacing: -0.015em;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    text-shadow: 
+      0 2px 16px rgba(0, 0, 0, 0.6),
+      0 0 42px rgba(255, 255, 255, 0.08);
+    animation: textFadeIn 900ms cubic-bezier(0.16, 1, 0.3, 1) 350ms both;
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   .success-subtitle {
-    font-size: 15px;
-    font-weight: 600;
-    color: rgba(232, 232, 224, 0.95);
-    margin: 0 0 12px 0;
-    line-height: 1.6;
-    letter-spacing: -0.01em;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    animation: textFadeIn 800ms cubic-bezier(0.23, 1, 0.32, 1) 400ms both;
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0 0 16px 0;
+    line-height: 1.65;
+    letter-spacing: -0.003em;
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    animation: textFadeIn 900ms cubic-bezier(0.16, 1, 0.3, 1) 450ms both;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   .success-hint {
-    font-size: 13px;
-    font-weight: 600;
-    color: rgba(184, 150, 95, 0.95);
-    margin: 0 0 32px 0;
-    line-height: 1.6;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(184, 150, 95, 0.92);
+    margin: 0 0 40px 0;
+    line-height: 1.7;
     letter-spacing: 0em;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    animation: textFadeIn 800ms cubic-bezier(0.23, 1, 0.32, 1) 500ms both;
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    animation: textFadeIn 900ms cubic-bezier(0.16, 1, 0.3, 1) 550ms both;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   .success-hint strong {
-    color: var(--gold-bright);
-    font-weight: 800;
-    text-shadow: 0 0 12px rgba(212, 175, 55, 0.5);
+    color: #D4AF37;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    text-shadow: 
+      0 0 18px rgba(212, 175, 55, 0.62),
+      0 0 34px rgba(212, 175, 55, 0.26);
   }
 
   @keyframes textFadeIn {
     from {
       opacity: 0;
-      transform: translateY(12px);
+      transform: translateY(8px);
     }
     to {
       opacity: 1;
@@ -1739,57 +1761,65 @@ export default function IntakeForm() {
 
   .success-cta {
     width: 100%;
-    height: 52px;
+    height: 56px;
     position: relative;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     cursor: pointer;
     border: none;
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
     
     background: linear-gradient(135deg, 
-      #b8965f 0%,
-      #d4af37 50%,
-      #b8965f 100%
+      #C0A062 0%,
+      #D4AF37 43%,
+      #E8C547 50%,
+      #D4AF37 57%,
+      #B8965F 100%
     );
+    background-size: 200% 100%;
     
     box-shadow: 
-      0 0 60px rgba(212, 175, 55, 0.5),
-      0 8px 28px rgba(0, 0, 0, 0.5),
-      inset 0 2px 0 rgba(255, 255, 255, 0.25),
-      inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+      0 0 0 1px rgba(212, 175, 55, 0.32),
+      0 0 85px rgba(212, 175, 55, 0.42),
+      0 10px 42px rgba(0, 0, 0, 0.62),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.26);
     
-    font-size: 14px;
-    font-weight: 800;
-    letter-spacing: 0.15em;
-    color: rgba(10, 10, 10, 0.98);
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: rgba(10, 8, 6, 0.96);
     text-transform: uppercase;
     text-shadow: 
-      0 1px 0 rgba(255, 255, 255, 0.4),
-      0 2px 8px rgba(255, 255, 255, 0.2);
+      0 1px 0 rgba(255, 255, 255, 0.38),
+      0 2px 14px rgba(255, 255, 255, 0.16);
     
-    transition: all 300ms cubic-bezier(0.23, 1, 0.32, 1);
-    animation: ctaFadeIn 800ms cubic-bezier(0.23, 1, 0.32, 1) 600ms both;
+    transition: all 360ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: ctaFadeIn 900ms cubic-bezier(0.16, 1, 0.3, 1) 650ms both;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   .success-cta::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, 
+    background: linear-gradient(110deg, 
       transparent 0%, 
-      rgba(255, 255, 255, 0.4) 50%,
+      transparent 38%,
+      rgba(255, 255, 255, 0.38) 50%,
+      transparent 62%,
       transparent 100%
     );
     background-size: 200% 100%;
-    animation: ctaShimmer 2s infinite linear;
-    opacity: 0.8;
+    animation: ctaShimmer 3.2s ease-in-out infinite;
+    opacity: 0.72;
   }
 
   @keyframes ctaFadeIn {
     from {
       opacity: 0;
-      transform: translateY(10px) scale(0.96);
+      transform: translateY(8px) scale(0.97);
     }
     to {
       opacity: 1;
@@ -1798,20 +1828,17 @@ export default function IntakeForm() {
   }
 
   .success-cta:hover {
-    transform: translateY(-2px) scale(1.02);
-    background: linear-gradient(135deg, 
-      #d4af37 0%,
-      #f0c850 50%,
-      #d4af37 100%
-    );
+    transform: translateY(-2px) scale(1.01);
+    background-position: -100% 0;
     box-shadow: 
-      0 0 80px rgba(212, 175, 55, 0.7),
-      0 12px 40px rgba(0, 0, 0, 0.6),
-      inset 0 2px 0 rgba(255, 255, 255, 0.4);
+      0 0 0 1px rgba(240, 200, 80, 0.52),
+      0 0 105px rgba(212, 175, 55, 0.62),
+      0 14px 50px rgba(0, 0, 0, 0.68),
+      inset 0 1px 0 rgba(255, 255, 255, 0.42);
   }
 
   .success-cta:active {
-    transform: translateY(0) scale(0.98);
+    transform: translateY(0) scale(0.99);
   }
 
   .countdown-ring {
@@ -1995,7 +2022,7 @@ export default function IntakeForm() {
 
     .success-modal-card {
       max-width: 500px;
-      padding: 56px 48px;
+      padding: 64px 48px;
     }
 
     .success-icon {
@@ -2003,23 +2030,23 @@ export default function IntakeForm() {
     }
 
     .success-title {
-      font-size: 30px;
-      margin-bottom: 18px;
+      font-size: 32px;
+      margin-bottom: 22px;
     }
 
     .success-subtitle {
       font-size: 17px;
-      margin-bottom: 14px;
+      margin-bottom: 18px;
     }
 
     .success-hint {
-      font-size: 14px;
-      margin-bottom: 36px;
+      font-size: 15px;
+      margin-bottom: 44px;
     }
 
     .success-cta {
-      height: 56px;
-      font-size: 15px;
+      height: 60px;
+      font-size: 13px;
     }
 
     .countdown-ring {
