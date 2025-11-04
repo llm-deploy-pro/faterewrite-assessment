@@ -332,19 +332,41 @@ export default function ScreenOneFront() {
     }
   }, []);
 
+  // 🔧 修复后的图片预加载 - Safari兼容
   useEffect(() => {
     const nextIndex = (currentSlide + 1) % HERO_PROFILES.length;
     
     [currentSlide, nextIndex].forEach(index => {
       if (!loadedImages.has(index) && !failedImages.has(index)) {
         const img = new Image();
-        img.src = HERO_PROFILES[index].img;
+        
+        // Safari兼容性：添加超时保护
+        const loadTimeout = setTimeout(() => {
+          console.warn(`[图片加载超时] ${HERO_PROFILES[index].img}`);
+          setFailedImages(prev => new Set(prev).add(index));
+        }, 8000);
+        
         img.onload = () => {
+          clearTimeout(loadTimeout);
           setLoadedImages(prev => new Set(prev).add(index));
+          console.log(`[图片加载成功] ${HERO_PROFILES[index].img}`);
         };
-        img.onerror = () => {
+        
+        img.onerror = (error) => {
+          clearTimeout(loadTimeout);
+          console.error(`[图片加载失败] ${HERO_PROFILES[index].img}`, error);
           setFailedImages(prev => new Set(prev).add(index));
         };
+        
+        // Safari: 先设置crossOrigin再设置src
+        img.crossOrigin = "anonymous";
+        img.src = HERO_PROFILES[index].img;
+        
+        // Safari需要主动检查已完成的图片
+        if (img.complete && img.naturalHeight !== 0) {
+          clearTimeout(loadTimeout);
+          setLoadedImages(prev => new Set(prev).add(index));
+        }
       }
     });
   }, [currentSlide, loadedImages, failedImages]);
@@ -614,6 +636,7 @@ export default function ScreenOneFront() {
                   {!isLoaded && !hasFailed && (
                     <div className="slide-placeholder">
                       <div className="shimmer"></div>
+                      <div className="loading-text">Loading...</div>
                     </div>
                   )}
                   
@@ -634,6 +657,9 @@ export default function ScreenOneFront() {
                         src={profile.img}
                         alt={`${profile.city} companion`}
                         className="slide-image"
+                        crossOrigin="anonymous"
+                        loading="eager"
+                        decoding="async"
                       />
                       <div className="slide-gradient-premium"></div>
                       
@@ -946,6 +972,9 @@ export default function ScreenOneFront() {
           height: 100%;
           object-fit: cover;
           display: block;
+          -webkit-user-select: none;
+          user-select: none;
+          -webkit-touch-callout: none;
         }
 
         .slide-gradient-premium {
@@ -1034,6 +1063,9 @@ export default function ScreenOneFront() {
           background: #0f1218;
           position: relative;
           overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .shimmer {
@@ -1053,6 +1085,14 @@ export default function ScreenOneFront() {
         @keyframes shimmer {
           0% { left: -100%; }
           100% { left: 100%; }
+        }
+
+        .loading-text {
+          position: relative;
+          z-index: 1;
+          font-size: 12px;
+          color: rgba(184, 150, 95, 0.6);
+          font-weight: 500;
         }
 
         .slide-fallback {
