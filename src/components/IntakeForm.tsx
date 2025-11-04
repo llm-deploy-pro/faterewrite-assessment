@@ -1,5 +1,5 @@
 // src/components/IntakeForm.tsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 /* =====================================================================
    Cross-subdomain deduplication utilities
@@ -127,7 +127,7 @@ export default function IntakeForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
 
-  const trackEvent = (eventName: string, extraData: Record<string, any> = {}) => {
+  const trackEvent = useCallback((eventName: string, extraData: Record<string, any> = {}) => {
     const frid = ensureFrid();
     const isDev = window.location.hostname === "localhost";
     
@@ -142,7 +142,7 @@ export default function IntakeForm() {
       }
       console.log(`[Event Tracked] ${eventName}`, extraData);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const checkTimeTracking = () => {
@@ -166,7 +166,7 @@ export default function IntakeForm() {
 
     const interval = setInterval(checkTimeTracking, 500);
     return () => clearInterval(interval);
-  }, []);
+  }, [trackEvent]);
 
   useEffect(() => {
     if (hasTrackedRef.current) return;
@@ -286,8 +286,12 @@ export default function IntakeForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // 先验证表单
+    const isValid = validateForm();
+    
+    // 追踪CTA点击事件（包含验证结果）
     trackEvent("cta_clicked", { 
-      form_complete: validateForm(),
+      form_complete: isValid,
       q1_filled: formData.q1_scenarios.length > 0,
       q2_filled: !!formData.q2_city,
       q2_custom_filled: formData.q2_city === "Other major city" ? !!formData.q2_city_custom : true,
@@ -296,17 +300,23 @@ export default function IntakeForm() {
       contact_filled: !!(formData.q5_contact_method && formData.q5_contact_value)
     });
     
-    if (!validateForm()) return;
+    // 如果验证失败，直接返回
+    if (!isValid) return;
     
     setIsSubmitting(true);
     const frid = ensureFrid();
+    const isDev = window.location.hostname === "localhost";
 
-    if (typeof (window as any).fbq !== "undefined") {
-      const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-      (window as any).fbq("track", "Lead", {
-        content_name: "Guided_Form_Submitted",
-        user_id: frid,
-      }, { eventID: eventId });
+    // 追踪Lead事件（带去重保护）
+    if (markOnce("form_submitted_lead", isDev)) {
+      if (typeof (window as any).fbq !== "undefined") {
+        const eventId = "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        (window as any).fbq("track", "Lead", {
+          content_name: "Guided_Form_Submitted",
+          user_id: frid,
+        }, { eventID: eventId });
+      }
+      console.log("[Event Tracked] Lead - Form Submitted");
     }
 
     try {
