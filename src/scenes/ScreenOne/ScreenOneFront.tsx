@@ -1,6 +1,5 @@
 // src/scenes/ScreenOne/ScreenOneFront.tsx
 import { useEffect, useRef, useState, useCallback } from "react";
-import Wordmark from "@/components/Wordmark";
 
 /* ===================== 优化的跨子域去重工具 ===================== */
 
@@ -282,26 +281,30 @@ interface HeroProfile {
   age: number;
   availability: string;
   img: string;
+  duration: number; // 停留时间（毫秒）
 }
 
 const HERO_PROFILES: HeroProfile[] = [
   {
     city: "Miami",
     age: 26,
-    availability: "Available tonight",
-    img: "/assets/girls/girl-miami.png"
+    availability: "available tonight",
+    img: "/assets/girls/2.png",
+    duration: 5000  // 5秒
   },
   {
     city: "Los Angeles",
     age: 26,
-    availability: "This weekend",
-    img: "/assets/girls/girl-la.png"
+    availability: "this weekend",
+    img: "/assets/girls/3.png",
+    duration: 3000  // 3秒
   },
   {
     city: "New York",
     age: 26,
-    availability: "This week",
-    img: "/assets/girls/girl-nyc.png"
+    availability: "this week",
+    img: "/assets/girls/1.png",
+    duration: 3000  // 3秒
   }
 ];
 
@@ -309,14 +312,9 @@ const HERO_PROFILES: HeroProfile[] = [
 
 export default function ScreenOneFront() {
   const startTimeRef = useRef<number>(0);
-  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  
-  const [countdown, setCountdown] = useState<number>(15);
-  const [countdownStarted, setCountdownStarted] = useState(false);
   
   const [ctaVisible, setCtaVisible] = useState(false);
   const [hasClicked, setHasClicked] = useState(false);
-  const [shouldPulse, setShouldPulse] = useState(false);
 
   const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -360,7 +358,9 @@ export default function ScreenOneFront() {
       return;
     }
 
-    carouselTimerRef.current = setInterval(() => {
+    const currentDuration = HERO_PROFILES[currentSlide].duration;
+
+    carouselTimerRef.current = setTimeout(() => {
       setIsTransitioning(true);
       const nextIndex = (currentSlide + 1) % HERO_PROFILES.length;
       
@@ -381,11 +381,11 @@ export default function ScreenOneFront() {
       setTimeout(() => {
         setIsTransitioning(false);
       }, 500);
-    }, 3000);
+    }, currentDuration);
 
     return () => {
       if (carouselTimerRef.current) {
-        clearInterval(carouselTimerRef.current);
+        clearTimeout(carouselTimerRef.current);
       }
     };
   }, [currentSlide, isPaused, isTransitioning]);
@@ -434,7 +434,7 @@ export default function ScreenOneFront() {
     setCurrentSlide(targetIndex);
     
     if (carouselTimerRef.current) {
-      clearInterval(carouselTimerRef.current);
+      clearTimeout(carouselTimerRef.current);
     }
 
     setTimeout(() => {
@@ -463,28 +463,11 @@ export default function ScreenOneFront() {
 
   useEffect(() => {
     const startTimer = setTimeout(() => {
-      setCountdownStarted(true);
       setCtaVisible(true);
-      
-      countdownIntervalRef.current = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            if (countdownIntervalRef.current) {
-              clearInterval(countdownIntervalRef.current);
-              countdownIntervalRef.current = null;
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
     }, 1500);
 
     return () => {
       clearTimeout(startTimer);
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
     };
   }, []);
 
@@ -548,23 +531,11 @@ export default function ScreenOneFront() {
     };
   }, []);
 
-  useEffect(() => {
-    if (countdown <= 4) {
-      setShouldPulse(true);
-    }
-  }, [countdown]);
-
   const navigateToNext = useCallback(() => {
     setHasClicked(true);
-    setShouldPulse(false);
-    
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
     
     if (carouselTimerRef.current) {
-      clearInterval(carouselTimerRef.current);
+      clearTimeout(carouselTimerRef.current);
       carouselTimerRef.current = null;
     }
     
@@ -605,7 +576,6 @@ export default function ScreenOneFront() {
         screen_position: 'center',
         screen_number: 1,
         trigger_type: 'user_click',
-        countdown_value: countdown,
         time_on_page: timeOnPage,
         current_carousel_city: HERO_PROFILES[currentSlide].city,
       },
@@ -613,41 +583,13 @@ export default function ScreenOneFront() {
     );
 
     navigateToNext();
-  }, [hasClicked, countdown, currentSlide, navigateToNext]);
-
-  useEffect(() => {
-    if (countdown === 0 && !hasClicked) {
-      const isDev = window.location.hostname === 'localhost';
-      const timeOnPage = startTimeRef.current > 0 
-        ? Math.round((Date.now() - startTimeRef.current) / 1000) 
-        : 0;
-
-      trackEvent(
-        "s1at",
-        "S1_Front_Auto_Transition",
-        {
-          content_name: 'Assessment_Countdown_Complete',
-          content_category: 'Matching_Assessment',
-          trigger_type: 'auto_timeout',
-          reason: 'countdown_zero',
-          time_on_page: timeOnPage,
-          screen_number: 1,
-        },
-        isDev
-      );
-
-      navigateToNext();
-    }
-  }, [countdown, hasClicked, navigateToNext]);
+  }, [hasClicked, currentSlide, navigateToNext]);
 
   return (
     <section className="screen-front-container">
-      <div className="logo-header">
-        <Wordmark name="AXIS" href="/" />
-      </div>
-      
       <div className="s1-top-label">
-        <span className="label-text">— VERIFIED NETWORK • MEMBERS ONLY —</span>
+        <span className="label-verify-icon">✓</span>
+        <span className="label-text">REAL PEOPLE • REAL TIME • GUARANTEED</span>
       </div>
 
       <div className="screen-front-content">
@@ -658,11 +600,6 @@ export default function ScreenOneFront() {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="carousel-top-badge">
-            <span className="badge-icon">✓</span>
-            <span className="badge-text">VERIFIED ELITE • AVAILABLE NATIONWIDE</span>
-          </div>
-
           <div className="carousel-slides">
             {HERO_PROFILES.map((profile, index) => {
               const isActive = index === currentSlide;
@@ -688,7 +625,7 @@ export default function ScreenOneFront() {
                       </div>
                       <div className="slide-info-floating">
                         <span className="location-pin">📍</span>
-                        <span className="location-text">{profile.city}, {profile.age} · {profile.availability}</span>
+                        <span className="location-text">{profile.city}</span>
                       </div>
                     </div>
                   ) : (
@@ -701,8 +638,11 @@ export default function ScreenOneFront() {
                       <div className="slide-gradient-premium"></div>
                       
                       <div className="slide-info-floating">
-                        <span className="location-pin">📍</span>
-                        <span className="location-text">{profile.city}, {profile.age} · {profile.availability}</span>
+                        <div className="info-location">📍 {profile.city}</div>
+                        <div className="info-hook">Waiting for you {profile.availability}</div>
+                        <div className="info-status">
+                          <span className="pulse-dot"></span> Online now
+                        </div>
                       </div>
                     </>
                   )}
@@ -711,7 +651,7 @@ export default function ScreenOneFront() {
             })}
           </div>
 
-          {HERO_PROFILES.length > 1 && (
+          {HERO_PROFILES.length > 1 && false && (
             <div className="carousel-indicators-premium">
               {HERO_PROFILES.map((_, index) => (
                 <button
@@ -725,91 +665,65 @@ export default function ScreenOneFront() {
           )}
         </div>
 
-        <div className="more-available">
-          + 21 more verified companions available nationwide this week
-        </div>
+        <h1 className="headline-primary">
+          Stop wasting time on people who never show up.
+        </h1>
 
-        <div className="project-sigil">
-          STOP CHASING. START CHOOSING.
-        </div>
-        
-        <div className="auth-protocol">
-          Pre-screened · Nationwide · This week
-        </div>
+        <h2 className="headline-secondary">
+          This is a paid circle. That's exactly why it works. Everyone here is verified, serious, and actually shows up.
+        </h2>
 
-        <div className="exclusion-block">
-          <div className="exclusion-header">
-            <span className="exclusion-icon">⚠</span>
-            <span className="exclusion-title">Why apps waste your time</span>
+        <div className="four-cards-compact">
+          <div className="service-card-mini service-card-fantasy">
+            <div className="card-title-mini">Real Conversation</div>
+            <div className="card-desc-mini">An actual person. An actual hour. No scripts.</div>
           </div>
 
-          <div className="exclusion-compare">
-            <div className="compare-row">
-              <div className="compare-them">
-                <span className="them-label">Apps:</span>
-                <span className="them-text">swipe → bots → flakes → ghosted</span>
-              </div>
-              <div className="compare-us">
-                <span className="us-label">Us:</span>
-                <span className="us-text">city → verified → book → she shows</span>
-              </div>
-            </div>
+          <div className="service-card-mini service-card-provider">
+            <div className="card-title-mini">Consistent Connection</div>
+            <div className="card-desc-mini">Set time. Real presence. Weekly rhythm.</div>
           </div>
 
-          <div className="network-status-bar">
-            <span className="status-indicator"></span>
-            <span className="status-text">Live: Miami · NYC · LA · Vegas · Dallas · Chicago · ATL · Houston</span>
+          <div className="service-card-mini service-card-action">
+            <div className="card-title-mini">Verified Meet-Up</div>
+            <div className="card-desc-mini">Public venue. She shows up—guaranteed.</div>
+          </div>
+
+          <div className="service-card-mini service-card-custom">
+            <div className="card-title-mini">Custom Arrangement</div>
+            <div className="card-desc-mini">Discreet. Built for what you want.</div>
           </div>
         </div>
 
         <div className={`interaction-core ${ctaVisible ? 'visible' : ''}`}>
-          
-          <p className="scarcity-notice">
-            <span className="scarcity-number">21 spots left</span> this week · <span className="scarcity-warning">Last week sold out</span>
-          </p>
-
-          <div className={`countdown-timer ${countdownStarted ? 'active' : ''} ${shouldPulse ? 'expired' : ''}`}>
-            <span className="countdown-label">Auto-continue in</span>
-            <span className="countdown-number">{countdown}</span>
-            <span className="countdown-unit">sec</span>
-          </div>
 
           <button
             type="button"
             onClick={handleCTAClick}
             disabled={hasClicked}
-            className={`s1-cta-btn ${shouldPulse ? 'pulse' : ''} ${shouldPulse ? 'urgent' : ''}`}
-            aria-label="See this week's women"
+            className="s1-cta-btn"
+            aria-label="Request your invitation"
           >
-            <span className="s1-cta-text">SEE THIS WEEK'S WOMEN</span>
+            <span className="s1-cta-text">REQUEST YOUR INVITATION</span>
             <span className="s1-cta-arrow">→</span>
           </button>
           
-          <p className="cta-subtext">
-            Showing {HERO_PROFILES[currentSlide].city} availability
+          <p className="cta-subtext-line1">
+            Investment required. Worth every dollar.
           </p>
 
-          <p className="social-proof-mini">
-            <span className="proof-icon">👥</span>
-            2,400+ verified arrangements completed
+          <p className="cta-subtext-line2">
+            ⏱ LIMITED AVAILABILITY THIS WEEK
           </p>
 
-          <p className="cta-disclaimer">
-            $49 verification • fully credited toward arrangement • full photos after approval
-          </p>
-
-          <p className="security-notice-enhanced">
-            <span className="security-icon">🔒</span>
-            <span className="security-text">Bank-grade encryption · Zero data retention</span>
-          </p>
-
-          <div className="trust-footer">
-            <span className="trust-item">🛡️ ID verified</span>
-            <span className="trust-divider">·</span>
-            <span className="trust-item">💳 Secure payment</span>
-            <span className="trust-divider">·</span>
-            <span className="trust-item">⚡ Instant access</span>
+          <div className="social-proof-inline">
+            "I wasted 6 months on apps. Here? She actually showed up. First time."
+            <span className="proof-attr"><span className="proof-verify">✓</span> Real member</span>
           </div>
+
+          <p className="footer-disclaimer">
+            Public venues only • Verified identities • Mutual respect required
+          </p>
 
         </div>
       </div>
@@ -817,13 +731,12 @@ export default function ScreenOneFront() {
       {/* @ts-ignore */}
       <style jsx>{`
         :root {
-          --bg-primary: #12161f;
-          --bg-secondary: #1a1f2a;
-          --gold: #e0bc87;
-          --gold-bright: #fff5e6;
-          --cream: #f5f5f0;
-          --amber: rgba(255, 191, 0, 0.45);
-          --gold-indicator: #F4D58A;
+          --bg-primary: #0a0c12;
+          --bg-secondary: #12151c;
+          --gold: #b8965f;
+          --gold-bright: #d4af37;
+          --cream: #e8e8e0;
+          --slate: #1e2330;
         }
 
         :global(html), :global(body) {
@@ -843,9 +756,11 @@ export default function ScreenOneFront() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, 
-            var(--bg-primary) 0%, 
-            var(--bg-secondary) 100%
+          background: radial-gradient(
+            ellipse at 50% 30%,
+            rgba(20, 15, 10, 0.6) 0%,
+            rgba(10, 12, 18, 1) 50%,
+            rgba(5, 6, 10, 1) 100%
           );
           overflow: hidden;
           padding: 0;
@@ -856,10 +771,11 @@ export default function ScreenOneFront() {
           position: absolute;
           inset: 0;
           background: 
-            radial-gradient(circle at 20% 30%, rgba(224, 188, 135, 0.08) 0%, transparent 50%),
-            radial-gradient(circle at 80% 70%, rgba(255, 245, 230, 0.05) 0%, transparent 50%);
+            radial-gradient(circle at 30% 20%, rgba(184, 150, 95, 0.03) 0%, transparent 30%),
+            radial-gradient(circle at 70% 80%, rgba(212, 175, 55, 0.02) 0%, transparent 25%);
           pointer-events: none;
           z-index: 1;
+          opacity: 0.8;
         }
 
         .screen-front-container::after {
@@ -867,50 +783,50 @@ export default function ScreenOneFront() {
           position: absolute;
           inset: 0;
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-          opacity: 0.025;
+          opacity: 0.015;
           pointer-events: none;
           z-index: 1;
         }
 
-        .logo-header {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          z-index: 100;
-          padding: 10px 16px;
-          background: linear-gradient(to bottom,
-            rgba(18, 22, 31, 0.95) 0%,
-            rgba(18, 22, 31, 0.85) 60%,
-            transparent 100%
-          );
-          backdrop-filter: blur(12px);
-          box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
-        }
-
         .s1-top-label {
           position: fixed;
-          top: 48px;
+          top: 16px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 90;
-          font-size: 7px;
+          font-size: 7.5px;
           line-height: 1;
           font-family: 'SF Mono', 'Monaco', monospace;
           font-weight: 500;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.15em;
           text-transform: uppercase;
           opacity: 0;
           animation: topLabelReveal 600ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
-          padding: 5px 12px;
-          background: rgba(20, 25, 35, 0.6);
-          border: 1px solid rgba(224, 188, 135, 0.2);
+          padding: 7px 24px;
+          background: rgba(0, 0, 0, 0.7);
+          border: 1px solid rgba(184, 150, 95, 0.25);
           border-radius: 20px;
-          backdrop-filter: blur(10px);
+          backdrop-filter: blur(12px);
+          width: fit-content;
+          min-width: 280px;
+          box-shadow: 
+            0 2px 8px rgba(0, 0, 0, 0.4),
+            0 0 20px rgba(184, 150, 95, 0.1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          white-space: nowrap;
+        }
+
+        .label-verify-icon {
+          color: rgba(100, 180, 100, 0.9);
+          font-size: 9px;
+          filter: drop-shadow(0 0 4px rgba(100, 180, 100, 0.4));
         }
 
         .label-text {
-          color: rgba(224, 188, 135, 0.95);
+          color: rgba(184, 150, 95, 0.9);
         }
 
         @keyframes topLabelReveal {
@@ -930,7 +846,7 @@ export default function ScreenOneFront() {
           max-width: 600px;
           text-align: center;
           color: var(--cream);
-          padding: 20px 10px 0;
+          padding: 36px 16px 16px;
           z-index: 2;
           display: flex;
           flex-direction: column;
@@ -940,74 +856,54 @@ export default function ScreenOneFront() {
         .hero-carousel {
           width: 100%;
           max-width: 360px;
-          height: 200px;
+          height: 220px;
           position: relative;
-          margin: 0 0 5px 0;
-          border-radius: 18px;
+          margin: 0 0 20px 0;
+          border-radius: 16px;
           overflow: hidden;
           opacity: 0;
           animation: carouselRevealPremium 800ms cubic-bezier(0.23,1,0.32,1) 600ms forwards;
           box-shadow: 
-            0 0 0 1px rgba(224, 188, 135, 0.15),
-            0 4px 12px rgba(0, 0, 0, 0.25),
-            0 8px 24px rgba(0, 0, 0, 0.2),
-            0 16px 48px rgba(0, 0, 0, 0.15),
-            0 0 60px rgba(224, 188, 135, 0.12),
-            inset 0 0 30px rgba(224, 188, 135, 0.03);
+            0 0 0 1px rgba(184, 150, 95, 0.15),
+            0 4px 16px rgba(0, 0, 0, 0.4),
+            0 8px 32px rgba(0, 0, 0, 0.3),
+            0 0 40px rgba(184, 150, 95, 0.08);
           transition: all 600ms cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         .hero-carousel::before {
           content: '';
           position: absolute;
-          inset: -2px;
-          border-radius: 20px;
+          inset: -1px;
+          border-radius: 17px;
           background: linear-gradient(
             135deg,
-            rgba(224, 188, 135, 0) 0%,
-            rgba(224, 188, 135, 0.4) 25%,
-            rgba(255, 245, 230, 0.6) 50%,
-            rgba(224, 188, 135, 0.4) 75%,
-            rgba(224, 188, 135, 0) 100%
+            rgba(184, 150, 95, 0) 0%,
+            rgba(184, 150, 95, 0.15) 50%,
+            rgba(184, 150, 95, 0) 100%
           );
           background-size: 200% 200%;
-          animation: borderGlow 4s ease-in-out infinite;
-          opacity: 0.8;
+          animation: subtleBorderGlow 8s ease-in-out infinite;
+          opacity: 0.5;
           pointer-events: none;
           z-index: 1;
-          filter: blur(1px);
         }
 
-        @keyframes borderGlow {
+        @keyframes subtleBorderGlow {
           0%, 100% { 
             background-position: 0% 50%;
-            opacity: 0.6;
+            opacity: 0.3;
           }
           50% { 
             background-position: 100% 50%;
-            opacity: 1;
+            opacity: 0.6;
           }
-        }
-
-        .hero-carousel::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: 18px;
-          background: 
-            radial-gradient(circle at 0% 0%, rgba(255, 245, 230, 0.25) 0%, transparent 15%),
-            radial-gradient(circle at 100% 0%, rgba(255, 245, 230, 0.15) 0%, transparent 15%),
-            radial-gradient(circle at 0% 100%, rgba(255, 245, 230, 0.15) 0%, transparent 15%),
-            radial-gradient(circle at 100% 100%, rgba(255, 245, 230, 0.25) 0%, transparent 15%);
-          pointer-events: none;
-          z-index: 3;
-          opacity: 0.7;
         }
 
         @keyframes carouselRevealPremium {
           0% {
             opacity: 0;
-            transform: scale(0.96) translateY(12px);
+            transform: scale(0.97) translateY(10px);
           }
           100% {
             opacity: 1;
@@ -1017,67 +913,13 @@ export default function ScreenOneFront() {
 
         @media (hover: hover) {
           .hero-carousel:hover {
-            transform: scale(1.02);
+            transform: scale(1.015);
             box-shadow: 
-              0 0 0 2px rgba(224, 188, 135, 0.25),
-              0 6px 16px rgba(0, 0, 0, 0.3),
-              0 12px 32px rgba(0, 0, 0, 0.25),
-              0 24px 64px rgba(0, 0, 0, 0.2),
-              0 0 80px rgba(224, 188, 135, 0.2),
-              inset 0 0 40px rgba(224, 188, 135, 0.05);
+              0 0 0 1px rgba(184, 150, 95, 0.25),
+              0 6px 20px rgba(0, 0, 0, 0.5),
+              0 12px 40px rgba(0, 0, 0, 0.35),
+              0 0 60px rgba(184, 150, 95, 0.12);
           }
-
-          .hero-carousel:hover::before {
-            opacity: 1;
-            animation-duration: 3s;
-          }
-        }
-
-        .carousel-top-badge {
-          position: absolute;
-          top: 8px;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 10;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          padding: 4px 12px;
-          background: linear-gradient(135deg,
-            rgba(224, 188, 135, 0.95) 0%,
-            rgba(212, 175, 55, 0.9) 100%
-          );
-          border-radius: 9999px;
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          box-shadow: 
-            0 4px 16px rgba(0, 0, 0, 0.4),
-            0 0 30px rgba(224, 188, 135, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-          animation: badgeFloat 3s ease-in-out infinite;
-        }
-
-        @keyframes badgeFloat {
-          0%, 100% { transform: translateX(-50%) translateY(0); }
-          50% { transform: translateX(-50%) translateY(-2px); }
-        }
-
-        .badge-icon {
-          font-size: 9px;
-          font-weight: 700;
-          color: #1a1f2a;
-          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
-        }
-
-        .badge-text {
-          font-size: 6.5px;
-          font-weight: 700;
-          color: #1a1f2a;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          font-family: 'SF Mono', 'Monaco', monospace;
-          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
         }
 
         .carousel-slides {
@@ -1111,54 +953,85 @@ export default function ScreenOneFront() {
           bottom: 0;
           left: 0;
           right: 0;
-          height: 70%;
+          height: 35%;
           background: linear-gradient(to bottom,
             transparent 0%,
-            rgba(0, 0, 0, 0.3) 40%,
-            rgba(0, 0, 0, 0.75) 100%
+            rgba(0, 0, 0, 0.15) 20%,
+            rgba(0, 0, 0, 0.45) 70%,
+            rgba(0, 0, 0, 0.65) 100%
           );
           pointer-events: none;
         }
 
         .slide-info-floating {
           position: absolute;
-          bottom: 10px;
-          left: 10px;
-          right: 10px;
-          display: flex;
+          bottom: 14px;
+          left: 14px;
+          right: auto;
+          display: inline-flex;
           align-items: center;
-          gap: 6px;
-          padding: 5px 10px;
-          background: rgba(15, 21, 31, 0.6);
-          border-radius: 6px;
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 0.5px solid rgba(224, 188, 135, 0.15);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          gap: 8px;
+          padding: 7px 14px;
+          background: rgba(8, 8, 12, 0.55);
+          border-radius: 24px;
+          backdrop-filter: blur(28px) saturate(180%);
+          -webkit-backdrop-filter: blur(28px) saturate(180%);
+          border: 0.5px solid rgba(255, 255, 255, 0.15);
+          box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            0 2px 8px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
           z-index: 2;
+          max-width: fit-content;
         }
 
-        .location-pin {
-          font-size: 10px;
-          line-height: 1;
-          filter: drop-shadow(0 0 8px rgba(224, 188, 135, 0.6));
-        }
-
-        .location-text {
+        .info-location {
           font-size: 11px;
           font-weight: 600;
-          color: #ffffff;
+          color: rgba(255, 255, 255, 0.98);
           letter-spacing: 0.02em;
+          text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+          white-space: nowrap;
           line-height: 1;
-          text-shadow: 
-            0 0 20px rgba(255, 255, 255, 0.4),
-            0 2px 4px rgba(0, 0, 0, 0.6);
+        }
+
+        .info-hook {
+          display: none;
+        }
+
+        .info-status {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 10px;
+          font-weight: 600;
+          color: rgba(130, 210, 130, 1);
+          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+          white-space: nowrap;
+          line-height: 1;
+        }
+
+        .pulse-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: rgba(130, 210, 130, 1);
+          display: inline-block;
+          animation: gentlePulse 2s ease-in-out infinite;
+          box-shadow: 
+            0 0 0 2px rgba(130, 210, 130, 0.3),
+            0 0 8px rgba(130, 210, 130, 0.7);
+        }
+
+        @keyframes gentlePulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.7; transform: scale(1.1); }
         }
 
         .slide-placeholder {
           width: 100%;
           height: 100%;
-          background: #121826;
+          background: #0f1218;
           position: relative;
           overflow: hidden;
         }
@@ -1171,10 +1044,10 @@ export default function ScreenOneFront() {
           height: 100%;
           background: linear-gradient(90deg,
             transparent 0%,
-            rgba(224, 188, 135, 0.1) 50%,
+            rgba(184, 150, 95, 0.08) 50%,
             transparent 100%
           );
-          animation: shimmer 2s infinite;
+          animation: shimmer 2.5s infinite;
         }
 
         @keyframes shimmer {
@@ -1185,7 +1058,7 @@ export default function ScreenOneFront() {
         .slide-fallback {
           width: 100%;
           height: 100%;
-          background: #121826;
+          background: #0f1218;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -1201,13 +1074,13 @@ export default function ScreenOneFront() {
         }
 
         .fallback-icon {
-          font-size: 32px;
-          opacity: 0.6;
+          font-size: 28px;
+          opacity: 0.5;
         }
 
         .fallback-text {
-          font-size: 13px;
-          color: rgba(245, 245, 240, 0.7);
+          font-size: 12px;
+          color: rgba(232, 232, 224, 0.6);
         }
 
         .carousel-indicators-premium {
@@ -1215,57 +1088,52 @@ export default function ScreenOneFront() {
           top: 12px;
           right: 12px;
           display: flex;
-          gap: 6px;
+          gap: 5px;
           z-index: 10;
         }
 
         .indicator-premium {
-          width: 24px;
+          width: 22px;
           height: 3px;
-          background: rgba(224, 188, 135, 0.2);
+          background: rgba(184, 150, 95, 0.25);
           border: none;
           border-radius: 3px;
           cursor: pointer;
           transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
           padding: 0;
-          box-shadow: 
-            0 2px 8px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         }
 
         .indicator-premium.active {
-          background: linear-gradient(135deg,
-            #F4D58A 0%,
-            #e0bc87 100%
-          );
+          background: rgba(184, 150, 95, 0.9);
           box-shadow: 
-            0 0 16px rgba(244, 213, 138, 0.6),
-            0 2px 12px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            0 0 12px rgba(184, 150, 95, 0.4),
+            0 2px 8px rgba(0, 0, 0, 0.4);
         }
 
         .indicator-premium:hover:not(.active) {
-          background: rgba(244, 213, 138, 0.5);
-          box-shadow: 
-            0 0 12px rgba(244, 213, 138, 0.4),
-            0 2px 10px rgba(0, 0, 0, 0.3);
+          background: rgba(184, 150, 95, 0.5);
         }
 
-        .more-available {
-          margin: 0 0 5px 0;
-          font-size: 10px;
-          font-weight: 500;
-          color: #F4D58A;
-          letter-spacing: 0.02em;
-          line-height: 1;
+        .headline-primary {
+          width: 100%;
+          max-width: 540px;
+          margin: 0 0 12px 0;
+          font-size: 19px;
+          line-height: 1.25;
+          font-weight: 700;
+          color: rgba(232, 232, 224, 1);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          letter-spacing: -0.01em;
           opacity: 0;
-          animation: moreAvailableReveal 600ms cubic-bezier(0.23,1,0.32,1) 1000ms forwards;
+          animation: headlineReveal 800ms cubic-bezier(0.23,1,0.32,1) 1000ms forwards;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
         }
 
-        @keyframes moreAvailableReveal {
+        @keyframes headlineReveal {
           0% {
             opacity: 0;
-            transform: translateY(5px);
+            transform: translateY(8px);
           }
           100% {
             opacity: 1;
@@ -1273,209 +1141,118 @@ export default function ScreenOneFront() {
           }
         }
 
-        .project-sigil {
-          margin: 0 0 8px 0;
-          padding: 8px 12px;
-          font-size: 11px;
-          line-height: 1;
-          color: rgba(224, 188, 135, 1);
-          font-family: 'Bodoni MT', 'Didot', Georgia, serif;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          opacity: 0;
-          animation: sigilReveal 800ms cubic-bezier(0.23,1,0.32,1) 1200ms forwards;
-          border: 1px solid rgba(224, 188, 135, 0.3);
-          border-radius: 4px;
-          background: linear-gradient(135deg,
-            rgba(224, 188, 135, 0.06) 0%,
-            rgba(224, 188, 135, 0.02) 100%
-          );
-          backdrop-filter: blur(8px);
-          box-shadow: 
-            0 2px 12px rgba(0, 0, 0, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05);
-          text-shadow: 
-            0 0 20px rgba(224, 188, 135, 0.3),
-            0 1px 2px rgba(0, 0, 0, 0.5);
-        }
-
-        @keyframes sigilReveal {
-          0% {
-            opacity: 0;
-            transform: scale(0.95) translateY(10px);
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
-
-        .auth-protocol {
-          margin: 0 0 8px 0;
-          font-size: 8px;
-          color: rgba(224, 188, 135, 0.85);
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          letter-spacing: 0.02em;
-          font-weight: 400;
-          opacity: 0;
-          animation: authFade 600ms cubic-bezier(0.23,1,0.32,1) 1400ms forwards;
-          text-shadow: 0 0 20px rgba(224, 188, 135, 0.15);
-        }
-
-        @keyframes authFade {
-          to { opacity: 1; }
-        }
-
-        .exclusion-block {
+        .headline-secondary {
           width: 100%;
-          max-width: 480px;
-          margin: 0 0 8px 0;
-          padding: 5px 10px;
-          background: linear-gradient(135deg,
-            rgba(255, 191, 0, 0.03) 0%,
-            rgba(20, 25, 35, 0.6) 100%
-          );
-          border: 1px solid var(--amber);
-          border-radius: 6px;
-          backdrop-filter: blur(24px);
-          box-shadow:
-            0 0 16px rgba(255, 191, 0, 0.15),
-            0 4px 32px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 191, 0, 0.06);
+          max-width: 540px;
+          margin: 0 0 18px 0;
+          font-size: 10px;
+          line-height: 1.4;
+          font-weight: 500;
+          color: rgba(184, 150, 95, 0.85);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          letter-spacing: 0em;
+          opacity: 0;
+          animation: headlineReveal 800ms cubic-bezier(0.23,1,0.32,1) 1200ms forwards;
         }
 
-        .exclusion-header {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 4px;
-          margin-bottom: 4px;
-          padding-bottom: 3px;
-          border-bottom: 1px solid rgba(255, 191, 0, 0.2);
+        .four-cards-compact {
+          width: 100%;
+          max-width: 600px;
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          grid-template-rows: repeat(2, 1fr);
+          gap: 10px;
+          margin: 0 0 20px 0;
+          padding: 0;
+          opacity: 0;
+          animation: headlineReveal 800ms cubic-bezier(0.23,1,0.32,1) 1600ms forwards;
         }
 
-        .exclusion-icon {
-          font-size: 7px;
-          animation: warningPulse 3s ease-in-out infinite;
-        }
-
-        @keyframes warningPulse {
-          0%, 100% { opacity: 0.85; }
-          50% { opacity: 1; }
-        }
-
-        .exclusion-title {
-          font-size: 7.5px;
-          font-weight: 600;
-          color: var(--amber);
-          font-family: 'SF Mono', 'Monaco', monospace;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-        }
-
-        .exclusion-compare {
-          margin-bottom: 5px;
-        }
-
-        .compare-row {
+        .service-card-mini {
+          padding: 12px 14px;
+          border-radius: 8px;
+          backdrop-filter: blur(16px);
+          box-shadow: 
+            0 2px 8px rgba(0, 0, 0, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.02);
+          transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          justify-content: flex-start;
         }
 
-        .compare-them {
-          display: flex;
-          align-items: baseline;
-          gap: 5px;
-          padding: 3px 8px;
-          background: rgba(139, 0, 0, 0.08);
-          border: 1px solid rgba(255, 191, 0, 0.2);
-          border-radius: 4px;
+        .service-card-fantasy {
+          background: linear-gradient(135deg,
+            rgba(140, 100, 140, 0.06) 0%,
+            rgba(80, 60, 100, 0.03) 100%
+          );
+          border: 1px solid rgba(140, 100, 140, 0.18);
         }
 
-        .them-label {
-          font-size: 7px;
-          font-weight: 700;
-          color: rgba(255, 180, 180, 0.9);
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          flex-shrink: 0;
+        .service-card-provider {
+          background: linear-gradient(135deg,
+            rgba(184, 150, 95, 0.06) 0%,
+            rgba(140, 115, 75, 0.03) 100%
+          );
+          border: 1px solid rgba(184, 150, 95, 0.18);
         }
 
-        .them-text {
-          font-size: 8px;
-          font-weight: 500;
-          color: rgba(255, 210, 180, 0.9);
-          line-height: 1.2;
+        .service-card-action {
+          background: linear-gradient(135deg,
+            rgba(180, 100, 80, 0.06) 0%,
+            rgba(140, 70, 60, 0.03) 100%
+          );
+          border: 1px solid rgba(180, 100, 80, 0.18);
+          animation: subtleGlow 3s ease-in-out infinite;
         }
 
-        .compare-us {
-          display: flex;
-          align-items: baseline;
-          gap: 5px;
-          padding: 3px 8px;
-          background: rgba(224, 188, 135, 0.08);
-          border: 1px solid rgba(224, 188, 135, 0.25);
-          border-radius: 4px;
-        }
-
-        .us-label {
-          font-size: 7px;
-          font-weight: 700;
-          color: var(--gold);
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          flex-shrink: 0;
-        }
-
-        .us-text {
-          font-size: 8px;
-          font-weight: 500;
-          color: rgba(245, 245, 240, 0.95);
-          line-height: 1.2;
-        }
-
-        .network-status-bar {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 5px 10px;
-          height: 28px;
-          background: rgba(15, 21, 31, 0.7);
-          border: 0.5px solid rgba(180, 255, 180, 0.2);
-          border-radius: 6px;
-          backdrop-filter: blur(16px);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        }
-
-        .status-indicator {
-          width: 6px;
-          height: 6px;
-          background: #4ade80;
-          border-radius: 50%;
-          animation: statusPulse 2s ease-in-out infinite;
-          box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
-          flex-shrink: 0;
-        }
-
-        @keyframes statusPulse {
+        @keyframes subtleGlow {
           0%, 100% { 
-            opacity: 1; 
-            transform: scale(1);
+            box-shadow: 0 0 8px rgba(180, 100, 80, 0.08);
           }
           50% { 
-            opacity: 0.6; 
-            transform: scale(0.9);
+            box-shadow: 0 0 16px rgba(180, 100, 80, 0.15);
           }
         }
 
-        .status-text {
-          font-size: 8px;
-          font-weight: 500;
-          color: rgba(180, 255, 180, 0.9);
-          font-family: 'SF Mono', 'Monaco', monospace;
+        .service-card-custom {
+          background: linear-gradient(135deg,
+            rgba(80, 80, 120, 0.06) 0%,
+            rgba(60, 60, 90, 0.03) 100%
+          );
+          border: 1px solid rgba(100, 100, 140, 0.18);
+        }
+
+        @media (hover: hover) {
+          .service-card-mini:hover {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 
+              0 4px 16px rgba(0, 0, 0, 0.3),
+              0 0 20px rgba(184, 150, 95, 0.08);
+          }
+
+          .service-card-provider:hover {
+            transform: translateY(-2px) scale(1.03);
+          }
+        }
+
+        .card-title-mini {
+          margin: 0 0 6px 0;
+          font-size: 10.5px;
+          font-weight: 700;
+          color: rgba(184, 150, 95, 1);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           letter-spacing: 0.02em;
-          line-height: 1;
+          line-height: 1.2;
+        }
+
+        .card-desc-mini {
+          margin: 0;
+          font-size: 9px;
+          line-height: 1.45;
+          color: rgba(232, 232, 224, 0.75);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 400;
         }
 
         .interaction-core {
@@ -1493,120 +1270,22 @@ export default function ScreenOneFront() {
           transform: translateY(0);
         }
 
-        .scarcity-notice {
-          margin: 0 0 5px 0;
-          padding: 0 10px;
-          font-size: 9px;
-          line-height: 1.3;
-          color: rgba(224, 188, 135, 0.88);
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-weight: 400;
-          text-align: center;
-        }
-
-        .scarcity-number {
-          font-weight: 700;
-          font-size: 10px;
-          color: #F4D58A;
-        }
-
-        .scarcity-warning {
-          font-weight: 600;
-          color: rgba(255, 180, 180, 0.9);
-        }
-
-        .countdown-timer {
-          margin: 0 0 5px 0;
-          padding: 4px 12px;
-          color: rgba(255, 255, 255, 0.98);
-          display: flex;
-          align-items: baseline;
-          justify-content: center;
-          gap: 6px;
-          opacity: 0;
-          transform: scale(0.8);
-          transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
-          background: linear-gradient(135deg,
-            rgba(255, 245, 230, 0.12) 0%,
-            rgba(224, 188, 135, 0.08) 100%
-          );
-          border: 2px solid rgba(224, 188, 135, 0.35);
-          border-radius: 20px;
-          backdrop-filter: blur(12px);
-          box-shadow: 
-            0 0 40px rgba(224, 188, 135, 0.3),
-            0 6px 24px rgba(0, 0, 0, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.08);
-        }
-
-        .countdown-timer.active {
-          opacity: 1;
-          transform: scale(1);
-        }
-
-        .countdown-timer.expired {
-          animation: countdownPulse 1.5s ease-in-out infinite;
-          border-color: rgba(224, 188, 135, 0.5);
-        }
-
-        @keyframes countdownPulse {
-          0%, 100% {
-            transform: scale(1);
-            box-shadow: 
-              0 4px 20px rgba(0, 0, 0, 0.2),
-              0 0 0 0 rgba(224, 188, 135, 0.5);
-          }
-          50% {
-            transform: scale(1.03);
-            box-shadow: 
-              0 4px 20px rgba(0, 0, 0, 0.2),
-              0 0 20px 8px rgba(224, 188, 135, 0.3);
-          }
-        }
-
-        .countdown-label {
-          font-size: 8px;
-          color: rgba(224, 188, 135, 0.7);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          font-family: 'SF Mono', 'Monaco', monospace;
-        }
-
-        .countdown-number {
-          font-size: 28px;
-          line-height: 1;
-          color: var(--gold-bright);
-          font-family: 'SF Mono', 'Monaco', monospace;
-          letter-spacing: 0.05em;
-          font-variant-numeric: tabular-nums;
-          text-shadow: 
-            0 0 35px rgba(255, 245, 230, 0.8),
-            0 0 70px rgba(224, 188, 135, 0.6),
-            0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .countdown-unit {
-          font-size: 10px;
-          color: rgba(224, 188, 135, 0.8);
-          font-family: 'SF Mono', 'Monaco', monospace;
-        }
-
         .s1-cta-btn {
           width: 100%;
-          max-width: 360px;
-          height: 44px;
-          margin: 0 auto 2px;
-          border-radius: 6px;
+          max-width: 400px;
+          height: 48px;
+          margin: 0 auto 8px;
+          border-radius: 10px;
           background: linear-gradient(135deg, 
-            rgba(224, 188, 135, 0.15) 0%,
-            rgba(212, 175, 55, 0.12) 50%,
-            rgba(224, 188, 135, 0.15) 100%
+            rgba(184, 150, 95, 0.20) 0%,
+            rgba(212, 175, 55, 0.16) 50%,
+            rgba(184, 150, 95, 0.20) 100%
           );
-          border: 1.5px solid rgba(224, 188, 135, 0.6);
-          color: var(--gold-bright);
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 0.12em;
+          border: 2px solid rgba(212, 175, 55, 0.75);
+          color: rgba(255, 255, 255, 1);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.15em;
           cursor: pointer;
           transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
           display: flex;
@@ -1617,25 +1296,10 @@ export default function ScreenOneFront() {
           text-transform: uppercase;
           position: relative;
           overflow: hidden;
-          backdrop-filter: blur(24px);
           box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.25),
-            0 0 60px rgba(224, 188, 135, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-
-        .s1-cta-btn::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 50%;
-          background: linear-gradient(to bottom,
-            rgba(255, 255, 255, 0.08) 0%,
-            transparent 100%
-          );
-          pointer-events: none;
+            0 0 40px rgba(212, 175, 55, 0.35),
+            0 4px 20px rgba(0, 0, 0, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15);
         }
 
         .s1-cta-btn::before {
@@ -1645,169 +1309,168 @@ export default function ScreenOneFront() {
           left: -50%;
           width: 200%;
           height: 200%;
-          background: linear-gradient(45deg,
-            transparent 40%,
+          background: linear-gradient(90deg, 
+            transparent 0%, 
             rgba(255, 255, 255, 0.15) 50%,
-            transparent 60%
+            transparent 100%
           );
-          transform: translateX(-100%) translateY(-100%) rotate(45deg);
-          transition: transform 800ms ease;
+          background-size: 200% 100%;
+          animation: ctaShimmer 3s infinite linear;
+          opacity: 0;
+          transition: opacity 400ms ease;
         }
 
-        .s1-cta-btn:hover::before {
-          transform: translateX(100%) translateY(100%) rotate(45deg);
+        @keyframes ctaShimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
         }
 
         .s1-cta-text {
-          color: rgba(255, 250, 240, 1);
+          color: rgba(255, 255, 255, 1);
           position: relative;
           z-index: 1;
           transition: all 300ms ease;
           text-shadow: 
-            0 0 30px rgba(224, 188, 135, 0.6),
-            0 2px 4px rgba(0, 0, 0, 0.4);
+            0 0 20px rgba(212, 175, 55, 0.6),
+            0 2px 6px rgba(0, 0, 0, 0.7);
         }
 
         .s1-cta-arrow {
-          color: var(--gold-bright);
-          font-size: 18px;
+          color: rgba(255, 255, 255, 1);
+          font-size: 19px;
           position: relative;
           z-index: 1;
           transition: all 300ms ease;
           text-shadow: 
-            0 0 25px rgba(224, 188, 135, 0.7),
-            0 2px 4px rgba(0, 0, 0, 0.4);
-        }
-
-        @keyframes pulseDramatic {
-          0%, 100% {
-            transform: scale(1);
-            box-shadow: 
-              0 8px 32px rgba(0, 0, 0, 0.25),
-              0 0 60px rgba(224, 188, 135, 0.2);
-          }
-          50% {
-            transform: scale(1.015);
-            box-shadow: 
-              0 12px 48px rgba(0, 0, 0, 0.3),
-              0 0 80px rgba(224, 188, 135, 0.4);
-          }
-        }
-
-        .s1-cta-btn.pulse {
-          animation: pulseDramatic 2s ease-in-out infinite;
-        }
-
-        .s1-cta-btn.urgent {
-          background: linear-gradient(135deg, 
-            rgba(224, 188, 135, 0.2) 0%,
-            rgba(212, 175, 55, 0.18) 50%,
-            rgba(224, 188, 135, 0.2) 100%
-          );
-          border-color: rgba(224, 188, 135, 0.8);
+            0 0 20px rgba(212, 175, 55, 0.6),
+            0 2px 6px rgba(0, 0, 0, 0.7);
         }
 
         @media (hover: hover) {
           .s1-cta-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
+            transform: translateY(-3px) scale(1.01);
+            background: linear-gradient(135deg, 
+              rgba(212, 175, 55, 0.28) 0%,
+              rgba(240, 200, 80, 0.22) 50%,
+              rgba(212, 175, 55, 0.28) 100%
+            );
+            border-color: rgba(240, 200, 80, 0.9);
             box-shadow: 
-              0 12px 48px rgba(0, 0, 0, 0.3),
-              0 0 80px rgba(224, 188, 135, 0.35);
+              0 0 60px rgba(212, 175, 55, 0.55),
+              0 6px 28px rgba(0, 0, 0, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          }
+
+          .s1-cta-btn:hover:not(:disabled)::before {
+            opacity: 1;
           }
 
           .s1-cta-btn:hover:not(:disabled) .s1-cta-arrow {
-            transform: translateX(5px);
+            transform: translateX(6px);
           }
         }
 
         .s1-cta-btn:active:not(:disabled) {
-          transform: translateY(0) scale(0.99);
+          transform: translateY(-1px) scale(0.99);
         }
 
         .s1-cta-btn:disabled {
-          opacity: 0.35;
+          opacity: 0.4;
           cursor: not-allowed;
-          animation: none;
         }
 
-        .cta-subtext {
-          margin: 0 0 2px 0;
+        .cta-subtext-line1 {
+          margin: 0 0 4px 0;
           padding: 0 10px;
-          font-size: 9px;
-          color: rgba(244, 213, 138, 0.85);
+          font-size: 9.5px;
+          font-weight: 500;
+          color: rgba(184, 150, 95, 0.8);
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          text-align: center;
+          line-height: 1.3;
+        }
+
+        .cta-subtext-line2 {
+          margin: 0 0 12px 0;
+          padding: 0 10px;
+          font-size: 10px;
+          font-weight: 600;
+          color: rgba(200, 120, 120, 0.9);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          text-align: center;
+          line-height: 1.3;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          animation: subtleBlink 3s ease-in-out infinite;
+        }
+
+        @keyframes subtleBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.8; }
+        }
+
+        .social-proof-inline {
+          width: 100%;
+          max-width: 480px;
+          margin: 0 0 10px 0;
+          padding: 12px 16px;
+          background: linear-gradient(135deg,
+            rgba(184, 150, 95, 0.06) 0%,
+            rgba(0, 0, 0, 0.5) 100%
+          );
+          border: 1px solid rgba(184, 150, 95, 0.2);
+          border-radius: 8px;
+          backdrop-filter: blur(12px);
+          box-shadow: 
+            0 2px 12px rgba(0, 0, 0, 0.3),
+            0 0 20px rgba(184, 150, 95, 0.08);
+          font-size: 10px;
+          line-height: 1.5;
+          color: rgba(232, 232, 224, 0.9);
+          font-family: Georgia, serif;
           font-style: italic;
           text-align: center;
+          transition: all 400ms ease;
         }
 
-        .social-proof-mini {
-          margin: 0 0 2px 0;
-          padding: 0 10px;
-          font-size: 8px;
-          color: rgba(180, 255, 180, 0.8);
+        @media (hover: hover) {
+          .social-proof-inline:hover {
+            border-color: rgba(184, 150, 95, 0.35);
+            box-shadow: 
+              0 4px 16px rgba(0, 0, 0, 0.35),
+              0 0 30px rgba(184, 150, 95, 0.12);
+            transform: translateY(-1px);
+          }
+        }
+
+        .proof-attr {
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 4px;
-          text-align: center;
-        }
-
-        .proof-icon {
+          margin-top: 5px;
           font-size: 9px;
-        }
-
-        .cta-disclaimer {
-          margin: 0 0 2px 0;
-          padding: 0 10px;
-          font-size: 7px;
-          color: rgba(224, 188, 135, 0.7);
+          color: rgba(184, 150, 95, 0.8);
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-style: italic;
-          text-align: center;
-          line-height: 1.4;
+          font-style: normal;
+          font-weight: 500;
         }
 
-        .security-notice-enhanced {
-          margin: 0 0 3px 0;
-          padding: 0 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 5px;
-          font-size: 8px;
-          text-align: center;
-        }
-
-        .security-icon {
+        .proof-verify {
+          color: rgba(100, 180, 100, 0.9);
           font-size: 9px;
-          filter: drop-shadow(0 0 8px rgba(180, 255, 180, 0.4));
+          filter: drop-shadow(0 0 4px rgba(100, 180, 100, 0.3));
         }
 
-        .security-text {
-          color: rgba(180, 255, 180, 0.85);
-          font-family: 'SF Mono', 'Monaco', monospace;
-          font-weight: 600;
-          letter-spacing: 0.02em;
-        }
-
-        .trust-footer {
-          margin: 0;
+        .footer-disclaimer {
+          margin: 0 0 12px 0;
           padding: 0 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
           font-size: 7px;
-          color: rgba(224, 188, 135, 0.7);
+          line-height: 1.4;
+          color: rgba(184, 150, 95, 0.5);
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-weight: 400;
           text-align: center;
-        }
-
-        .trust-item {
-          white-space: nowrap;
-        }
-
-        .trust-divider {
-          opacity: 0.4;
         }
 
         @media (min-width: 768px) {
@@ -1816,35 +1479,77 @@ export default function ScreenOneFront() {
             height: 280px;
           }
 
-          .carousel-top-badge {
-            top: 12px;
-            padding: 6px 18px;
-          }
-
-          .badge-text {
-            font-size: 8px;
+          .s1-top-label {
+            font-size: 9px;
+            padding: 8px 20px;
           }
 
           .slide-info-floating {
-            bottom: 16px;
-            left: 16px;
-            right: 16px;
-            padding: 8px 14px;
+            bottom: 18px;
+            left: 18px;
+            right: auto;
+            padding: 8px 16px;
           }
 
-          .location-text {
-            font-size: 13px;
+          .info-location {
+            font-size: 12px;
+          }
+
+          .info-hook {
+            display: none;
+          }
+
+          .info-status {
+            font-size: 11px;
           }
 
           .carousel-indicators-premium {
-            top: 16px;
-            right: 16px;
-            gap: 8px;
+            top: 14px;
+            right: 14px;
+            gap: 6px;
           }
 
           .indicator-premium {
-            width: 32px;
-            height: 4px;
+            width: 28px;
+            height: 3px;
+          }
+
+          .headline-primary {
+            font-size: 22px;
+          }
+
+          .headline-secondary {
+            font-size: 12px;
+          }
+
+          .card-title-mini {
+            font-size: 11.5px;
+          }
+
+          .card-desc-mini {
+            font-size: 9.5px;
+          }
+
+          .s1-cta-btn {
+            height: 50px;
+            font-size: 11px;
+          }
+
+          .cta-subtext-line1 {
+            font-size: 10px;
+          }
+
+          .cta-subtext-line2 {
+            font-size: 10.5px;
+          }
+
+          .social-proof-inline {
+            font-size: 11px;
+            padding: 14px 18px;
+          }
+
+          .proof-attr {
+            font-size: 9.5px;
           }
         }
 

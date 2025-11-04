@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import LuxuryBackground from "../../components/LuxuryBackground";
 import ScreenOneFront from "./ScreenOneFront";
-import ScreenOneBack from "./ScreenOneBack";
+import IntakeForm from "../../components/IntakeForm";
 
 export default function ScreenOne() {
   const [phase, setPhase] = useState<"front" | "back">("front");
@@ -112,7 +112,7 @@ export default function ScreenOne() {
         {/* ✅ 仅在进入后屏时才挂载后屏，防止首屏就触发后屏打点 */}
         {phase === "back" && (
           <section className={`s1-layer ${phase === "back" ? "in" : "out"}`}>
-            <ScreenOneBack />
+            <IntakeForm />
           </section>
         )}
       </div>
